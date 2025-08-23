@@ -1,0 +1,33 @@
+# Source files (not needed in npm package)
+src/
+
+# Development files
+nodemon.json
+tsconfig.json
+.gitignore
+
+# Development dependencies (already in devDependencies)
+node_modules/
+
+# Build cache
+*.tsbuildinfo
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test files
+*.test.ts
+*.spec.ts
+coverage/
+
+# Environment files
+.env* 
