@@ -1,4 +1,4 @@
-import { ACMEClient } from './src/acme-client.js';
+import { ACMEClient } from './src/acme/client/client.js';
 import { directory } from './src/index.js';
 import { generateKeyPairSync } from 'crypto';
 

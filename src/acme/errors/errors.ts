@@ -1,59 +1,47 @@
-/**
- * ACME Error classes based on RFC 8555
- * This file contains error classes for all error types defined in RFC 8555 Section 6.7
- * @see https://datatracker.ietf.org/doc/html/rfc8555#section-6.7
- */
+import { ACME_ERROR } from './codes.js';
 
-import * as ErrorTypes from './error-types.js';
-
-/**
- * Base ACME Error class with standardized error type URN
- */
 export class AcmeError extends Error {
   type: string;
   detail: string;
-  subproblems?: AcmeError[];
-  status?: number;
-  instance?: string;
+  subproblems?: AcmeError[] | undefined;
+  status?: number | undefined;
+  instance: string | undefined;
 
-  constructor(detail: string, status?: number) {
-    super(detail);
-    this.name = this.constructor.name;
+  constructor(
+    detail: string,
+    status?: number,
+    opts?: { type?: string; instance?: string; cause?: unknown },
+  ) {
+    super(detail, { cause: opts?.cause });
+    Object.setPrototypeOf(this, new.target.prototype);
+
+    this.name = new.target.name;
     this.detail = detail;
-    this.status = status || 500; // Default to 500 if not provided
-    this.type = 'urn:ietf:params:acme:error:serverInternal'; // Default type, will be overridden in child classes
+    this.status = status ?? 500;
+    this.type = opts?.type ?? ACME_ERROR.serverInternal;
+    this.instance = opts?.instance;
   }
 
-  /**
-   * Returns error in RFC7807 format
-   */
-  toJSON(): object {
-    const result: Record<string, any> = {
-      type: this.type,
-      detail: this.detail,
-    };
+  toJSON(): Record<string, unknown> {
+    const res: Record<string, unknown> = { type: this.type, detail: this.detail };
 
-    if (this.subproblems && this.subproblems.length > 0) {
-      result.subproblems = this.subproblems.map((p) => p.toJSON());
+    if (this.status !== undefined) {
+      res.status = this.status;
     }
 
     if (this.instance) {
-      result.instance = this.instance;
+      res.instance = this.instance;
     }
 
-    return result;
+    if (this.subproblems?.length) {
+      res.subproblems = this.subproblems.map((p) => p.toJSON());
+    }
+
+    return res;
   }
 
-  /**
-   * Add a subproblem to this error
-   * @param error The error to add as a subproblem
-   */
   addSubproblem(error: AcmeError): this {
-    if (!this.subproblems) {
-      this.subproblems = [];
-    }
-
-    this.subproblems.push(error);
+    (this.subproblems ??= []).push(error);
 
     return this;
   }
@@ -65,7 +53,7 @@ export class AcmeError extends Error {
 export class AccountDoesNotExistError extends AcmeError {
   constructor(detail = 'The request specified an account that does not exist', status = 400) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_ACCOUNT_DOES_NOT_EXIST;
+    this.type = ACME_ERROR.accountDoesNotExist;
   }
 }
 
@@ -78,7 +66,7 @@ export class AlreadyRevokedError extends AcmeError {
     status = 400,
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_ALREADY_REVOKED;
+    this.type = ACME_ERROR.alreadyRevoked;
   }
 }
 
@@ -88,7 +76,7 @@ export class AlreadyRevokedError extends AcmeError {
 export class BadCSRError extends AcmeError {
   constructor(detail = 'The CSR is unacceptable (e.g., due to a short key)', status = 400) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_BAD_CSR;
+    this.type = ACME_ERROR.badCSR;
   }
 }
 
@@ -98,7 +86,7 @@ export class BadCSRError extends AcmeError {
 export class BadNonceError extends AcmeError {
   constructor(detail = 'The client sent an unacceptable anti-replay nonce', status = 400) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_BAD_NONCE;
+    this.type = ACME_ERROR.badNonce;
   }
 }
 
@@ -111,7 +99,7 @@ export class BadPublicKeyError extends AcmeError {
     status = 400,
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_BAD_PUBLIC_KEY;
+    this.type = ACME_ERROR.badPublicKey;
   }
 }
 
@@ -124,7 +112,7 @@ export class BadRevocationReasonError extends AcmeError {
     status = 400,
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_BAD_REVOCATION_REASON;
+    this.type = ACME_ERROR.badRevocationReason;
   }
 }
 
@@ -140,11 +128,11 @@ export class BadSignatureAlgorithmError extends AcmeError {
     algorithms?: string[],
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_BAD_SIGNATURE_ALGORITHM;
+    this.type = ACME_ERROR.badSignatureAlgorithm;
     this.algorithms = algorithms || [];
   }
 
-  override toJSON(): object {
+  override toJSON(): Record<string, unknown> {
     const result = super.toJSON() as Record<string, unknown>;
 
     if (this.algorithms && this.algorithms.length > 0) {
@@ -164,7 +152,7 @@ export class CAAError extends AcmeError {
     status = 400,
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_CAA;
+    this.type = ACME_ERROR.caa;
   }
 }
 
@@ -174,7 +162,7 @@ export class CAAError extends AcmeError {
 export class CompoundError extends AcmeError {
   constructor(detail = 'Multiple errors occurred', status = 400) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_COMPOUND;
+    this.type = ACME_ERROR.compound;
   }
 }
 
@@ -184,7 +172,7 @@ export class CompoundError extends AcmeError {
 export class ConnectionError extends AcmeError {
   constructor(detail = 'The server could not connect to validation target', status = 400) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_CONNECTION;
+    this.type = ACME_ERROR.connection;
   }
 }
 
@@ -197,7 +185,7 @@ export class DNSError extends AcmeError {
     status = 400,
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_DNS;
+    this.type = ACME_ERROR.dns;
   }
 }
 
@@ -210,7 +198,7 @@ export class ExternalAccountRequiredError extends AcmeError {
     status = 400,
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_EXTERNAL_ACCOUNT_REQUIRED;
+    this.type = ACME_ERROR.externalAccountRequired;
   }
 }
 
@@ -223,7 +211,7 @@ export class IncorrectResponseError extends AcmeError {
     status = 400,
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_INCORRECT_RESPONSE;
+    this.type = ACME_ERROR.incorrectResponse;
   }
 }
 
@@ -233,7 +221,7 @@ export class IncorrectResponseError extends AcmeError {
 export class InvalidContactError extends AcmeError {
   constructor(detail = 'A contact URL for an account was invalid', status = 400) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_INVALID_CONTACT;
+    this.type = ACME_ERROR.invalidContact;
   }
 }
 
@@ -243,7 +231,7 @@ export class InvalidContactError extends AcmeError {
 export class MalformedError extends AcmeError {
   constructor(detail = 'The request message was malformed', status = 400) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_MALFORMED;
+    this.type = ACME_ERROR.malformed;
   }
 }
 
@@ -256,7 +244,7 @@ export class OrderNotReadyError extends AcmeError {
     status = 400,
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_ORDER_NOT_READY;
+    this.type = ACME_ERROR.orderNotReady;
   }
 }
 
@@ -268,7 +256,7 @@ export class RateLimitedError extends AcmeError {
 
   constructor(detail = 'The request exceeds a rate limit', status = 429, retryAfter?: Date) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_RATE_LIMITED;
+    this.type = ACME_ERROR.rateLimited;
     this.retryAfter = retryAfter;
   }
 
@@ -286,7 +274,7 @@ export class RateLimitedError extends AcmeError {
     return Math.max(0, seconds);
   }
 
-  override toJSON(): object {
+  override toJSON(): Record<string, unknown> {
     const result = super.toJSON() as Record<string, unknown>;
 
     if (this.retryAfter) {
@@ -303,7 +291,7 @@ export class RateLimitedError extends AcmeError {
 export class RejectedIdentifierError extends AcmeError {
   constructor(detail = 'The server will not issue certificates for the identifier', status = 400) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_REJECTED_IDENTIFIER;
+    this.type = ACME_ERROR.rejectedIdentifier;
   }
 }
 
@@ -313,7 +301,7 @@ export class RejectedIdentifierError extends AcmeError {
 export class ServerInternalError extends AcmeError {
   constructor(detail = 'The server experienced an internal error', status = 500) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_SERVER_INTERNAL;
+    this.type = ACME_ERROR.serverInternal;
   }
 }
 
@@ -323,7 +311,7 @@ export class ServerInternalError extends AcmeError {
 export class TLSError extends AcmeError {
   constructor(detail = 'The server received a TLS error during validation', status = 400) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_TLS;
+    this.type = ACME_ERROR.tls;
   }
 }
 
@@ -333,7 +321,7 @@ export class TLSError extends AcmeError {
 export class UnauthorizedError extends AcmeError {
   constructor(detail = 'The client lacks sufficient authorization', status = 401) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_UNAUTHORIZED;
+    this.type = ACME_ERROR.unauthorized;
   }
 }
 
@@ -346,7 +334,7 @@ export class UnsupportedContactError extends AcmeError {
     status = 400,
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_UNSUPPORTED_CONTACT;
+    this.type = ACME_ERROR.unsupportedContact;
   }
 }
 
@@ -356,7 +344,7 @@ export class UnsupportedContactError extends AcmeError {
 export class UnsupportedIdentifierError extends AcmeError {
   constructor(detail = 'An identifier is of an unsupported type', status = 400) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_UNSUPPORTED_IDENTIFIER;
+    this.type = ACME_ERROR.unsupportedIdentifier;
   }
 }
 
@@ -370,121 +358,10 @@ export class UserActionRequiredError extends AcmeError {
     instance?: string,
   ) {
     super(detail, status);
-    this.type = ErrorTypes.ACME_ERROR_USER_ACTION_REQUIRED;
+    this.type = ACME_ERROR.userActionRequired;
 
     if (instance) {
       this.instance = instance;
     }
   }
-}
-
-/**
- * Create an ACME error instance from a problem document
- * @param problem The problem document
- * @returns An appropriate AcmeError instance
- */
-export function createErrorFromProblem(problem: any): AcmeError {
-  const type = problem.type;
-  const detail = problem.detail || 'Unknown error';
-  const status = problem.status;
-  const instance = problem.instance;
-
-  let error: AcmeError;
-
-  // Create the appropriate error based on the type
-  switch (type) {
-    case 'urn:ietf:params:acme:error:accountDoesNotExist':
-      error = new AccountDoesNotExistError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:alreadyRevoked':
-      error = new AlreadyRevokedError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:badCSR':
-      error = new BadCSRError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:badNonce':
-      error = new BadNonceError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:badPublicKey':
-      error = new BadPublicKeyError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:badRevocationReason':
-      error = new BadRevocationReasonError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:badSignatureAlgorithm':
-      const algorithms = problem.algorithms;
-
-      error = new BadSignatureAlgorithmError(detail, status, algorithms);
-      break;
-    case 'urn:ietf:params:acme:error:caa':
-      error = new CAAError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:compound':
-      error = new CompoundError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:connection':
-      error = new ConnectionError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:dns':
-      error = new DNSError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:externalAccountRequired':
-      error = new ExternalAccountRequiredError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:incorrectResponse':
-      error = new IncorrectResponseError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:invalidContact':
-      error = new InvalidContactError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:malformed':
-      error = new MalformedError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:orderNotReady':
-      error = new OrderNotReadyError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:rateLimited':
-      const retryAfter = problem.retryAfter ? new Date(problem.retryAfter) : undefined;
-
-      error = new RateLimitedError(detail, status, retryAfter);
-      break;
-    case 'urn:ietf:params:acme:error:rejectedIdentifier':
-      error = new RejectedIdentifierError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:serverInternal':
-      error = new ServerInternalError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:tls':
-      error = new TLSError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:unauthorized':
-      error = new UnauthorizedError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:unsupportedContact':
-      error = new UnsupportedContactError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:unsupportedIdentifier':
-      error = new UnsupportedIdentifierError(detail, status);
-      break;
-    case 'urn:ietf:params:acme:error:userActionRequired':
-      error = new UserActionRequiredError(detail, status, instance);
-      break;
-    default:
-      error = new AcmeError(detail, status);
-      error.type = type;
-  }
-
-  // Add instance if available
-  if (instance) {
-    error.instance = instance;
-  }
-
-  // Add subproblems if available
-  if (problem.subproblems && Array.isArray(problem.subproblems)) {
-    problem.subproblems.forEach((subproblem: any) => {
-      error.addSubproblem(createErrorFromProblem(subproblem));
-    });
-  }
-
-  return error;
 }

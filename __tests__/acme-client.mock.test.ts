@@ -1,4 +1,4 @@
-import { ACMEClient } from '../src/acme-client.js';
+import { ACMEClient } from '../src/acme/client/client.js';
 import { BadNonceError, UnauthorizedError, ServerInternalError } from '../src/errors.js';
 import { generateKeyPairSync } from 'crypto';
 

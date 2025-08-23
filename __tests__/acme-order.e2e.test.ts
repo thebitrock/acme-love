@@ -3,12 +3,13 @@ import {
   type ACMEAuthorization,
   type ACMEChallenge,
   type ACMEOrder,
-} from '../src/acme-client.js';
-import { directory, RejectedIdentifierError } from '../src/index.js';
+} from '../src/acme/client/client.js';
+import { directory } from '../src/index.js';
 import * as jose from 'jose';
 import * as jest from 'jest-mock';
 import { setLogger } from '../src/logger.js';
 import util from 'util';
+import { RejectedIdentifierError } from '../src/acme/errors/errors.js';
 
 describe('ACME Order E2E Tests', () => {
   let client: ACMEClient;
@@ -21,6 +22,7 @@ describe('ACME Order E2E Tests', () => {
 
     const keyPair = await jose.generateKeyPair('ES256');
     client.setAccount(keyPair);
+    await client.createAccount();
   });
 
   beforeEach(() => {
@@ -50,7 +52,6 @@ describe('ACME Order E2E Tests', () => {
       const keyPair = await jose.generateKeyPair('ES256');
       client.setAccount(keyPair);
 
-      await client.createAccount();
       const account = await client.createAccount();
       expect(account).toBeDefined();
       expect(logger).toHaveBeenCalledWith(
@@ -67,7 +68,6 @@ describe('ACME Order E2E Tests', () => {
 
   describe('Order Creation', () => {
     it('should attempt to create new order for domain', async () => {
-      await client.createAccount();
       const identifiers = [{ type: 'dns', value: 'test.acme-love.com' }];
       const order = await client.createOrder(identifiers);
 
@@ -92,7 +92,6 @@ describe('ACME Order E2E Tests', () => {
         { type: 'dns', value: 'test1.acme-love.com' },
         { type: 'dns', value: 'test2.acme-love.com' },
       ];
-      await client.createAccount();
       const order = await client.createOrder(identifiers);
 
       console.log('Order response:', order);
@@ -109,7 +108,6 @@ describe('ACME Order E2E Tests', () => {
     it('should handle invalid domain gracefully', async () => {
       const identifiers = [{ type: 'dns', value: 'invalid-domain' }];
 
-      await client.createAccount();
       await expect(client.createOrder(identifiers)).rejects.toThrow({
         name: RejectedIdentifierError.name,
         message:
@@ -123,7 +121,6 @@ describe('ACME Order E2E Tests', () => {
     let authz: any;
 
     beforeAll(async () => {
-      await client.createAccount();
       order = await client.createOrder([{ type: 'dns', value: 'test.acme-love.com' }]);
     });
 
@@ -155,9 +152,8 @@ describe('ACME Order E2E Tests', () => {
     beforeAll(async () => {
       const identifiers = [{ type: 'dns', value: 'test.acme-love.com' }];
 
-      await client.createAccount();
       order = await client.createOrder(identifiers);
-      authz = await client.getAuthorization(order.authorizations[0]);
+      authz = await client.fetchResource(order.authorizations[0]);
       const found = authz.challenges.find((c: ACMEChallenge) => c.type === 'http-01');
       if (!found) {
         throw new Error('HTTP-01 challenge not found for authorization');
@@ -165,23 +161,29 @@ describe('ACME Order E2E Tests', () => {
       challenge = found;
     });
 
-    it('should generate key authorization if challenge available', async () => {
-      const keyAuth = await client.generateKeyAuthorization(challenge.token);
-
-      console.log('Generated key authorization:', keyAuth);
-      expect(keyAuth).toBeDefined();
-      expect(typeof keyAuth).toBe('string');
-      expect(keyAuth).toContain(challenge.token);
-    });
-
     it('should handle challenge completion for test domains', async () => {
       const completeChallenge = await client.completeChallenge(challenge);
-      const completeChallenge2 = await client.fetchResource(challenge.url);
-      const authorization = await client.fetchResource<ACMEAuthorization>(order.authorizations[0]);
+      const fetchedChallenge = await client.fetchResource<ACMEChallenge>(challenge.url);
+      const fetchedAuthorization = await client.fetchResource<ACMEAuthorization>(
+        order.authorizations[0],
+      );
+      const fetchedOrder = await client.fetchResource<ACMEOrder>(order.url);
 
-      console.log('Challenge completion response:', completeChallenge, completeChallenge2, order);
+      console.log('Challenge completion response:', completeChallenge);
 
-      console.log(util.inspect(authorization, { depth: null, colors: true }));
+      console.log(
+        util.inspect(
+          {
+            order,
+            authChallenges: authz.challenges,
+            completeChallenge,
+            fetchedChallenge,
+            fetchedAuthorization,
+            fetchedOrder,
+          },
+          { depth: null, colors: true },
+        ),
+      );
     });
   });
 

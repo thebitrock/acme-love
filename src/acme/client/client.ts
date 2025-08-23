@@ -1,17 +1,10 @@
-import { SimpleHttpClient, type HttpResponse } from './http-client.js';
-import { createHash, randomBytes } from 'crypto';
+import { SimpleHttpClient, type HttpResponse } from '../http/http-client.js';
+import { createHash } from 'crypto';
 import { TextEncoder } from 'util';
-// import * as jose from 'node-jose';
 import * as jose from 'jose';
-import {
-  BadNonceError,
-  ServerInternalError,
-  UnauthorizedError,
-  createErrorFromProblem,
-} from './errors.js';
-import { logWarn } from './logger.js';
-
-// ...existing code...
+import { logWarn } from '../../logger.js';
+import { BadNonceError, ServerInternalError, UnauthorizedError } from '../errors/errors.js';
+import { createErrorFromProblem } from '../errors/factory.js';
 
 export interface ACMEAccount {
   privateKey: jose.CryptoKey;
@@ -39,20 +32,23 @@ export interface ACMEDirectory {
   };
 }
 
+export interface ACMEIdentifier {
+  type: 'dns';
+  value: string;
+}
+
 export interface ACMEOrder {
+  url: string;
   status: 'pending' | 'ready' | 'processing' | 'valid' | 'invalid';
   expires?: string;
-  identifiers: Array<{
-    type: string;
-    value: string;
-  }>;
+  identifiers: ACMEIdentifier[];
   authorizations: string[];
   finalize: string;
   certificate?: string;
 }
 
 export interface ACMEChallenge {
-  type: string;
+  type: 'http-01' | 'dns-01' | 'tls-alpn-01' | string;
   url: string;
   status: 'pending' | 'processing' | 'valid' | 'invalid';
   validated?: string;
@@ -66,33 +62,8 @@ export interface ACMEError {
   status: number;
 }
 
-export type ACMEErrorType =
-  | 'urn:ietf:params:acme:error:userActionRequired'
-  | 'urn:ietf:params:acme:error:rateLimited'
-  | 'urn:ietf:params:acme:error:rejectedIdentifier'
-  | 'urn:ietf:params:acme:error:malformed'
-  | 'urn:ietf:params:acme:error:unauthorized'
-  | 'urn:ietf:params:acme:error:badCSR'
-  | 'urn:ietf:params:acme:error:badNonce'
-  | 'urn:ietf:params:acme:error:connection'
-  | 'urn:ietf:params:acme:error:dns'
-  | 'urn:ietf:params:acme:error:externalAccountRequired'
-  | 'urn:ietf:params:acme:error:invalidContact'
-  | 'urn:ietf:params:acme:error:orderNotReady'
-  | 'urn:ietf:params:acme:error:serverInternal'
-  | 'urn:ietf:params:acme:error:tls'
-  | 'urn:ietf:params:acme:error:unsupportedContact'
-  | 'urn:ietf:params:acme:error:unauthorized'
-  | 'urn:ietf:params:acme:error:badPublicKey'
-  | 'urn:ietf:params:acme:error:badRevocationReason'
-  | 'urn:ietf:params:acme:error:caa'
-  | 'urn:ietf:params:acme:error:badSignatureAlgorithm';
-
 export interface ACMEAuthorization {
-  identifier: {
-    type: string;
-    value: string;
-  };
+  identifier: ACMEIdentifier;
   status: 'pending' | 'valid' | 'invalid' | 'deactivated' | 'expired' | 'revoked';
   expires?: string;
   challenges: ACMEChallenge[];
@@ -104,7 +75,7 @@ export class ACMEClient {
   private directory?: ACMEDirectory;
   private nonce?: string;
   private account?: ACMEAccount;
-  private jwk?: any;
+  private jwk: Promise<jose.JWK> | null = null;
   private http: SimpleHttpClient;
 
   constructor(directoryUrl: string) {
@@ -242,7 +213,20 @@ export class ACMEClient {
       typeof response.headers['content-type'] === 'string' &&
       response.headers['content-type'].includes('application/json')
     ) {
-      return response;
+      const location = response.headers?.location || response.headers?.Location;
+
+      const url = (response.data?.url ||
+        (location && (Array.isArray(location) ? location[0] : location))) as string;
+
+      return {
+        status: response.status,
+        headers: response.headers,
+        data: {
+          ...response.data,
+          // Ensure the order URL is included in the returned object
+          ...(url && { url }),
+        },
+      };
     }
 
     throw new ServerInternalError(
@@ -313,15 +297,8 @@ export class ACMEClient {
       );
     }
 
-    const { headers, data } = await this.makeRequest(this.directory.newAccount, payload);
-
-    const location = headers.location || headers.Location;
-    const resultBody = data || {};
-
-    const kid =
-      (location && (Array.isArray(location) ? location[0] : location)) ||
-      resultBody.kid ||
-      resultBody.keyId;
+    const { data } = await this.makeRequest(this.directory.newAccount, payload);
+    const kid = data?.url || data?.kid || data?.keyId;
 
     if (!kid) {
       throw new ServerInternalError(
@@ -341,9 +318,7 @@ export class ACMEClient {
   /**
    * Create new order ACMEOrder
    */
-  public async createOrder(
-    identifiers: Array<{ type: string; value: string }>,
-  ): Promise<ACMEOrder> {
+  public async createOrder(identifiers: ACMEIdentifier[]): Promise<ACMEOrder> {
     if (!this.directory) {
       await this.getDirectory();
     }
@@ -361,34 +336,18 @@ export class ACMEClient {
     return data;
   }
 
-  /**
-   * Get authorization details
-   */
-  public async getAuthorization(authzUrl: string): Promise<ACMEAuthorization> {
-    return this.fetchResource<ACMEAuthorization>(authzUrl);
-  }
-
   public async fetchResource<T>(url: string): Promise<T> {
-    if (typeof T === ACMEAuthorization) {
-      // do this
-    }
+    const data = (await this.makeRequest(url)).data;
 
-    return (await this.makeRequest(url)).data;
+    return { url, ...data };
   }
 
   /**
    * Complete challenge
    */
-  public async completeChallenge(
-    challenge: ACMEChallenge,
-    keyAuthorization?: string,
-  ): Promise<ACMEChallenge> {
-    if (!keyAuthorization) {
-      keyAuthorization = await this.generateKeyAuthorization(challenge.token);
-    }
-
+  public async completeChallenge(challenge: ACMEChallenge): Promise<ACMEChallenge> {
     const payload = {
-      keyAuthorization,
+      keyAuthorization: await this.generateKeyAuthorization(challenge.token),
     };
 
     return (await this.makeRequest(challenge.url, payload)).data;
@@ -438,7 +397,11 @@ export class ACMEClient {
       payload.reason = reason;
     }
 
-    await this.makeRequest(this.directory?.revokeCert, payload);
+    if (!this.directory) {
+      throw new ServerInternalError('Server directory unavailable');
+    }
+
+    await this.makeRequest(this.directory.revokeCert, payload);
   }
 
   /**
@@ -446,13 +409,13 @@ export class ACMEClient {
    */
   setAccount(account: ACMEAccount): void {
     this.account = account;
-    this.jwk = undefined; // Reset JWK cache
+    this.jwk = null;
   }
 
   /**
    * Generate key authorization for challenge
    */
-  async generateKeyAuthorization(token: string): Promise<string> {
+  private async generateKeyAuthorization(token: string): Promise<string> {
     if (!this.account) {
       throw new UnauthorizedError(
         'Account not set - you must set an account with setAccount before generating key authorization',

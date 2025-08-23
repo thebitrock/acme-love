@@ -65,20 +65,14 @@ export class Application {
 export * as directory from './directory.js';
 
 // Export ACME client
-export { ACMEClient } from './acme-client.js';
+export { ACMEClient } from './acme/client/client.js';
 export type {
   ACMEAccount,
   ACMEDirectory,
   ACMEOrder,
   ACMEChallenge,
   ACMEAuthorization,
-} from './acme-client.js';
-
-// Export ACME error classes
-export * from './errors.js';
-
-// Export ACME error types constants
-export * from './error-types.js';
+} from './acme/client/client.js';
 
 // Utility functions
 export function createApp(config?: Partial<AppConfig>): Application {
