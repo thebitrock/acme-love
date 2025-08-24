@@ -8,6 +8,7 @@ export interface HttpResponse<T = unknown> {
 
 export class SimpleHttpClient {
   async get<T>(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<T>> {
+    console.log('HTTP GET', url, headers);
     const res = await request(url, { method: 'GET', headers });
     const data = await res.body.json();
 
@@ -54,6 +55,7 @@ export class SimpleHttpClient {
   }
 
   async head(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<void>> {
+    console.log('HTTP HEAD', url);
     const res = await request(url, { method: 'HEAD', headers });
 
     return {
