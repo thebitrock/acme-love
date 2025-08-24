@@ -3,8 +3,9 @@ import { createHash } from 'crypto';
 import { TextEncoder } from 'util';
 import * as jose from 'jose';
 import { logWarn } from '../../logger.js';
-import { BadNonceError, ServerInternalError, UnauthorizedError } from '../errors/errors.js';
+import { ServerInternalError, UnauthorizedError } from '../errors/errors.js';
 import { createErrorFromProblem } from '../errors/factory.js';
+import { NonceManager } from './nonce-manager.js';
 
 export interface ACMEAccount {
   privateKey: jose.CryptoKey;
@@ -73,10 +74,10 @@ export interface ACMEAuthorization {
 export class ACMEClient {
   private directoryUrl: string;
   private directory?: ACMEDirectory;
-  private nonce?: string;
   private account?: ACMEAccount;
   private jwk: Promise<jose.JWK> | null = null;
   private http: SimpleHttpClient;
+  private nonceManager?: NonceManager;
 
   constructor(directoryUrl: string) {
     this.directoryUrl = directoryUrl;
@@ -95,51 +96,28 @@ export class ACMEClient {
    * Get ACME directory from the server
    */
   private async getDirectory(): Promise<void> {
-    const response = await this.http.get(this.directoryUrl);
+    const response = await this.http.get<ACMEDirectory>(this.directoryUrl);
 
     if (response.status !== 200) {
       throw new ServerInternalError(`Failed to get directory: ${response.status}`);
     }
 
-    this.directory = response.data as ACMEDirectory;
+    this.directory = response.data;
+
+    this.nonceManager = new NonceManager({
+      newNonceUrl: this.directory.newNonce,
+      fetch: this.http.head.bind(this.http),
+    });
   }
 
-  /**
-   * Get a new nonce from the server
-   */
-  async getNonce(): Promise<string> {
-    if (!this.directory) {
-      await this.getDirectory();
-    }
-
-    if (!this.directory?.newNonce) {
-      throw new ServerInternalError('Server directory does not contain newNonce endpoint');
-    }
-
-    const response = await this.http.head(this.directory.newNonce);
-    const nonce = response.headers['replay-nonce'];
-
-    if (!nonce || Array.isArray(nonce)) {
-      throw new BadNonceError('No valid nonce received from server');
-    }
-
-    this.nonce = nonce;
-
-    return nonce;
-  }
-
-  async createJWS(payload: any, url: string): Promise<jose.FlattenedJWS> {
+  async createJWS(payload: any, url: string, nonce: string): Promise<jose.FlattenedJWS> {
     if (!this.account?.privateKey && !this.account?.keyId) {
       throw new ServerInternalError('Account key or keyId is not initialized');
     }
 
-    if (!this.nonce) {
-      throw new ServerInternalError('Nonce is missing');
-    }
-
     const protectedHeader: jose.JWSHeaderParameters = {
       alg: 'ES256',
-      nonce: this.nonce,
+      nonce,
       url,
       ...(this.account?.keyId ? { kid: this.account.keyId } : {}),
     };
@@ -179,22 +157,22 @@ export class ACMEClient {
    * Make authenticated request to ACME server
    */
   private async makeRequest(url: string, payload?: any): Promise<HttpResponse<any>> {
-    if (!this.nonce) {
-      await this.getNonce();
+    const namespace = NonceManager.makeNamespace(this.directoryUrl, this.account?.keyId || '');
+
+    if (!this.nonceManager) {
+      throw new ServerInternalError('Nonce manager is not initialized');
     }
 
-    const jws = await this.createJWS(payload, url);
-    const response = await this.http.post<any>(url, jws, {
-      'Content-Type': 'application/jose+json',
-      Accept: 'application/json',
+    const nonceManager = this.nonceManager;
+
+    const response = await nonceManager.withNonceRetry(namespace, async (nonce: string) => {
+      const jws = await this.createJWS(payload, url, nonce);
+
+      return await this.http.post<any>(url, jws, {
+        'Content-Type': 'application/jose+json',
+        Accept: 'application/json',
+      });
     });
-    const newNonce = response.headers['replay-nonce'];
-
-    if (newNonce && !Array.isArray(newNonce)) {
-      this.nonce = newNonce;
-    }
-
-    logWarn('Response data:', response);
 
     if (response.status >= 400) {
       const problemDetails = response.data;
@@ -208,11 +186,9 @@ export class ACMEClient {
       }
     }
 
-    if (
-      response.headers['content-type'] &&
-      typeof response.headers['content-type'] === 'string' &&
-      response.headers['content-type'].includes('application/json')
-    ) {
+    const ct = response.headers['content-type'];
+
+    if (typeof ct === 'string' && ct.includes('application/json')) {
       const location = response.headers?.location || response.headers?.Location;
 
       const url = (response.data?.url ||
@@ -223,15 +199,12 @@ export class ACMEClient {
         headers: response.headers,
         data: {
           ...response.data,
-          // Ensure the order URL is included in the returned object
           ...(url && { url }),
         },
       };
     }
 
-    throw new ServerInternalError(
-      `Unexpected response content-type: ${response.headers['content-type']}`,
-    );
+    return response;
   }
 
   /**
@@ -368,17 +341,14 @@ export class ACMEClient {
    * Download certificate
    */
   async downloadCertificate(certUrl: string): Promise<string> {
-    const jws = await this.createJWS('', certUrl);
-    const response = await this.http.post<string>(certUrl, jws, {
-      'Content-Type': 'application/jose+json',
-      Accept: 'application/pem-certificate-chain',
-    });
+    const res = await this.makeRequest(certUrl, ''); // POST-as-GET, пустой payload
 
-    if (response.status !== 200) {
-      throw new ServerInternalError(`Failed to download certificate: ${response.status}`);
+    if (res.status !== 200) {
+      throw new ServerInternalError(`Failed to download certificate: ${res.status}`);
     }
 
-    return response.data;
+    // тут придёт 'application/pem-certificate-chain'
+    return res.data as string;
   }
 
   /**

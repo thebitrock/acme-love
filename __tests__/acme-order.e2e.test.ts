@@ -10,6 +10,16 @@ import * as jest from 'jest-mock';
 import { setLogger } from '../src/logger.js';
 import util from 'util';
 import { RejectedIdentifierError } from '../src/acme/errors/errors.js';
+import type { ACMEIdentifier } from '../src/acme/types/types.js';
+
+describe('Directory', () => {
+  it('test', async () => {
+    const client = new ACMEClient(directory.letsencrypt.staging.directoryUrl);
+    const keyPair = await jose.generateKeyPair('ES256');
+    client.setAccount(keyPair);
+    await client.createAccount();
+  });
+});
 
 describe('ACME Order E2E Tests', () => {
   let client: ACMEClient;
@@ -54,6 +64,7 @@ describe('ACME Order E2E Tests', () => {
 
       const account = await client.createAccount();
       expect(account).toBeDefined();
+      await client.createAccount(); // Try creating again to test idempotency
       expect(logger).toHaveBeenCalledWith(
         'WARN: Account already exists - keyId is set. This indicates an account was previously created using the current key pair. To recreate or register a new account with different credentials, replace the stored privateKey and publicKey before calling setAccount/createAccount.',
       );
@@ -68,7 +79,7 @@ describe('ACME Order E2E Tests', () => {
 
   describe('Order Creation', () => {
     it('should attempt to create new order for domain', async () => {
-      const identifiers = [{ type: 'dns', value: 'test.acme-love.com' }];
+      const identifiers: ACMEIdentifier[] = [{ type: 'dns', value: 'test.acme-love.com' }];
       const order = await client.createOrder(identifiers);
 
       expect(order).toBeDefined();
@@ -88,7 +99,7 @@ describe('ACME Order E2E Tests', () => {
     });
 
     it('should attempt to create order for multiple domains', async () => {
-      const identifiers = [
+      const identifiers: ACMEIdentifier[] = [
         { type: 'dns', value: 'test1.acme-love.com' },
         { type: 'dns', value: 'test2.acme-love.com' },
       ];
@@ -106,7 +117,7 @@ describe('ACME Order E2E Tests', () => {
     });
 
     it('should handle invalid domain gracefully', async () => {
-      const identifiers = [{ type: 'dns', value: 'invalid-domain' }];
+      const identifiers: ACMEIdentifier[] = [{ type: 'dns', value: 'invalid-domain' }];
 
       await expect(client.createOrder(identifiers)).rejects.toThrow({
         name: RejectedIdentifierError.name,
@@ -126,7 +137,7 @@ describe('ACME Order E2E Tests', () => {
 
     it('should attempt to get authorization details', async () => {
       expect(order.authorizations.length).toBeGreaterThan(0);
-      authz = await client.getAuthorization(order.authorizations[0]);
+      authz = await client.fetchResource(order.authorizations[0]);
 
       expect(authz).toBeDefined();
       expect(authz.identifier.type).toBe('dns');
@@ -144,13 +155,13 @@ describe('ACME Order E2E Tests', () => {
     });
   });
 
-  describe.only('Challenge Completion', () => {
+  describe('Challenge Completion', () => {
     let order: ACMEOrder;
     let authz: ACMEAuthorization;
     let challenge: ACMEChallenge;
 
     beforeAll(async () => {
-      const identifiers = [{ type: 'dns', value: 'test.acme-love.com' }];
+      const identifiers: ACMEIdentifier[] = [{ type: 'dns', value: 'test.acme-love.com' }];
 
       order = await client.createOrder(identifiers);
       authz = await client.fetchResource(order.authorizations[0]);
@@ -203,6 +214,24 @@ describe('ACME Order E2E Tests', () => {
       await expect(
         clientWithoutAccount.createOrder([{ type: 'dns', value: 'test.example.com' }]),
       ).rejects.toThrow();
+    });
+  });
+
+  describe('Async multiple call getOrder', () => {
+    it.only('should handle multiple concurrent getOrder calls', async () => {
+      const identifiers: ACMEIdentifier[] = [{ type: 'dns', value: 'test.acme-love.com' }];
+      const order = await client.createOrder(identifiers);
+
+      const orderPromises = [];
+      for (let i = 0; i < 5; i++) {
+        orderPromises.push(client.fetchResource<ACMEOrder>(order.url));
+      }
+
+      const orders = await Promise.all(orderPromises);
+      orders.forEach((fetchedOrder) => {
+        expect(fetchedOrder).toBeDefined();
+        expect(fetchedOrder.url).toBe(order.url);
+      });
     });
   });
 });
