@@ -41,16 +41,34 @@ export class SimpleHttpClient {
       serializedBody = JSON.stringify(body);
     }
 
+    console.log('HTTP POST', url, headers);
     const res = await request(url, {
       method: 'POST',
       headers,
       body: serializedBody,
     });
 
+    const rawCt = res.headers["content-type"];
+    const ct = (Array.isArray(rawCt) ? rawCt[0] : rawCt)?.toLowerCase() ?? "";
+
+    let data: unknown;
+    if (ct.includes("application/json")) {
+      console.log(`Unknown content-type (${ct}), returning raw data as JSON`);
+      data = await res.body.json();
+    } else if (ct.startsWith("text/") || ct.includes("application/pem-certificate-chain")) {
+      console.log(`Unknown content-type (${ct}), returning raw data as text`);
+      data = await res.body.text();
+    } else {
+      console.log(`Unknown content-type (${ct}), returning raw data as Buffer`);
+      const buf = await res.body.arrayBuffer();
+      data = Buffer.from(buf);
+    }
+
+    console.log(data);
     return {
       status: res.statusCode,
       headers: this.normalizeHeaders(res.headers),
-      data: (await res.body.json()) as T,
+      data: data as T,
     };
   }
 

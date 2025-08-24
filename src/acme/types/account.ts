@@ -1,8 +1,8 @@
-import type { CryptoKey } from 'jose';
+import type { webcrypto } from 'crypto';
 
 export interface ACMEAccount {
-  privateKey: CryptoKey;
-  publicKey: CryptoKey;
+  privateKey: webcrypto.CryptoKey | Uint8Array<ArrayBufferLike>;
+  publicKey: webcrypto.CryptoKey | Uint8Array<ArrayBufferLike>;
   keyId?: string;
 }
 

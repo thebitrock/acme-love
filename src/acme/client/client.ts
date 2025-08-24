@@ -167,6 +167,7 @@ export class ACMEClient {
       };
     }
 
+    console.log(nonceManager.getPoolSize(namespace), 'nonces left in pool for', namespace);
     return response;
   }
 
@@ -249,9 +250,40 @@ export class ACMEClient {
     return (await this.makeRequest(challenge.url, payload)).data;
   }
 
-  async finalizeOrder(finalizeUrl: string, csr: Buffer): Promise<ACMEOrder> {
+  public async getTlsAlpn01Digest(challenge: ACMEChallenge): Promise<Buffer> {
+    if (challenge.type !== 'tls-alpn-01') {
+      throw new Error('Not a tls-alpn-01 challenge');
+    }
+    const keyAuth = await this.generateKeyAuthorization(challenge.token);
+    return createHash('sha256').update(keyAuth).digest(); // raw 32 bytes
+  }
+
+  public async getChallengeKeyAuthorization(challenge: ACMEChallenge): Promise<string> {
+    const result = await this.generateKeyAuthorization(challenge.token);
+
+    /* https://datatracker.ietf.org/doc/html/rfc8555#section-8.3 */
+    if (challenge.type === 'http-01') {
+      return result;
+    }
+
+    /* https://datatracker.ietf.org/doc/html/rfc8555#section-8.4 */
+    if (challenge.type === 'dns-01') {
+      return createHash('sha256').update(result).digest('base64url');
+    }
+
+    /* https://datatracker.ietf.org/doc/html/rfc8737 */
+    if (challenge.type === 'tls-alpn-01') {
+      throw new Error(
+        'For tls-alpn-01 challenges, use getTlsAlpn01Digest() to get the required SHA-256 digest',
+      );
+    }
+
+    throw new Error(`Unable to produce key authorization, unknown challenge type: ${challenge.type}`);
+  }
+
+  public async finalizeOrder(finalizeUrl: string, csr: Buffer | string): Promise<ACMEOrder> {
     const payload = {
-      csr: csr.toString('base64url'),
+      csr: Buffer.isBuffer(csr) ? csr.toString('base64url') : csr,
     };
 
     return (await this.makeRequest(finalizeUrl, payload)).data;
@@ -259,6 +291,8 @@ export class ACMEClient {
 
   async downloadCertificate(certUrl: string): Promise<string> {
     const res = await this.makeRequest(certUrl, ''); // POST-as-GET, пустой payload
+
+    console.log('Certificate download response', typeof res.data);
 
     if (res.status !== 200) {
       throw new ServerInternalError(`Failed to download certificate: ${res.status}`);
@@ -306,7 +340,8 @@ export class ACMEClient {
     }
 
     const jwk = await this.getJWK();
-    const thumbprint = createHash('sha256').update(JSON.stringify(jwk)).digest('base64url');
+    // const thumbprint = createHash('sha256').update(JSON.stringify(jwk)).digest('base64url');
+    const thumbprint = await jose.calculateJwkThumbprint(jwk, 'sha256');
 
     return `${token}.${thumbprint}`;
   }
