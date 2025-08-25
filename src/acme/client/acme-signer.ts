@@ -1,7 +1,7 @@
-import * as jose from 'jose';
 import { createHash } from 'crypto';
 import { UnauthorizedError } from '../errors/errors.js';
 import type { ACMEAccount } from '../types/account.js';
+import { calculateJwkThumbprint, exportJWK, FlattenedSign, type FlattenedJWS, type JWK, type JWSHeaderParameters } from 'jose';
 
 /** Minimal signer interface used by AcmeTransport/ACMEClient */
 export interface AcmeSigner {
@@ -9,10 +9,10 @@ export interface AcmeSigner {
   setAccountKid(kid: string): void;
 
   /** Returns cached JWK of the account public key */
-  getJwk(): Promise<jose.JWK>;
+  getJwk(): Promise<JWK>;
 
   /** Signs JWS with the account private key */
-  signJws(payload: Uint8Array, header: jose.JWSHeaderParameters): Promise<jose.FlattenedJWS>;
+  signJws(payload: Uint8Array, header: JWSHeaderParameters): Promise<FlattenedJWS>;
 
   /** RFC 8555 key authorization: token + '.' + base64url(thumbprint(JWK)) */
   generateKeyAuthorization(token: string): Promise<string>;
@@ -29,7 +29,7 @@ export interface AcmeSigner {
 
 /** JOSE/WebCrypto-based signer for ACME account keys */
 export class JoseAcmeSigner implements AcmeSigner {
-  private jwkPromise: Promise<jose.JWK> | null = null;
+  private jwkPromise: Promise<JWK> | null = null;
 
   constructor(private readonly account: ACMEAccount) { }
 
@@ -45,25 +45,25 @@ export class JoseAcmeSigner implements AcmeSigner {
     this.account.keyId = kid;
   }
 
-  async getJwk(): Promise<jose.JWK> {
+  async getJwk(): Promise<JWK> {
     if (this.jwkPromise) return this.jwkPromise;
     if (!this.account.publicKey) {
       throw new UnauthorizedError('Account key is not initialized');
     }
-    this.jwkPromise = jose.exportJWK(this.account.publicKey);
+    this.jwkPromise = exportJWK(this.account.publicKey);
     return this.jwkPromise;
   }
 
-  async signJws(payload: Uint8Array, header: jose.JWSHeaderParameters): Promise<jose.FlattenedJWS> {
+  async signJws(payload: Uint8Array, header: JWSHeaderParameters): Promise<FlattenedJWS> {
     if (!this.account.privateKey) {
       throw new UnauthorizedError('Account private key is not initialized');
     }
-    return new jose.FlattenedSign(payload).setProtectedHeader(header).sign(this.account.privateKey);
+    return new FlattenedSign(payload).setProtectedHeader(header).sign(this.account.privateKey);
   }
 
   async generateKeyAuthorization(token: string): Promise<string> {
     const jwk = await this.getJwk();
-    const thumb = await jose.calculateJwkThumbprint(jwk, 'sha256');
+    const thumb = await calculateJwkThumbprint(jwk, 'sha256');
     return `${token}.${thumb}`;
   }
 

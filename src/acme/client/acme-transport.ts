@@ -2,7 +2,9 @@ import type { HttpResponse } from '../http/http-client.js';
 import { SimpleHttpClient } from '../http/http-client.js';
 import { NonceManager, type NonceManagerOptions } from './nonce-manager.js';
 import type { AcmeSigner } from './acme-signer.js';
-import * as jose from 'jose';
+import type { JWSHeaderParameters } from 'jose';
+import { util } from 'undici';
+import { inspect } from 'util';
 
 /**
  * Responsible for signed ACME HTTP calls and Nonce handling.
@@ -35,9 +37,9 @@ export class AcmeTransport {
   }
 
   /** Builds the ACME protected header for this request. */
-  private async buildHeader(url: string, nonce: string): Promise<jose.JWSHeaderParameters> {
+  private async buildHeader(url: string, nonce: string): Promise<JWSHeaderParameters> {
     const kid = this.signer.getAccountKid();
-    const header: jose.JWSHeaderParameters = { alg: 'ES256', url, nonce };
+    const header: JWSHeaderParameters = { alg: 'ES256', url, nonce };
     if (kid) {
       header.kid = kid;
     } else {
@@ -67,10 +69,24 @@ export class AcmeTransport {
 
       const jws = await this.signer.signJws(data, header);
 
-      return await this.http.post<T>(url, jws, {
+      const result = await this.http.post<T>(url, jws, {
         'Content-Type': 'application/jose+json',
         Accept: '*/*',
       });
+
+      // if (result.status >= 400 && result.data?.detail === 'Unable to validate JWS :: No embedded JWK in JWS header') {
+      //   console.log('ACME Request:',
+      //     inspect(
+      //       {
+      //         request: { url, payload, header, jws },
+      //         response: { status: result.status, headers: result.headers, data: result.data },
+      //       },
+      //       { showHidden: false, depth: null, colors: true }
+      //     )
+      //   );
+      // }
+
+      return result;
     });
   }
 

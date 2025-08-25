@@ -59,7 +59,6 @@ export class ACMEClient {
   private async makeRequest<T = any>(url: string, payload?: unknown): Promise<HttpResponse<T>> {
     const transport = await this.ensureTransport();
     const res = payload === undefined ? await transport.postAsGet<T>(url) : await transport.post<T>(url, payload);
-
     if (res.status >= 400) {
       const problem = res.data as any;
       if (problem && problem.type) {
