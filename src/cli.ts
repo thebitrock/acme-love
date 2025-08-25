@@ -118,7 +118,7 @@ async function handleCertCommand(options: any) {
     }
   }
 
-  const outputDir = options.output;
+  const outputDir = options.output || './certificates';
   const accountKeyPath = options.accountKey || join(outputDir, 'account-key.json');
 
   // Create directories
@@ -307,7 +307,7 @@ async function handleCertCommand(options: any) {
 async function handleCreateAccountKey(options: any) {
   console.log('🔑 Creating ACME account key...\n');
 
-  const outputPath = options.output;
+  const outputPath = options.output || './account-key.json';
 
   if (existsSync(outputPath)) {
     const overwrite = await confirm({
