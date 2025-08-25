@@ -1,6 +1,6 @@
 {
   "name": "acme-love",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Lightweight strongly-typed ACME (RFC 8555) client & toolkit for Node.js 20+ (nonce pooling, CSR helpers, directory presets)",
   "main": "dist/index.js",
   "type": "module",
@@ -62,11 +62,13 @@
     "@peculiar/asn1-x509": "^2.4.0",
     "@peculiar/webcrypto": "^1.5.0",
     "@peculiar/x509": "^1.13.0",
+    "@inquirer/prompts": "^7.8.3",
     "commander": "^14.0.0",
     "debug": "^4.4.1",
     "jose": "^6.0.13",
     "promise-coalesce": "^1.1.2",
-    "undici": "^6.6.2"
+    "undici": "^6.6.2",
+    "inquirer": "^12.9.3"
   },
   "devDependencies": {
     "@inquirer/prompts": "^7.8.3",
