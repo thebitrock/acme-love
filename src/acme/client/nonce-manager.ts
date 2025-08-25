@@ -1,35 +1,86 @@
+/**
+ * ACME Nonce Manager
+ * ------------------
+ * RFC 8555 (ACME) requires every JWS request to the CA to include a fresh, unused nonce taken
+ * from the CA via the "newNonce" endpoint (HEAD /acme/new-nonce). If a request reuses or provides
+ * an expired nonce the server answers with an ACME problem document `badNonce` and the client
+ * should retry with a fresh value.
+ *
+ * High‑performance ACME clients often pipeline or parallelize multiple requests; naively issuing
+ * a network round‑trip (HEAD newNonce) before each signed request increases latency and amplifies
+ * CA rate limits. This manager implements a small in‑memory nonce pool per *namespace* and an
+ * adaptive refill strategy so callers can simply "take" a nonce when they need one and optionally
+ * let the manager prefetch ahead of demand.
+ *
+ * Key features:
+ *  - Namespace isolation (e.g. per CA origin OR origin+account) to avoid cross‑account reuse.
+ *  - Opportunistic prefetch with configurable low/high water marks.
+ *  - Coalesced concurrent refills (multiple simultaneous consumers trigger only one network fetch).
+ *  - Passive harvesting of nonces from normal ACME responses (Replay-Nonce header) to recycle
+ *    what the server already gives back without extra calls.
+ *  - Automatic garbage collection of stale nonces (protect against replay window / server expiry).
+ *  - Retry helper that transparently handles `badNonce` errors while surfacing other problems.
+ *
+ * Not in scope:
+ *  - Persistent storage (pool is in‑memory only).
+ *  - Multi‑process / distributed coordination (each process manages its own pool).
+ *
+ * Thread‑safety / Concurrency:
+ *  - Designed for single Node.js event loop; operations are atomic relative to microtasks.
+ *  - Uses `promise-coalesce` to serialize refill loops per namespace key.
+ *
+ * Usage outline:
+ *  ```ts
+ *  const nm = new NonceManager({ newNonceUrl, fetch });
+ *  const ns = NonceManager.makeNamespace(directoryUrl);
+ *  const nonce = await nm.take(ns); // obtain a usable nonce
+ *  // sign JWS with nonce ...
+ *  const res = await http.post(...);
+ *  // nm.withNonceRetry(namespace, signerFn) can be used to auto retry badNonce responses.
+ *  ```
+ */
 import { coalesceAsync } from 'promise-coalesce';
 import { BadNonceError, ServerInternalError } from '../errors/errors.js';
 import { createErrorFromProblem } from '../errors/factory.js';
 import type { HttpResponse } from '../http/http-client.js';
 import { safeReadBody } from '../utils.js';
 
+/**
+ * Minimal fetch‑like function signature returning an HttpResponse
+ * (your implementation can wrap undici / node fetch / custom HTTP client).
+ */
 export type FetchLike = (url: string) => Promise<HttpResponse<any>>;
 
 export interface NonceManagerOptions {
-  /** Full URL of the newNonce endpoint (from directory), e.g. https://acme-v02.api.letsencrypt.org/acme/new-nonce */
+  /** Full URL of the ACME newNonce endpoint (absolute). */
   newNonceUrl: string;
-  /** fetch-compatible function (node: globalThis.fetch / undici fetch) */
+  /** Fetch / HTTP function returning a structured response (status, headers, data). */
   fetch: FetchLike;
-  /** How long to keep nonces, ms (protection against "stale" nonces); default: 5 minutes */
+  /** Max nonce age (ms) before considered stale & discarded. Defaults to 5 minutes. */
   maxAgeMs?: number;
-  /** Maximum pool size per namespace; default: 32 */
+  /** Hard cap on pool size per namespace. Defaults to 32. */
   maxPool?: number;
-  /** Optional low-water mark for prefetch; if > 0, refill keeps pool at least this size */
+  /**
+   * If > 0, when a consumer asks for a nonce and pool < lowWater the manager will proactively
+   * fetch more (prefetch). Set 0 to disable prefetch.
+   */
   prefetchLowWater?: number;
-  /** Optional high-water target for prefetch; if set, refill tries to fill up to this size */
+  /** Target fill level for prefetch (must be >= lowWater). Optional. */
   prefetchHighWater?: number;
-  /** Optional logger */
+  /** Optional logger function for diagnostics. */
   log?: (msg: string, ...args: unknown[]) => void;
 }
 
-/** One pool per namespace (typically: CA base + account KID/JWK thumbprint) */
+/** Opaque key segregating nonce pools (e.g. per CA origin or CA+account). */
 type Namespace = string;
 
+/** Nonce plus insertion timestamp for expiry / GC. */
 type StampedNonce = { value: string; ts: number };
+/** Outstanding `take()` requests waiting for a nonce. */
 type PendingWaiter = { resolve: (v: string) => void; reject: (e: unknown) => void };
 
 export class NonceManager {
+  /** URL to call for fresh nonces. */
   private readonly newNonceUrl: string;
   private readonly fetch: FetchLike;
   private readonly maxAgeMs: number;
@@ -41,6 +92,10 @@ export class NonceManager {
   private pools = new Map<Namespace, StampedNonce[]>();
   private pending = new Map<Namespace, PendingWaiter[]>();
 
+  /**
+   * Create a new manager.
+   * @param opts Configuration options (see NonceManagerOptions)
+   */
   constructor(opts: NonceManagerOptions) {
     this.newNonceUrl = opts.newNonceUrl;
     this.fetch = opts.fetch;
@@ -51,11 +106,18 @@ export class NonceManager {
     this.log = opts.log ?? (() => { });
   }
 
-  /** Normalized namespace key: create your own strategy. */
+  /**
+   * Produce a namespace key from a CA directory URL.
+   * You may augment this (e.g. append account key thumbprint) to isolate accounts.
+   */
   static makeNamespace(caUrl: string): Namespace {
     return new URL(caUrl).origin;
   }
 
+  /**
+   * Obtain a nonce. If the pool has a fresh one it is returned immediately; otherwise the
+   * request is queued and a refill cycle started.
+   */
   async take(namespace: Namespace): Promise<string> {
     this.gc(namespace);
 
@@ -77,6 +139,9 @@ export class NonceManager {
     });
   }
 
+  /**
+   * Harvest nonce(s) from an ACME response (Replay-Nonce header). Supports folded / multi headers.
+   */
   private putFromResponse(namespace: Namespace, res: HttpResponse<any>): void {
     const raw = res.headers['replay-nonce'] || res.headers['Replay-Nonce'];
     if (!raw) return;
@@ -90,6 +155,12 @@ export class NonceManager {
     this.drain(namespace);
   }
 
+  /**
+   * Execute an ACME request with automatic retry on `badNonce`.
+   * @param namespace Pool key.
+   * @param fn Function that performs the HTTP request using the provided nonce.
+   * @param maxAttempts Retry cap (default 3). Last response (even if badNonce) is returned.
+   */
   public async withNonceRetry<T>(
     namespace: Namespace,
     fn: (nonce: string) => Promise<HttpResponse<T>>,
@@ -140,6 +211,7 @@ export class NonceManager {
     throw lastErr ?? new ServerInternalError('Nonce retry exhausted');
   }
 
+  /** Extract & validate a single Replay-Nonce header. */
   private nonceExtractor(res: HttpResponse<any>): string {
     const nonce = res.headers['replay-nonce'] || res.headers['Replay-Nonce'];
     if (!nonce) {
@@ -151,6 +223,7 @@ export class NonceManager {
     return nonce;
   }
 
+  /** Perform network request for a fresh nonce and store it. */
   private async fetchNewNonce(namespace: Namespace): Promise<string> {
     const res = await this.fetch(this.newNonceUrl);
     this.log(`Fetched new nonce from ${this.newNonceUrl}: HTTP ${res.status}`);
@@ -162,6 +235,10 @@ export class NonceManager {
     return nonce;
   }
 
+  /**
+   * Satisfy as many pending waiters as currently possible with pooled nonces.
+   * Triggers another refill if waiters remain unsatisfied.
+   */
   private drain(namespace: Namespace): void {
     const q = this.pending.get(namespace);
     if (!q || q.length === 0) return;
@@ -189,6 +266,12 @@ export class NonceManager {
    *  - If there are pending waiters → fetch until all are served.
    *  - If prefetch is enabled → also top-up pool to prefetchHighWater (bounded by maxPool).
    *  - Hard-cap per run to avoid infinite loops on persistent server failure.
+   */
+  /**
+   * Refill loop: coalesced so only one runs per namespace concurrently.
+   * Conditions for fetching:
+   *  - There are pending waiters OR pool below lowWater (if prefetch enabled).
+   * Stops if: pool reaches highWater/maxPool or no further need.
    */
   private runRefill(namespace: Namespace): Promise<void> {
     const key = `nonce-refill:${namespace}`;
@@ -225,6 +308,7 @@ export class NonceManager {
     });
   }
 
+  /** Insert a nonce into the pool (deduplicated, size‑bounded). */
   private add(namespace: Namespace, value: string): void {
     const pool = this.pools.get(namespace) ?? [];
     // Avoid duplicates (can happen when server returns multiple RN headers or concurrent calls land)
@@ -238,6 +322,7 @@ export class NonceManager {
     }
   }
 
+  /** Remove expired nonces for the namespace (time‑based GC). */
   private gc(namespace: Namespace): void {
     const pool = this.pools.get(namespace);
     if (!pool) return;
@@ -249,10 +334,12 @@ export class NonceManager {
     }
   }
 
+  /** True if timestamp is older than maxAgeMs. */
   private isExpired(ts: number): boolean {
     return Date.now() - ts > this.maxAgeMs;
   }
 
+  /** Current pool size (diagnostics / metrics). */
   public getPoolSize(namespace: Namespace): number {
     return (this.pools.get(namespace) ?? []).length;
   }
