@@ -10,6 +10,7 @@ import type { ACMEChallenge, ACMEIdentifier, ACMEOrder } from '../types/order.js
 import { AcmeDirectory } from './acme-directory.js';
 import { AcmeTransport } from './acme-transport.js';
 import { JoseAcmeSigner, type AcmeSigner } from './acme-signer.js';
+import type { NonceManagerOptions } from './nonce-manager.js';
 
 /**
  * High-level ACME client orchestrating account, orders, challenges and cert flow.
@@ -21,8 +22,14 @@ export class ACMEClient {
 
   private signer?: AcmeSigner;        // set via setAccount()
   private transport?: AcmeTransport;  // lazy-init once directory is known
+  /** User overrides for NonceManager (pool sizes, watermarks, ttl, log, etc). */
+  private nonceOverrides?: Partial<NonceManagerOptions>;
 
-  constructor(private readonly directoryUrl: string) {
+  constructor(private readonly directoryUrl: string, opts?: { nonce?: Partial<NonceManagerOptions> }) {
+    if (opts?.nonce) {
+      this.nonceOverrides = opts?.nonce;
+    }
+
     this.dirSvc = new AcmeDirectory(this.http, directoryUrl);
   }
 
@@ -31,7 +38,7 @@ export class ACMEClient {
     if (this.transport) return this.transport;
     const dir = await this.dirSvc.get();
     if (!this.signer) throw new UnauthorizedError('Account not set - call setAccount() first');
-    this.transport = new AcmeTransport(this.directoryUrl, dir.newNonce, this.http, this.signer);
+    this.transport = new AcmeTransport(this.directoryUrl, dir.newNonce, this.http, this.signer, this.nonceOverrides);
     return this.transport;
   }
 

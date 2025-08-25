@@ -9,7 +9,15 @@ let client: ACMEClient;
 let keyPair: jose.GenerateKeyPairResult;
 
 test.beforeEach(async () => {
-  client = new ACMEClient(directory.letsencrypt.staging.directoryUrl);
+  client = new ACMEClient(directory.letsencrypt.staging.directoryUrl, {
+    nonce: {
+      maxAgeMs: 5 * 60_000,
+      maxPool: 32,
+      prefetchLowWater: 4,
+      prefetchHighWater: 16,
+      log: console.error,
+    },
+  });
   keyPair = await jose.generateKeyPair('ES256');
   client.setAccount(keyPair);
   await client.createAccount();
@@ -56,9 +64,19 @@ test.skip('should handle errors correctly', async (t) => {
   }
 });
 
+test.only('create multiple orders sequentially', async (t) => {
+  const identifiersList: ACMEIdentifier[][] = [];
+  for (let i = 0; i < 10; i++) {
+    identifiersList.push([{ type: 'dns', value: `sequential-test-${i + 1}.acme-love.com` }]);
+  }
+  for (let i = 0; i < identifiersList.length; i++) {
+    const order = await client.createOrder(identifiersList[i]);
+    t.truthy(order.url, `Order ${i + 1} should have URL`);
+    t.is(order.status, 'pending', `Order ${i + 1} should have pending status`);
+  }
+});
 
-
-test.only('multiple order creates in promise all', async (t) => {
+test('multiple order creates in promise all', async (t) => {
 
   const identifiersList: ACMEIdentifier[][] = [];
   const identifiersList2: ACMEIdentifier[][] = [];

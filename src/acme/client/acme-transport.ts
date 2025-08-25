@@ -1,6 +1,6 @@
 import type { HttpResponse } from '../http/http-client.js';
 import { SimpleHttpClient } from '../http/http-client.js';
-import { NonceManager } from './nonce-manager.js';
+import { NonceManager, type NonceManagerOptions } from './nonce-manager.js';
 import type { AcmeSigner } from './acme-signer.js';
 import * as jose from 'jose';
 
@@ -16,15 +16,22 @@ export class AcmeTransport {
     private readonly newNonceUrl: string,
     private readonly http: SimpleHttpClient,
     private readonly signer: AcmeSigner,
+    private readonly nonceOverrides?: Partial<NonceManagerOptions>,
   ) {
-    this.nonceManager = new NonceManager({
+
+    const baseConfig = {
+      newNonceUrl,
+      fetch: (url: string) => this.http.head(url),
+    } as Pick<NonceManagerOptions, 'newNonceUrl' | 'fetch'>;
+
+    const merged: NonceManagerOptions = {
+      ...baseConfig,
+      ...(this.nonceOverrides ?? {}),
       newNonceUrl: this.newNonceUrl,
-      fetch: (url) => this.http.head(url),
-      maxPool: 64,
-      prefetchLowWater: 12,
-      prefetchHighWater: 40,
-      log: (...args) => console.debug('[nonce]', ...args),
-    });
+      fetch: baseConfig.fetch,
+    };
+
+    this.nonceManager = new NonceManager(merged);
   }
 
   /** Builds the ACME protected header for this request. */
