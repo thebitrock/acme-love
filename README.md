@@ -4,7 +4,10 @@ git clone <repository-url>
 
 # ACME Love
 
-Lightweight, strongly‑typed **ACME (RFC 8555)** toolkit for Node.js 20+/TypeScript. Provides a high‑level `ACMEClient`, CA directory presets (Let's Encrypt / Buypass / Google / ZeroSSL), nonce pooling, CSR helpers and validation utilities.
+Lightweight, strongly‑typed **ACME (RFC 8555)** toolkit for Node.js 20+/TypeScript. Provides a high‑level `ACMEClient`, CA directory presets (Let's Encrypt / Buypass / Google / ZeroSSL), nonce pooling, CSR helpers, validation utilities, and CLI tool.
+
+[![NPM Version](https://img.shields.io/npm/v/acme-love.svg)](https://www.npmjs.com/package/acme-love)
+[![NPM License](https://img.shields.io/npm/l/acme-love.svg)](https://github.com/thebitrock/acme-love/blob/main/LICENSE)
 
 </div>
 
@@ -12,6 +15,7 @@ Lightweight, strongly‑typed **ACME (RFC 8555)** toolkit for Node.js 20+/TypeSc
 
 | Feature                    | Notes                                                            |
 | -------------------------- | ---------------------------------------------------------------- |
+| **CLI Tool**               | Easy-to-use CLI for certificate management                       |
 | ESM + TS 5                 | Native Node.js ESM, strict types                                 |
 | Multiple CAs               | Built‑in directory catalog (staging & prod)                      |
 | Robust nonce management    | Pooled, prefetch, retry on `badNonce`                            |
@@ -23,13 +27,70 @@ Lightweight, strongly‑typed **ACME (RFC 8555)** toolkit for Node.js 20+/TypeSc
 
 ## Install
 
+### CLI Tool (Global)
+
 ```bash
+# Install globally for CLI usage
+npm install -g acme-love
+
+# Use the CLI
+acme-love --help
+acme-love cert -d example.com -e admin@example.com --staging
+```
+
+### Library (Local)
+
+```bash
+# Install as dependency
 npm install acme-love
+
+# Use in code
+import { ACMEClient, directory } from 'acme-love';
+```
+
+### Via npx (No Installation)
+
+```bash
+# Use CLI without installation
+npx acme-love --help
+npx acme-love cert -d example.com -e admin@example.com --staging
 ```
 
 Node.js >= 20 is required (WebCrypto, modern URL, base64url support).
 
-## Quick Start
+## CLI Quick Start
+
+### Get a test certificate (recommended first step)
+
+```bash
+# Interactive mode - easiest way to start
+acme-love interactive
+
+# Or with command line options
+acme-love cert \
+  --domain test.example.com \
+  --email admin@example.com \
+  --staging \
+  --output ./certificates
+```
+
+### Get a production certificate
+
+**⚠️ Warning:** Let's Encrypt has rate limits on production. Always test with `--staging` first!
+
+```bash
+acme-love cert \
+  --domain example.com \
+  --email admin@example.com \
+  --production \
+  --output ./certificates
+```
+
+### CLI Documentation
+
+For complete CLI documentation, see [CLI.md](./docs/CLI.md)
+
+## Library Quick Start
 
 ```ts
 import { ACMEClient, directory } from 'acme-love';
