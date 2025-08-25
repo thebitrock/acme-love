@@ -15,6 +15,12 @@ export interface NonceManagerOptions {
   maxAgeMs?: number;
   /** Maximum pool size per namespace; default: 32 */
   maxPool?: number;
+  /** Optional low-water mark for prefetch; if > 0, refill keeps pool at least this size */
+  prefetchLowWater?: number;
+  /** Optional high-water target for prefetch; if set, refill tries to fill up to this size */
+  prefetchHighWater?: number;
+  /** Optional logger */
+  log?: (msg: string, ...args: unknown[]) => void;
 }
 
 /** One pool per namespace (typically: CA base + account KID/JWK thumbprint) */
@@ -28,6 +34,9 @@ export class NonceManager {
   private readonly fetch: FetchLike;
   private readonly maxAgeMs: number;
   private readonly maxPool: number;
+  private readonly prefetchLowWater: number;
+  private readonly prefetchHighWater: number;
+  private readonly log: (msg: string, ...args: unknown[]) => void;
 
   private pools = new Map<Namespace, StampedNonce[]>();
   private pending = new Map<Namespace, PendingWaiter[]>();
@@ -36,13 +45,15 @@ export class NonceManager {
     this.newNonceUrl = opts.newNonceUrl;
     this.fetch = opts.fetch;
     this.maxAgeMs = opts.maxAgeMs ?? 5 * 60_000;
-    this.maxPool = opts.maxPool ?? 2;
+    this.maxPool = opts.maxPool ?? 32;
+    this.prefetchLowWater = Math.max(0, opts.prefetchLowWater ?? 0);
+    this.prefetchHighWater = Math.max(this.prefetchLowWater, opts.prefetchHighWater ?? 0);
+    this.log = opts.log ?? (() => { });
   }
 
-  /** Normalized namespace key: create your own strategy.
-   *  Recommend: `${caBaseUrl}::${kidOrJwkThumbprint}` */
-  static makeNamespace(caBaseUrl: string, kidOrThumb: string): Namespace {
-    return `${caBaseUrl}::${kidOrThumb}`;
+  /** Normalized namespace key: create your own strategy. */
+  static makeNamespace(caUrl: string): Namespace {
+    return new URL(caUrl).origin;
   }
 
   async take(namespace: Namespace): Promise<string> {
@@ -92,6 +103,8 @@ export class NonceManager {
 
       this.putFromResponse(namespace, res);
 
+      this.log(`Attempt ${attempt}: HTTP ${res.status} (pool size ${this.getPoolSize(namespace)})`);
+
       if (res.status >= 200 && res.status < 400) {
         return res;
       }
@@ -140,6 +153,7 @@ export class NonceManager {
 
   private async fetchNewNonce(namespace: Namespace): Promise<string> {
     const res = await this.fetch(this.newNonceUrl);
+    this.log(`Fetched new nonce from ${this.newNonceUrl}: HTTP ${res.status}`);
     if (!res.status || res.status < 200 || res.status >= 400) {
       throw new ServerInternalError(`newNonce failed: HTTP ${res.status}`);
     }
@@ -169,18 +183,39 @@ export class NonceManager {
     }
   }
 
+  /**
+   * Refill loop with coalescing.
+   * Strategy:
+   *  - If there are pending waiters → fetch until all are served.
+   *  - If prefetch is enabled → also top-up pool to prefetchHighWater (bounded by maxPool).
+   *  - Hard-cap per run to avoid infinite loops on persistent server failure.
+   */
   private runRefill(namespace: Namespace): Promise<void> {
     const key = `nonce-refill:${namespace}`;
-
     return coalesceAsync(key, async () => {
-      for (; ;) {
-        const need = (this.pending.get(namespace)?.length ?? 0);
-        if (need <= 0) break;
+      const HARD_CAP = Math.max(8, this.maxPool); // safety bound per run
+
+      for (let i = 0; i < HARD_CAP; i++) {
+        const queueNeed = (this.pending.get(namespace)?.length ?? 0);
+        const pool = this.pools.get(namespace) ?? [];
+        const poolLen = pool.length;
+
+        // Determine if we need another fetch
+        let needAnother =
+          queueNeed > 0 ||
+          (this.prefetchLowWater > 0 && poolLen < this.prefetchLowWater);
+
+        if (!needAnother) break;
+
+        // Also respect high-water (don’t overfill the pool)
+        if (this.prefetchHighWater > 0 && poolLen >= this.prefetchHighWater) break;
+        if (poolLen >= this.maxPool) break;
 
         try {
           await this.fetchNewNonce(namespace);
           this.drain(namespace);
         } catch (e) {
+          // On failure, reject all waiters and stop
           const q = this.pending.get(namespace) ?? [];
           this.pending.delete(namespace);
           for (const w of q) w.reject(e);
@@ -192,9 +227,10 @@ export class NonceManager {
 
   private add(namespace: Namespace, value: string): void {
     const pool = this.pools.get(namespace) ?? [];
+    // Avoid duplicates (can happen when server returns multiple RN headers or concurrent calls land)
     if (!pool.some((n) => n.value === value)) {
       pool.push({ value, ts: Date.now() });
-
+      // Trim to maxPool, keep the freshest
       if (pool.length > this.maxPool) {
         pool.splice(0, pool.length - this.maxPool);
       }

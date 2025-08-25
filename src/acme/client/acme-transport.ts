@@ -20,6 +20,10 @@ export class AcmeTransport {
     this.nonceManager = new NonceManager({
       newNonceUrl: this.newNonceUrl,
       fetch: (url) => this.http.head(url),
+      maxPool: 64,
+      prefetchLowWater: 12,
+      prefetchHighWater: 40,
+      log: (...args) => console.debug('[nonce]', ...args),
     });
   }
 
@@ -37,7 +41,7 @@ export class AcmeTransport {
 
   /** Returns namespace string used by NonceManager (CA base + account kid or empty). */
   private getNamespace(): string {
-    return NonceManager.makeNamespace(this.directoryBaseUrl, this.signer.getAccountKid() || '');
+    return NonceManager.makeNamespace(this.directoryBaseUrl);
   }
 
   /** ACME signed POST (with JSON body or empty). */

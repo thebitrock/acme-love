@@ -59,18 +59,16 @@ test.skip('should handle errors correctly', async (t) => {
 
 
 test.only('multiple order creates in promise all', async (t) => {
-  const identifiersList: ACMEIdentifier[][] = [
-    [{ type: 'dns', value: 'test1.acme-love.com' }],
-    [{ type: 'dns', value: 'test2.acme-love.com' }],
-    [{ type: 'dns', value: 'test3.acme-love.com' }],
-    [{ type: 'dns', value: 'test4.acme-love.com' }],
-    [{ type: 'dns', value: 'test5.acme-love.com' }],
-    [{ type: 'dns', value: 'test6.acme-love.com' }],
-    [{ type: 'dns', value: 'test7.acme-love.com' }],
-    [{ type: 'dns', value: 'test8.acme-love.com' }],
-    [{ type: 'dns', value: 'test9.acme-love.com' }],
-    [{ type: 'dns', value: 'test10.acme-love.com' }],
-  ];
+
+  const identifiersList: ACMEIdentifier[][] = [];
+  const identifiersList2: ACMEIdentifier[][] = [];
+  for (let i = 0; i < 20; i++) {
+    identifiersList.push([{ type: 'dns', value: `test-${i + 1}.acme-love.com` }]);
+  }
+
+  for (let i = 0; i < 12; i++) {
+    identifiersList2.push([{ type: 'dns', value: `test-2-${i + 1}.acme-love.com` }]);
+  }
 
   try {
     const orders = await Promise.all(
@@ -81,7 +79,19 @@ test.only('multiple order creates in promise all', async (t) => {
       t.truthy(order.url, `Order ${index + 1} should have URL`);
       t.is(order.status, 'pending', `Order ${index + 1} should have pending status`);
     });
-    console.log('All orders created:', orders);
+
+    for (let i = 0; i < 12; i++) {
+      identifiersList2.push([{ type: 'dns', value: `test-2-${i + 1}.acme-love.com` }]);
+    }
+
+    const orders2 = await Promise.all(
+      identifiersList2.map((identifiers) => client.createOrder(identifiers)),
+    );
+    t.is(orders2.length, identifiersList2.length, 'Should create correct number of orders in second batch');
+    orders2.forEach((order, index) => {
+      t.truthy(order.url, `Order2 ${index + 1} should have URL`);
+      t.is(order.status, 'pending', `Order2 ${index + 1} should have pending status`);
+    });
   } catch (error: any) {
     console.log(error);
     if (error?.status === 401) {
