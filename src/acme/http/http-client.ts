@@ -50,7 +50,7 @@ export class SimpleHttpClient {
     const ct = (Array.isArray(rawCt) ? rawCt[0] : rawCt)?.toLowerCase() ?? "";
 
     let data: unknown;
-    if (ct.includes("application/json")) {
+    if (ct.includes("application/json") || ct.includes("application/problem+json")) {
       data = await res.body.json();
     } else if (ct.startsWith("text/") || ct.includes("application/pem-certificate-chain")) {
       data = await res.body.text();

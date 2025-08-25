@@ -56,21 +56,14 @@ export class AcmeTransport {
 
       const jws = await this.signer.signJws(data, header);
 
-      const res = await this.http.post<T>(url, jws, {
+      return await this.http.post<T>(url, jws, {
         'Content-Type': 'application/jose+json',
         Accept: '*/*',
       });
-
-      // Always collect a fresh nonce if present
-      this.nonceManager.putFromResponse(namespace, res);
-
-      return res;
     });
   }
 
-  /** ACME POST-as-GET: send an empty JWS body to "GET" a resource. */
   async postAsGet<T = any>(url: string): Promise<HttpResponse<T>> {
-    // Delegate to post() with empty payload
     return this.post<T>(url, '');
   }
 }

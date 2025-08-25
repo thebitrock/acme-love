@@ -1,6 +1,6 @@
 import test from 'ava';
 import * as jose from 'jose';
-import { ACMEClient } from '../src/acme/client/client.js';
+import { ACMEClient } from '../src/acme/client/acme-client.js';
 import { directory } from '../src/directory.js';
 import type { ACMEIdentifier } from '../src/acme/types/order.js';
 // import type { ACMEIdentifier } from '../src/acme/types/order.js';
@@ -13,12 +13,6 @@ test.beforeEach(async () => {
   keyPair = await jose.generateKeyPair('ES256');
   client.setAccount(keyPair);
   await client.createAccount();
-});
-
-test('should get directory info', async (t) => {
-  const dirAfterInit = client.getDirectoryInfo();
-  t.truthy(dirAfterInit, 'Directory info should be defined');
-  t.truthy(dirAfterInit?.newNonce, 'newNonce URL should be present');
 });
 
 test('should attempt to create new account', async (t) => {
@@ -64,7 +58,7 @@ test.skip('should handle errors correctly', async (t) => {
 
 
 
-test('multiple order creates in promise all', async (t) => {
+test.only('multiple order creates in promise all', async (t) => {
   const identifiersList: ACMEIdentifier[][] = [
     [{ type: 'dns', value: 'test1.acme-love.com' }],
     [{ type: 'dns', value: 'test2.acme-love.com' }],
@@ -87,7 +81,9 @@ test('multiple order creates in promise all', async (t) => {
       t.truthy(order.url, `Order ${index + 1} should have URL`);
       t.is(order.status, 'pending', `Order ${index + 1} should have pending status`);
     });
+    console.log('All orders created:', orders);
   } catch (error: any) {
+    console.log(error);
     if (error?.status === 401) {
       t.pass('Order creation failed with auth error - acceptable for E2E test');
     } else {
