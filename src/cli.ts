@@ -10,6 +10,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import type { ACMEAccount } from './acme/types/account.js';
 import type { ACMEOrder, ACMEChallenge, ACMEAuthorization } from './acme/types/order.js';
+import { resolveAndValidateAcmeTxtAuthoritative } from './acme/validator/dns-txt-validator.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -223,6 +224,36 @@ async function handleCertCommand(options: any) {
     if (!proceed) {
       console.log('❌ Certificate issuance cancelled');
       return;
+    }
+
+    // Retry DNS propagation verification before responding to challenge
+    const maxAttempts = 24;          // total attempts
+    const delayMs = 5_000;          // 10s between attempts (total ~2 minutes)
+    let dnsVerified = false;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      console.log(`🔎 Verifying DNS record (attempt ${attempt}/${maxAttempts})...`);
+      try {
+        const result = await resolveAndValidateAcmeTxtAuthoritative(authz.identifier.value, dnsValue);
+        if (result.ok) {
+          console.log('✅ DNS record verified successfully');
+          dnsVerified = true;
+          break;
+        } else {
+          console.log('❌ DNS record not verified yet:', result.reasons ? result.reasons.join('; ') : 'Unknown reasons');
+        }
+      } catch (e) {
+        console.log('⚠️  DNS verification error:', e instanceof Error ? e.message : e);
+      }
+
+      if (attempt < maxAttempts) {
+        console.log(`⏳ Waiting ${delayMs / 1000}s before next attempt...`);
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+
+    if (!dnsVerified) {
+      throw new Error('DNS record could not be verified after multiple attempts. Aborting.');
     }
 
     // Respond to challenge
