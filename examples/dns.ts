@@ -16,14 +16,30 @@ import {
 } from "../src/index.js";
 import type { webcrypto } from "crypto";
 
-const ARTIFACTS_DIR = path.join(process.cwd(), 'tmp');
-const ACCOUNT_KEY_FILE = path.join(ARTIFACTS_DIR, "account-key.json");
-const CERT_KEY_FILE = path.join(ARTIFACTS_DIR, "cert-key.json");
-const CERT_CSR_FILE = path.join(ARTIFACTS_DIR, "cert.csr.pem");
-const CERT_PEM_FILE = path.join(ARTIFACTS_DIR, "cert.pem");
-const ORDER_FILE = path.join(ARTIFACTS_DIR, "order.json");
+/* ---------- paths & fs helpers ---------- */
 
-/* ---------- fs helpers ---------- */
+const ROOT_DIR = path.join(process.cwd(), "tmp");
+const ACCOUNT_KEY_FILE = path.join(ROOT_DIR, "account-key.json"); // account is global
+
+function safeName(s: string): string {
+  // keep readable, avoid filesystem-problematic chars; map '*' to 'wildcard'
+  return s.replace(/\*/g, "wildcard").replace(/[^\w.-]/g, "_");
+}
+
+function domainPaths(env: "staging" | "production", domain: string) {
+  const dir = path.join(ROOT_DIR, env, safeName(domain));
+  return {
+    DIR: dir,
+    ORDER_FILE: path.join(dir, "order.json"),
+    CERT_KEY_FILE: path.join(dir, "cert-key.json"),
+    CERT_CSR_FILE: path.join(dir, "cert.csr.pem"),
+    CERT_PEM_FILE: path.join(dir, "cert.pem"),
+  };
+}
+
+async function ensureDir(p: string) {
+  await fs.mkdir(p, { recursive: true });
+}
 
 async function fileExists(p: string): Promise<boolean> {
   try {
@@ -39,10 +55,11 @@ async function readJson<T>(p: string): Promise<T> {
 }
 
 async function writeJson(p: string, v: unknown): Promise<void> {
+  await ensureDir(path.dirname(p));
   await fs.writeFile(p, JSON.stringify(v, null, 2), "utf8");
 }
 
-/* ---------- account key I/O ---------- */
+/* ---------- account key I/O (global) ---------- */
 
 type StoredAccount = { privateJwk: JWK; publicJwk: JWK };
 
@@ -64,55 +81,57 @@ async function saveAccountKeys(keys: {
   privateKey: webcrypto.CryptoKey | Uint8Array<ArrayBufferLike>;
   publicKey: webcrypto.CryptoKey | Uint8Array<ArrayBufferLike>;
 }) {
+  await ensureDir(path.dirname(ACCOUNT_KEY_FILE));
   const privateJwk = await exportJWK(keys.privateKey);
   const publicJwk = await exportJWK(keys.publicKey);
   await writeJson(ACCOUNT_KEY_FILE, { privateJwk, publicJwk });
 }
 
-/* ---------- cert key / csr I/O ---------- */
+/* ---------- cert key / csr I/O (per-domain) ---------- */
 
-async function saveCertKeys(keys: CryptoKeyPair) {
+async function saveCertKeys(file: string, keys: CryptoKeyPair) {
   if (!keys.privateKey) throw new Error("No private key to save");
+  await ensureDir(path.dirname(file));
   const jwk = await exportJWK(keys.privateKey);
-  await writeJson(CERT_KEY_FILE, jwk);
+  await writeJson(file, jwk);
 }
 
-async function loadCertPrivateKey(): Promise<webcrypto.CryptoKey | Uint8Array<ArrayBufferLike> | null> {
+async function loadCertPrivateKey(file: string): Promise<webcrypto.CryptoKey | Uint8Array<ArrayBufferLike> | null> {
   try {
-    const jwk = await readJson<JWK>(CERT_KEY_FILE);
-    return await importJWK(jwk, jwk.alg ?? "ES256");
+    const jwk = await readJson<JWK>(file);
+    return await importJWK(jwk, (jwk.alg as any) ?? "ES256");
   } catch {
     return null;
   }
 }
 
-async function saveCSR(pem: string) {
-  await fs.writeFile(CERT_CSR_FILE, pem, "utf8");
+async function saveCSR(file: string, pem: string) {
+  await ensureDir(path.dirname(file));
+  await fs.writeFile(file, pem, "utf8");
 }
 
-/* ---------- order I/O ---------- */
+/* ---------- order I/O (per-domain) ---------- */
 
 type StoredOrder = {
   url: string;
   finalize: string;
-  // Include undefined explicitly to satisfy exactOptionalPropertyTypes when value may be undefined
   certificate?: string | undefined;
   status?: ACMEOrder["status"] | undefined;
 };
 
-async function saveOrder(o: StoredOrder) {
-  await writeJson(ORDER_FILE, o);
+async function saveOrder(file: string, o: StoredOrder) {
+  await writeJson(file, o);
 }
 
-async function loadOrder(): Promise<StoredOrder | null> {
+async function loadOrder(file: string): Promise<StoredOrder | null> {
   try {
-    return await readJson<StoredOrder>(ORDER_FILE);
+    return await readJson<StoredOrder>(file);
   } catch {
     return null;
   }
 }
 
-/* ---------- main ---------- */
+/* ---------- polling ---------- */
 
 async function waitOrderStatus(client: ACMEClient, url: string): Promise<ACMEOrder> {
   const updated = await client.fetchResource<ACMEOrder>(url);
@@ -124,30 +143,35 @@ async function waitOrderStatus(client: ACMEClient, url: string): Promise<ACMEOrd
   return waitOrderStatus(client, url);
 }
 
-async function main() {
-  // Short-circuit: cert already present
-  if (await fileExists(CERT_PEM_FILE)) {
-    console.log(`✅ Certificate already exists at ${CERT_PEM_FILE}. Nothing to do.`);
-    return;
-  }
+/* ---------- main ---------- */
 
-  // Select environment (staging/production)
+async function main() {
   const env = await select({
     message: "Select ACME environment:",
     choices: [
       { name: "Let's Encrypt STAGING (test, no trusted certs)", value: "staging" },
       { name: "Let's Encrypt PRODUCTION (real trusted certs)", value: "production" },
     ],
-  });
+  }) as "staging" | "production";
 
   const directoryUrl =
     env === "staging"
       ? directory.letsencrypt.staging.directoryUrl
       : directory.letsencrypt.production.directoryUrl;
 
+  const commonName = await input({ message: "Enter domain name:" });
   const client = new ACMEClient(directoryUrl);
 
-  // Load or create account
+  const paths = domainPaths(env, commonName);
+  await ensureDir(paths.DIR);
+
+  // fast path: certificate already exists for this env/domain
+  if (await fileExists(paths.CERT_PEM_FILE)) {
+    console.log(`✅ Certificate already exists at ${paths.CERT_PEM_FILE}. Nothing to do.`);
+    return;
+  }
+
+  // account: load or create (global)
   let accountKeys = await loadAccountKeys();
   if (!accountKeys) {
     console.log("🔑 Generating new account key (ES256)...");
@@ -157,25 +181,21 @@ async function main() {
   client.setAccount(accountKeys);
   await client.createAccount();
 
-  // Try resuming from an existing order
-  const existingOrder = await loadOrder();
+  // resume from domain-specific order if any
+  const existingOrder = await loadOrder(paths.ORDER_FILE);
   if (existingOrder) {
-    console.log("ℹ️ Found existing order metadata:", existingOrder.url);
+    console.log(`ℹ️ Found existing order for ${commonName}: ${existingOrder.url}`);
 
-    // If we already have certificate URL — try to download immediately
     if (existingOrder.certificate) {
       console.log("⏳ Downloading certificate from stored URL...");
       const certPem = await client.downloadCertificate(existingOrder.certificate);
-      // console.log("Certificate:\n", certPem);
-      await fs.writeFile(CERT_PEM_FILE, certPem, "utf8");
-      console.log(`🎉 Certificate saved to ${CERT_PEM_FILE}`);
+      await fs.writeFile(paths.CERT_PEM_FILE, certPem, "utf8");
+      console.log(`🎉 Certificate saved to ${paths.CERT_PEM_FILE}`);
       return;
     }
 
-    // Otherwise poll order; if valid → download; if ready → finalize using existing CSR or create a new one
     const polled = await waitOrderStatus(client, existingOrder.url);
-    // keep metadata fresh
-    await saveOrder({
+    await saveOrder(paths.ORDER_FILE, {
       url: polled.url,
       finalize: polled.finalize,
       certificate: polled.certificate,
@@ -185,34 +205,32 @@ async function main() {
     if (polled.status === "valid" && polled.certificate) {
       console.log("⏳ Downloading certificate...");
       const certPem = await client.downloadCertificate(polled.certificate);
-      await fs.writeFile(CERT_PEM_FILE, certPem, "utf8");
-      console.log(`🎉 Certificate saved to ${CERT_PEM_FILE}`);
+      await fs.writeFile(paths.CERT_PEM_FILE, certPem, "utf8");
+      console.log(`🎉 Certificate saved to ${paths.CERT_PEM_FILE}`);
       return;
     }
 
     if (polled.status === "ready") {
       console.log("🔧 Order is READY. Proceeding to finalize...");
-      // Load or generate certificate key + CSR
-      let certPriv = await loadCertPrivateKey();
-      let csrPem: string | null = (await fileExists(CERT_CSR_FILE))
-        ? await fs.readFile(CERT_CSR_FILE, "utf8")
-        : null;
-      let derBase64Url: string | null = null;
 
+      // load or generate CSR
+      let certPriv = await loadCertPrivateKey(paths.CERT_KEY_FILE);
+      let csrPem: string | null = (await fileExists(paths.CERT_CSR_FILE))
+        ? await fs.readFile(paths.CERT_CSR_FILE, "utf8")
+        : null;
+
+      let derBase64Url: string;
       if (!certPriv || !csrPem) {
         console.log("🔑 Generating certificate key + CSR...");
-        const csr = await createAcmeCsr([/* CN will be validated anyway */], {
+        const csr = await createAcmeCsr([commonName], {
           kind: "ec",
           namedCurve: "P-256",
           hash: "SHA-256",
         });
-        await saveCertKeys(csr.keys);
-        await saveCSR(csr.pem);
-        certPriv = csr.keys.privateKey as webcrypto.CryptoKey;
-        csrPem = csr.pem;
+        await saveCertKeys(paths.CERT_KEY_FILE, csr.keys);
+        await saveCSR(paths.CERT_CSR_FILE, csr.pem);
         derBase64Url = csr.derBase64Url;
       } else {
-        // We have CSR PEM on disk, but finalize needs DER (base64url). Re-encode it from PEM.
         const der = Buffer.from(
           csrPem
             .replace(/-----BEGIN CERTIFICATE REQUEST-----/g, "")
@@ -225,7 +243,7 @@ async function main() {
 
       console.log("⏳ Finalizing order...");
       const finalized = await client.finalizeOrder(polled.finalize, derBase64Url);
-      await saveOrder({
+      await saveOrder(paths.ORDER_FILE, {
         url: finalized.url,
         finalize: finalized.finalize,
         certificate: finalized.certificate,
@@ -233,21 +251,19 @@ async function main() {
       });
 
       const valid = await waitOrderStatus(client, finalized.url);
-      await saveOrder({
+      await saveOrder(paths.ORDER_FILE, {
         url: valid.url,
         finalize: valid.finalize,
         certificate: valid.certificate,
         status: valid.status,
       });
 
-      if (!valid.certificate) {
-        throw new Error("Order is valid but certificate URL is missing");
-      }
+      if (!valid.certificate) throw new Error("Order is valid but certificate URL is missing");
 
       console.log("⏳ Downloading certificate...");
       const certPem = await client.downloadCertificate(valid.certificate);
-      await fs.writeFile(CERT_PEM_FILE, certPem, "utf8");
-      console.log(`🎉 Certificate saved to ${CERT_PEM_FILE}`);
+      await fs.writeFile(paths.CERT_PEM_FILE, certPem, "utf8");
+      console.log(`🎉 Certificate saved to ${paths.CERT_PEM_FILE}`);
       return;
     }
 
@@ -257,13 +273,15 @@ async function main() {
     }
   }
 
-  // Fresh flow: create order and pass challenge
-  const commonName = await input({ message: "Enter domain name:" });
+  // fresh flow
   console.log(`\nCreating order for: ${commonName}`);
-
   const order = await client.createOrder([{ type: "dns", value: commonName }]);
   console.log("✅ Order created:", order);
-  await saveOrder({ url: order.url, finalize: order.finalize, status: order.status });
+  await saveOrder(paths.ORDER_FILE, {
+    url: order.url,
+    finalize: order.finalize,
+    status: order.status,
+  });
 
   const authzUrl = order.authorizations[0];
   if (!authzUrl) throw new Error("No authorization URL found in order");
@@ -283,7 +301,6 @@ async function main() {
     );
     await input({ message: "Press Enter when DNS record is in place..." });
 
-    // Validate DNS record before proceeding
     while (true) {
       const result = await resolveAndValidateAcmeTxtAuthoritative(commonName, keyAuthorization);
       if (result.ok) {
@@ -307,7 +324,7 @@ async function main() {
   await client.completeChallenge(challenge);
 
   const ready = await waitOrderStatus(client, order.url);
-  await saveOrder({
+  await saveOrder(paths.ORDER_FILE, {
     url: ready.url,
     finalize: ready.finalize,
     certificate: ready.certificate,
@@ -315,15 +332,11 @@ async function main() {
   });
 
   if (ready.status === "invalid") throw new Error("Order failed");
-  if (ready.status !== "ready" && ready.status !== "valid") {
-    throw new Error(`Unexpected order status: ${ready.status}`);
-  }
-
   if (ready.status === "valid" && ready.certificate) {
     console.log("⏳ Downloading certificate (order already valid)...");
     const certPem = await client.downloadCertificate(ready.certificate);
-    await fs.writeFile(CERT_PEM_FILE, certPem, "utf8");
-    console.log(`🎉 Certificate saved to ${CERT_PEM_FILE}`);
+    await fs.writeFile(paths.CERT_PEM_FILE, certPem, "utf8");
+    console.log(`🎉 Certificate saved to ${paths.CERT_PEM_FILE}`);
     return;
   }
 
@@ -332,12 +345,12 @@ async function main() {
     [commonName],
     { kind: "ec", namedCurve: "P-256", hash: "SHA-256" },
   );
-  await saveCertKeys(certKeys);
-  await saveCSR(csrPem);
+  await saveCertKeys(paths.CERT_KEY_FILE, certKeys);
+  await saveCSR(paths.CERT_CSR_FILE, csrPem);
 
   console.log("⏳ Finalizing order...");
   const finalized = await client.finalizeOrder(ready.finalize, derBase64Url);
-  await saveOrder({
+  await saveOrder(paths.ORDER_FILE, {
     url: finalized.url,
     finalize: finalized.finalize,
     certificate: finalized.certificate,
@@ -345,7 +358,7 @@ async function main() {
   });
 
   const validOrder = await waitOrderStatus(client, finalized.url);
-  await saveOrder({
+  await saveOrder(paths.ORDER_FILE, {
     url: validOrder.url,
     finalize: validOrder.finalize,
     certificate: validOrder.certificate,
@@ -355,9 +368,8 @@ async function main() {
   if (!validOrder.certificate) throw new Error("No certificate URL in order");
   console.log("⏳ Downloading certificate...");
   const certPem = await client.downloadCertificate(validOrder.certificate);
-  console.log("Certificate:\n", certPem);
-  await fs.writeFile(CERT_PEM_FILE, certPem, "utf8");
-  console.log(`\n🎉 Certificate saved to ${CERT_PEM_FILE}`);
+  await fs.writeFile(paths.CERT_PEM_FILE, certPem, "utf8");
+  console.log(`\n🎉 Certificate saved to ${paths.CERT_PEM_FILE}`);
 }
 
 main().catch((err) => {

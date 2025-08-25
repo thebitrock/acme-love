@@ -7,7 +7,7 @@ import {
 } from "@peculiar/x509";
 
 // Use Node's global WebCrypto if available, otherwise fall back to @peculiar/webcrypto
-const provider: globalThis.Crypto =
+const provider: Crypto =
   (globalThis.crypto && "subtle" in globalThis.crypto)
     ? (globalThis.crypto as Crypto)
     : new Crypto();
@@ -50,11 +50,10 @@ export interface CreateCsrResult {
   pem: string;
   /** Convenience: base64url-encoded DER, if you prefer to send string immediately */
   derBase64Url: string;
-  /** The keypair used (keep the private key safe; it matches the issued cert) */
+  /** The keyPair used (keep the private key safe; it matches the issued cert) */
   keys: CryptoKeyPair;
 }
 
-// ---------- Key generation ----------
 export async function generateKeyPair(algo: CsrAlgo): Promise<CryptoKeyPair> {
   if (algo.kind === "ec") {
     return provider.subtle.generateKey(
@@ -80,7 +79,6 @@ export async function generateKeyPair(algo: CsrAlgo): Promise<CryptoKeyPair> {
   );
 }
 
-// ---------- CSR creation ----------
 /**
  * Creates a CSR for ACME with SAN = all provided DNS names.
  * `commonName` defaults to the first DNS name.
@@ -118,7 +116,7 @@ export async function createAcmeCsr(
     keys: keyPair,
     signingAlgorithm,
     extensions: [san],
-  }); // Pkcs10CertificateRequestGenerator API & params. :contentReference[oaicite:1]{index=1}
+  });
 
   // Export formats
   const der = Buffer.from(csr.rawData);               // DER bytes
@@ -127,19 +125,3 @@ export async function createAcmeCsr(
 
   return { der, pem, derBase64Url, keys: keyPair };
 }
-
-// ---------- Example usage (remove in production) ----------
-/*
-(async () => {
-  const { derBase64Url, pem } = await createAcmeCsr(
-    ["example.com", "www.example.com"],
-    { kind: "ec", namedCurve: "P-256", hash: "SHA-256" },
-  );
-
-  console.log(pem);
-  // If your finalizeOrder expects Buffer and does base64url inside:
-  // await client.finalizeOrder(finalizeUrl, Buffer.from(derBase64Url, "base64url"));
-  // If it expects raw DER Buffer:
-  // await client.finalizeOrder(finalizeUrl, der);
-})();
-*/

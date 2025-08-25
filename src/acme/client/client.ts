@@ -127,7 +127,6 @@ export class ACMEClient {
     const nonceManager = this.nonceManager;
 
     const response = await nonceManager.withNonceRetry(namespace, async (nonce: string) => {
-      console.log('Making ACME request to', url, 'with nonce', nonce);
       const jws = await this.createJWS(payload, url, nonce);
 
       return await this.http.post<any>(url, jws, {
@@ -289,7 +288,7 @@ export class ACMEClient {
     return (await this.makeRequest(finalizeUrl, payload)).data;
   }
 
-  async downloadCertificate(certUrl: string): Promise<string> {
+  public async downloadCertificate(certUrl: string): Promise<string> {
     const res = await this.makeRequest(certUrl, ''); // POST-as-GET, пустой payload
 
     console.log('Certificate download response', typeof res.data);
@@ -301,7 +300,7 @@ export class ACMEClient {
     return res.data as string;
   }
 
-  async revokeCertificate(cert: Buffer, reason?: number): Promise<void> {
+  public async revokeCertificate(cert: Buffer, reason?: number): Promise<void> {
     if (!this.directory) {
       await this.getDirectory();
     }
@@ -324,7 +323,7 @@ export class ACMEClient {
   /**
    * Set account credentials
    */
-  setAccount(account: ACMEAccount): void {
+  public setAccount(account: ACMEAccount): void {
     this.account = account;
     this.jwk = null;
   }

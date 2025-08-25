@@ -8,7 +8,6 @@ export interface HttpResponse<T = unknown> {
 
 export class SimpleHttpClient {
   async get<T>(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<T>> {
-    console.log('HTTP GET', url, headers);
     const res = await request(url, { method: 'GET', headers });
     const data = await res.body.json();
 
@@ -41,7 +40,6 @@ export class SimpleHttpClient {
       serializedBody = JSON.stringify(body);
     }
 
-    console.log('HTTP POST', url, headers);
     const res = await request(url, {
       method: 'POST',
       headers,
@@ -53,18 +51,14 @@ export class SimpleHttpClient {
 
     let data: unknown;
     if (ct.includes("application/json")) {
-      console.log(`Unknown content-type (${ct}), returning raw data as JSON`);
       data = await res.body.json();
     } else if (ct.startsWith("text/") || ct.includes("application/pem-certificate-chain")) {
-      console.log(`Unknown content-type (${ct}), returning raw data as text`);
       data = await res.body.text();
     } else {
-      console.log(`Unknown content-type (${ct}), returning raw data as Buffer`);
       const buf = await res.body.arrayBuffer();
       data = Buffer.from(buf);
     }
 
-    console.log(data);
     return {
       status: res.statusCode,
       headers: this.normalizeHeaders(res.headers),
@@ -73,7 +67,6 @@ export class SimpleHttpClient {
   }
 
   async head(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<void>> {
-    console.log('HTTP HEAD', url);
     const res = await request(url, { method: 'HEAD', headers });
 
     return {
