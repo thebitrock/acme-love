@@ -1,6 +1,6 @@
 export * as directory from './directory.js';
 
-export { ACMEClient } from './acme/client/client.js';
+export { ACMEClient } from './acme/client/acme-client.js';
 
 export * from './acme/types/account.js';
 export * from './acme/types/order.js';
