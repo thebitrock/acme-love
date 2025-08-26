@@ -174,6 +174,56 @@ const certificate = await acct.downloadCertificate(valid);
 console.log('Certificate obtained!', certificate);
 ```
 
+### Working with Existing Accounts
+
+When you already have a registered ACME account, you can reuse it by providing the `kid` (Key ID) to avoid creating duplicate registrations:
+
+```ts
+// First time: Register new account and save the kid
+const acct = new AcmeAccountSession(core, accountKeys);
+const kid = await acct.ensureRegistered({
+  contact: ['mailto:admin@example.com'],
+  termsOfServiceAgreed: true,
+});
+
+// Save account info for future use
+const accountInfo = {
+  kid,
+  privateKey: await crypto.subtle.exportKey('jwk', accountKeys.privateKey),
+  publicKey: await crypto.subtle.exportKey('jwk', accountKeys.publicKey),
+};
+await fs.writeFile('account.json', JSON.stringify(accountInfo, null, 2));
+```
+
+```ts
+// Later: Load existing account with kid
+const savedAccount = JSON.parse(await fs.readFile('account.json', 'utf8'));
+const accountKeys = {
+  privateKey: await crypto.subtle.importKey(
+    'jwk',
+    savedAccount.privateKey,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign'],
+  ),
+  publicKey: await crypto.subtle.importKey(
+    'jwk',
+    savedAccount.publicKey,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['verify'],
+  ),
+};
+
+// Create session with existing kid
+const acct = new AcmeAccountSession(core, accountKeys, {
+  kid: savedAccount.kid, // Use existing account
+});
+
+// No need to call ensureRegistered() - account already exists
+const order = await acct.newOrder(['example.com']);
+```
+
 ### Advanced Features
 
 **Error Handling with Maintenance Detection**
