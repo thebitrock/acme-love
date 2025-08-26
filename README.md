@@ -2,30 +2,14 @@
 
 # 🔐 ACME Love
 
-**Modern, strongly‑typed ACME (RFC 8555) toolkit for Node.j### 🔑 Cryptographic Algorithms
-
-**CLI Algorithm Support**: Both interactive and command-line modes support full algorithm selection:
-
-- **Interactive Mode**: Prompts for algorithm preferences with detailed explanations
-- **Command Line**: `--account-algo` and `--cert-algo` options for non-interactive use
-- **Default**: P-256 ECDSA for optimal performance and compatibility
-
-**Supported Values**: `ec-p256`, `ec-p384`, `ec-p521`, `rsa-2048`, `rsa-3072`, `rsa-4096`
-
-```bash
-# Interactive algorithm selection
-acme-love interactive --staging
-
-# Command-line algorithm specification
-acme-love cert --account-algo ec-p384 --cert-algo rsa-4096 --domain example.com
-```
-
-The CLI uses **P-256 ECDSA** by default for both account and certificate keys, providing an excellent balance of security and performance. This algorithm is:0+**
+**Modern, strongly‑typed ACME (RFC 8555) toolkit for Node.js 20+**
 
 Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certificate Authorities
 
 [![NPM Version](https://img.shields.io/npm/v/acme-love.svg)](https://www.npmjs.com/package/acme-love)
 [![NPM License](https://img.shields.io/npm/l/acme-love.svg)](https://github.com/thebitrock/acme-love/blob/main/LICENSE)
+[![Tests](https://img.shields.io/badge/tests-42%20passing-brightgreen.svg)](https://github.com/thebitrock/acme-love)
+[![Coverage](https://img.shields.io/badge/coverage-94%25%20CSR%20%7C%2069%25%20NonceManager-green.svg)](https://github.com/thebitrock/acme-love)
 
 </div>
 
@@ -36,11 +20,112 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 | 🖥️ **Powerful CLI**         | Interactive & command-line modes with beautiful prompts     |
 | 🌐 **Multi-Environment**    | Staging, Production, and Custom ACME directories            |
 | 🔒 **Challenge Support**    | DNS-01 and HTTP-01 with automatic validation                |
-| � **Crypto Algorithms**    | ECDSA (P-256/P-384/P-521) and RSA (2048/3072/4096) support |
-| �🛠️ **Smart Error Handling** | Maintenance detection, user-friendly error messages         |
+| 🔑 **Crypto Algorithms**    | ECDSA (P-256/P-384/P-521) and RSA (2048/3072/4096) support  |
+| 🛠️ **Smart Error Handling** | Maintenance detection, user-friendly error messages         |
 | ⚡ **Modern Architecture**  | ESM + TypeScript 5, WebCrypto, nonce pooling                |
 | 🏢 **Multiple CAs**         | Let's Encrypt, Buypass, Google, ZeroSSL presets             |
 | 🔧 **Developer Friendly**   | Multiple CLI access methods, auto-build, comprehensive docs |
+
+## 🚀 Quick Start
+
+### CLI Installation & Usage
+
+```bash
+# Global installation (recommended)
+npm install -g acme-love
+acme-love --help
+
+# Or use without installation
+npx acme-love interactive --staging
+```
+
+### 🎮 Interactive Mode (Easiest Way)
+
+```bash
+# Start interactive mode with environment selection
+acme-love interactive
+
+# Or with pre-selected environment
+acme-love interactive --staging    # For testing
+acme-love interactive --production # For real certificates
+```
+
+### 📋 Command Line Mode
+
+```bash
+# Get a staging certificate (recommended first)
+acme-love cert
+  --domain test.example.com
+  --email admin@example.com
+  --staging
+  --challenge dns-01
+
+# Get a production certificate with custom algorithms
+acme-love cert
+  --domain example.com
+  --email admin@example.com
+  --production
+  --challenge http-01
+  --account-algo ec-p256
+  --cert-algo rsa-4096
+
+# Create an account key with specific algorithm
+acme-love create-account-key
+  --algo ec-p384
+  --output ./my-account-key.json
+```
+
+### 🎯 Challenge Types
+
+**DNS-01 Challenge** (Recommended)
+
+```bash
+acme-love cert --challenge dns-01 --domain example.com --email user@example.com --staging
+```
+
+- ✅ Works with wildcard certificates (`*.example.com`)
+- ✅ No need for public web server
+- 🔧 Requires DNS provider access
+
+**HTTP-01 Challenge**
+
+```bash
+acme-love cert --challenge http-01 --domain example.com --email user@example.com --staging
+```
+
+- ✅ Simple validation via HTTP file
+- ✅ Automatic validation with built-in checker
+- 🔧 Requires domain to point to your web server
+
+```bash
+# Interactive algorithm selection
+acme-love interactive --staging
+
+# Command-line algorithm specification
+acme-love cert --account-algo ec-p384 --cert-algo rsa-4096 --domain example.com
+```
+
+For programmatic usage via the library, you can choose from multiple algorithms including different ECDSA curves (P-256, P-384, P-521) and RSA key sizes (2048, 3072, 4096 bits). See the [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms) section for details.erful CLI tool + TypeScript library for Let's Encrypt and other ACME Certificate Authorities
+
+[![NPM Version](https://img.shields.io/npm/v/acme-love.svg)](https://www.npmjs.com/package/acme-love)
+[![NPM License](https://img.shields.io/npm/l/acme-love.svg)](https://github.com/thebitrock/acme-love/blob/main/LICENSE)
+[![Tests](https://img.shields.io/badge/tests-42%20passing-brightgreen.svg)](https://github.com/thebitrock/acme-love)
+[![Coverage](https://img.shields.io/badge/coverage-94%25%20CSR%20%7C%2069%25%20NonceManager-green.svg)](https://github.com/thebitrock/acme-love)
+
+</div>
+
+## ✨ Key Features
+
+| Feature                      | Description                                                 |
+| ---------------------------- | ----------------------------------------------------------- |
+| 🖥️ **Powerful CLI**          | Interactive & command-line modes with beautiful prompts     |
+| 🌐 **Multi-Environment**     | Staging, Production, and Custom ACME directories            |
+| 🔒 **Challenge Support**     | DNS-01 and HTTP-01 with automatic validation                |
+| � **Crypto Algorithms**      | ECDSA (P-256/P-384/P-521) and RSA (2048/3072/4096) support  |
+| �🛠️ **Smart Error Handling** | Maintenance detection, user-friendly error messages         |
+| ⚡ **Modern Architecture**   | ESM + TypeScript 5, WebCrypto, nonce pooling                |
+| 🏢 **Multiple CAs**          | Let's Encrypt, Buypass, Google, ZeroSSL presets             |
+| 🔧 **Developer Friendly**    | Multiple CLI access methods, auto-build, comprehensive docs |
 
 ## 🚀 Quick Start
 
@@ -147,16 +232,17 @@ See [CLI-USAGE.md](./CLI-USAGE.md) for detailed development setup.
 
 ### 📖 CLI Commands Reference
 
-| Command                   | Purpose                           | Algorithm Options                    |
-| ------------------------- | --------------------------------- | ------------------------------------ |
-| `cert`                    | Obtain SSL certificate           | `--account-algo`, `--cert-algo`      |
-| `create-account-key`      | Generate ACME account key        | `--algo`                             |
-| `status`                  | Check certificate status         | -                                    |
-| `interactive`             | Interactive certificate wizard   | Full interactive algorithm selection |
+| Command              | Purpose                        | Algorithm Options                    |
+| -------------------- | ------------------------------ | ------------------------------------ |
+| `cert`               | Obtain SSL certificate         | `--account-algo`, `--cert-algo`      |
+| `create-account-key` | Generate ACME account key      | `--algo`                             |
+| `status`             | Check certificate status       | -                                    |
+| `interactive`        | Interactive certificate wizard | Full interactive algorithm selection |
 
 **Algorithm Values**: `ec-p256` (default), `ec-p384`, `ec-p521`, `rsa-2048`, `rsa-3072`, `rsa-4096`
 
 **Examples**:
+
 ```bash
 # Generate P-384 ECDSA account key
 acme-love create-account-key --algo ec-p384 --output ./my-account.json
@@ -239,8 +325,9 @@ console.log('Certificate obtained!', certificate);
 ACME Love supports multiple cryptographic algorithms for both account keys and certificate keys:
 
 #### ECDSA (Elliptic Curve Digital Signature Algorithm)
+
 - **P-256** (recommended) - Fast, secure, widely supported
-- **P-384** - Higher security, larger keys  
+- **P-384** - Higher security, larger keys
 - **P-521** - Maximum security, largest keys
 
 ```ts
@@ -255,6 +342,7 @@ const p521Algo = { kind: 'ec', namedCurve: 'P-521', hash: 'SHA-512' };
 ```
 
 #### RSA (Rivest-Shamir-Adleman)
+
 - **2048-bit** - Minimum supported, fast
 - **3072-bit** - Enhanced security
 - **4096-bit** - Maximum security, slower
@@ -271,6 +359,7 @@ const rsa4096Algo = { kind: 'rsa', modulusLength: 4096, hash: 'SHA-384' };
 ```
 
 #### Algorithm Selection Guidelines
+
 - **P-256 ECDSA**: Default choice, excellent performance/security balance
 - **P-384/P-521 ECDSA**: For compliance requirements or enhanced security
 - **RSA 2048**: Legacy compatibility, larger certificate size
@@ -303,8 +392,8 @@ const certAlgo = { kind: 'ec', namedCurve: 'P-384', hash: 'SHA-384' };
 const { derBase64Url, keys: certKeys } = await createAcmeCsr(['example.com'], certAlgo);
 
 // Or mix ECDSA and RSA
-const accountAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };    // Fast ECDSA for account
-const certAlgo = { kind: 'rsa', modulusLength: 4096, hash: 'SHA-256' };     // RSA for certificate compatibility
+const accountAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' }; // Fast ECDSA for account
+const certAlgo = { kind: 'rsa', modulusLength: 4096, hash: 'SHA-256' }; // RSA for certificate compatibility
 ```
 
 ### Working with Existing Accounts
@@ -499,7 +588,7 @@ DEBUG=acme-love:nonce,acme-love:http node your-app.js
 
 # Available debug namespaces:
 # acme-love:nonce    - Nonce management operations
-# acme-love:http     - HTTP requests and responses  
+# acme-love:http     - HTTP requests and responses
 # acme-love:challenge - Challenge solving process
 # acme-love:client   - Core client operations
 # acme-love:validator - Validation functions
@@ -534,13 +623,13 @@ import {
   resolveAndValidateAcmeTxtAuthoritative,
   resolveAndValidateAcmeTxt,
   resolveNsToIPs,
-  findZoneWithNs
+  findZoneWithNs,
 } from 'acme-love/validator';
 
 // Authoritative DNS validation (queries actual NS servers)
 const result = await resolveAndValidateAcmeTxtAuthoritative(
   '_acme-challenge.example.com',
-  'expected-challenge-value'
+  'expected-challenge-value',
 );
 
 if (result.ok) {
@@ -552,7 +641,7 @@ if (result.ok) {
 // Standard DNS validation with fallback to public resolvers
 const quickResult = await resolveAndValidateAcmeTxt(
   '_acme-challenge.example.com',
-  'expected-challenge-value'
+  'expected-challenge-value',
 );
 ```
 
@@ -564,14 +653,14 @@ import { validateHttp01ChallengeByUrl, validateHttp01Challenge } from 'acme-love
 // Direct URL validation
 const result = await validateHttp01ChallengeByUrl(
   'http://example.com/.well-known/acme-challenge/token123',
-  'expected-key-authorization'
+  'expected-key-authorization',
 );
 
 // Domain + token validation
 const result2 = await validateHttp01Challenge(
   'example.com',
   'token123',
-  'expected-key-authorization'
+  'expected-key-authorization',
 );
 ```
 
@@ -591,6 +680,7 @@ When using the CLI, ACME Love automatically handles file organization and config
 ```
 
 **CLI Configuration Defaults:**
+
 - **Output directory**: `./certificates/`
 - **Account key path**: `./certificates/account-key.json`
 - **Nonce pool size**: 64 (optimized for CLI operations)
@@ -622,31 +712,31 @@ ACME Love supports modern cryptographic algorithms via WebCrypto API:
 import { generateKeyPair, type CsrAlgo } from 'acme-love';
 
 // ECDSA with P-256 curve (Recommended - smaller keys, faster)
-const ecAlgo: CsrAlgo = { 
-  kind: 'ec', 
-  namedCurve: 'P-256', 
-  hash: 'SHA-256' 
+const ecAlgo: CsrAlgo = {
+  kind: 'ec',
+  namedCurve: 'P-256',
+  hash: 'SHA-256',
 };
 
 // ECDSA with P-384 curve (Higher security)
-const ec384Algo: CsrAlgo = { 
-  kind: 'ec', 
-  namedCurve: 'P-384', 
-  hash: 'SHA-384' 
+const ec384Algo: CsrAlgo = {
+  kind: 'ec',
+  namedCurve: 'P-384',
+  hash: 'SHA-384',
 };
 
 // RSA 2048-bit (Widely compatible, larger keys)
-const rsaAlgo: CsrAlgo = { 
-  kind: 'rsa', 
-  modulusLength: 2048, 
-  hash: 'SHA-256' 
+const rsaAlgo: CsrAlgo = {
+  kind: 'rsa',
+  modulusLength: 2048,
+  hash: 'SHA-256',
 };
 
 // RSA 4096-bit (Maximum security, slower)
-const rsa4096Algo: CsrAlgo = { 
-  kind: 'rsa', 
-  modulusLength: 4096, 
-  hash: 'SHA-256' 
+const rsa4096Algo: CsrAlgo = {
+  kind: 'rsa',
+  modulusLength: 4096,
+  hash: 'SHA-256',
 };
 
 // Generate key pair with chosen algorithm
@@ -654,12 +744,14 @@ const keyPair = await generateKeyPair(ecAlgo);
 ```
 
 **Algorithm Recommendations:**
+
 - **ECDSA P-256**: Best balance of security, performance, and compatibility
 - **ECDSA P-384**: For applications requiring higher security
 - **RSA 2048**: For maximum compatibility with older systems
 - **RSA 4096**: For maximum security (slower operations)
 
 **Key Storage Formats:**
+
 - **JWK** (JSON Web Key): Used for account keys and internal storage
 - **PEM**: Standard format for certificate keys and CSRs
 - **DER**: Binary format for ACME protocol communication
@@ -721,22 +813,26 @@ directory.zerossl.production.directoryUrl;
 ### Common Issues
 
 **WebCrypto API Errors**
+
 ```bash
 # Error: crypto.subtle is undefined
 # Solution: Ensure Node.js ≥ 20 and secure context (HTTPS/localhost)
 ```
 
 **JWK Import/Export Issues**
+
 ```ts
 // ❌ Wrong algorithm specification
 await crypto.subtle.importKey('jwk', jwkData, { name: 'ECDSA' }, false, ['sign']);
 
 // ✅ Correct algorithm with namedCurve
-await crypto.subtle.importKey('jwk', jwkData, 
-  { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+await crypto.subtle.importKey('jwk', jwkData, { name: 'ECDSA', namedCurve: 'P-256' }, false, [
+  'sign',
+]);
 ```
 
 **Debug Logging Control**
+
 ```bash
 # Production: Debug disabled by default (no DEBUG environment variable)
 node your-app.js
@@ -759,12 +855,14 @@ if (process.env.NODE_ENV === 'production') {
 ```
 
 **DNS Challenge Validation Timeout**
+
 ```bash
 # If DNS propagation is slow, increase timeout in your waitFor function
 await new Promise(resolve => setTimeout(resolve, 30000));  // Wait 30s
 ```
 
 **File Permission Errors**
+
 ```bash
 # Ensure write permissions for certificate output directory
 chmod 755 ./certificates/
@@ -774,6 +872,39 @@ chmod 755 ./certificates/
 
 - **Node.js ≥ 20** (WebCrypto, modern URL, base64url support)
 - **TypeScript ≥ 5** (for development)
+
+## 🧪 Test Coverage
+
+ACME Love maintains comprehensive test coverage to ensure reliability and quality:
+
+**Test Statistics**
+
+- ✅ **42 Tests** across 5 test suites
+- ✅ **100% Passing** test rate
+- 📊 **Core Components Coverage:**
+  - `csr.ts`: **94.11%** (cryptographic operations)
+  - `nonce-manager.ts`: **69.46%** (pooling & concurrent access)
+  - `acme-directory.ts`: **83.33%** (directory operations)
+  - `acme-client-core.ts`: **68.75%** (core client functionality)
+
+**Test Types**
+
+- 🔬 **Unit Tests**: Mock-based testing of individual components
+- 🌐 **Integration Tests**: Real requests to Let's Encrypt staging
+- ⚡ **Async Behavior Tests**: Concurrent operations and memory leak prevention
+- 🔄 **E2E Tests**: Full workflow testing with staging environment
+
+```bash
+# Run all tests
+npm test
+
+# Run with coverage report
+npm run test:coverage
+
+# Run specific test types
+npm run test:unit       # Unit tests only
+npm run test:e2e        # Integration tests with Let's Encrypt staging
+```
 
 ## 📄 License
 
@@ -790,3 +921,5 @@ Contributions are welcome! Please read our contributing guidelines and submit pu
 **Made with ❤️ for the Node.js community**
 
 [Report Issues](https://github.com/thebitrock/acme-love/issues) | [Request Features](https://github.com/thebitrock/acme-love/discussions)
+
+</div>

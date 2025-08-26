@@ -63,7 +63,7 @@ export async function validateHttp01ChallengeByUrl(
       },
       bodyTimeout: timeoutMs,
       headersTimeout: timeoutMs,
-      maxRedirections: followRedirects ? 3 : 0
+      ...(followRedirects ? {} : { maxRedirections: 0 })
     });
 
     const statusCode = response.statusCode;
