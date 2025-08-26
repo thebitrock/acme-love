@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Simple wrapper script for acme-love CLI
+# Usage: ./acme-love --help
+
+# Build if needed
+if [ ! -f "dist/src/cli.js" ] || [ "src/cli.ts" -nt "dist/src/cli.js" ]; then
+    echo "🔨 Building..."
+    npm run build > /dev/null 2>&1
+fi
+
+# Run CLI with all arguments
+node dist/src/cli.js "$@"

@@ -29,6 +29,20 @@ function encodePayload(payload: unknown): Uint8Array {
   return new TextEncoder().encode(typeof payload === 'string' ? payload : JSON.stringify(payload));
 }
 
+interface ChallengePreparation {
+  target: string;
+  value: string;
+  additional?: { token: string };
+}
+
+/** Generic challenge handler interface */
+interface ChallengeHandler {
+  challengeType: string;
+  prepareChallenge: (authorization: ACMEAuthorization, keyAuth: string, challenge: ACMEChallenge) => Promise<ChallengePreparation>;
+  setChallenge: (challenge: ChallengePreparation) => Promise<void>;
+  waitFor: (challenge: ChallengePreparation) => Promise<void>;
+}
+
 export class AcmeAccountSession {
   private readonly client: AcmeClientCore;
   private readonly keys: AccountKeys;
@@ -165,32 +179,58 @@ export class AcmeAccountSession {
     return res.data as ACMEOrder;
   }
 
-  async solveDns01(order: ACMEOrder, opts: {
-    waitFor: (fqdn: string, expected: string) => Promise<void>;
-    setDns: (fqdn: string, value: string) => Promise<void>;
-  }) {
+  /** Generic challenge solver that handles the common flow */
+  private async solveChallenge(order: ACMEOrder, handler: ChallengeHandler): Promise<ACMEOrder> {
     const authzUrl = order.authorizations[0];
     if (!authzUrl) throw new Error('No authz URL');
 
     const authorizations: ACMEAuthorization[] = await Promise.all(order.authorizations.map((url) => this.fetch<ACMEAuthorization>(url)));
 
     for (const authorization of authorizations) {
-      const challenge: ACMEChallenge | undefined = authorization.challenges?.find((c: any) => c.type === 'dns-01');
-      if (!challenge) throw new Error('No dns-01 challenge');
+      const challenge: ACMEChallenge | undefined = authorization.challenges?.find((c: any) => c.type === handler.challengeType);
+      if (!challenge) throw new Error(`No ${handler.challengeType} challenge`);
 
       const keyAuth = await this.keyAuthorization(challenge.token);
+      const challengePreparation = await handler.prepareChallenge(authorization, keyAuth, challenge);
 
-      const txtValue = createHash('sha256').update(keyAuth).digest('base64url');
-
-      const fqdn = `_acme-challenge.${authorization.identifier.value}`;
-      await opts.setDns(fqdn, txtValue);
-      await opts.waitFor(fqdn, txtValue);
+      await handler.setChallenge(challengePreparation);
+      await handler.waitFor(challengePreparation);
 
       await this.completeChallenge(challenge);
     }
 
-    console.log(order);
     return await this.waitOrder(order.url, ['ready', 'valid']);
+  }
+
+  async solveDns01(order: ACMEOrder, opts: {
+    waitFor: (preparation: ChallengePreparation) => Promise<void>;
+    setDns: (preparation: ChallengePreparation) => Promise<void>;
+  }) {
+    return this.solveChallenge(order, {
+      challengeType: 'dns-01',
+      prepareChallenge: async (authorization: ACMEAuthorization, keyAuth: string, _challenge: ACMEChallenge) => {
+        const txtValue = createHash('sha256').update(keyAuth).digest('base64url');
+        const fqdn = `_acme-challenge.${authorization.identifier.value}`;
+        return { target: fqdn, value: txtValue };
+      },
+      setChallenge: opts.setDns,
+      waitFor: opts.waitFor
+    });
+  }
+
+  async solveHttp01(order: ACMEOrder, opts: {
+    waitFor: (preparation: ChallengePreparation) => Promise<void>;
+    setHttp: (preparation: ChallengePreparation) => Promise<void>;
+  }) {
+    return this.solveChallenge(order, {
+      challengeType: 'http-01',
+      prepareChallenge: async (authorization: ACMEAuthorization, keyAuth: string, challenge: ACMEChallenge) => {
+        const url = `http://${authorization.identifier.value}/.well-known/acme-challenge/${challenge.token}`;
+        return { target: url, value: keyAuth, additional: { token: challenge.token } };
+      },
+      setChallenge: opts.setHttp,
+      waitFor: opts.waitFor
+    });
   }
 
   /** Complete a specific challenge (payload includes keyAuthorization) */

@@ -1,6 +1,6 @@
 {
   "name": "acme-love",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "description": "Lightweight strongly-typed ACME (RFC 8555) client & toolkit for Node.js 20+ (nonce pooling, CSR helpers, directory presets)",
   "main": "dist/index.js",
   "type": "module",
@@ -32,7 +32,13 @@
     "test:e2e": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/**/*.e2e.test.ts",
     "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/**/*.test.ts --testPathIgnorePatterns=e2e",
     "clean": "rm -rf dist",
-    "prepublishOnly": "npm run clean && npm run build && npm test"
+    "prepublishOnly": "npm run clean && npm run build && npm test",
+    "cli": "npm run build && node dist/src/cli.js",
+    "cli:help": "npm run build && node dist/src/cli.js --help",
+    "cli:interactive": "npm run build && node dist/src/cli.js interactive",
+    "cli:cert": "npm run build && node dist/src/cli.js cert",
+    "cli:staging": "npm run build && node dist/src/cli.js interactive --staging",
+    "cli:production": "npm run build && node dist/src/cli.js interactive --production"
   },
   "keywords": [
     "acme",

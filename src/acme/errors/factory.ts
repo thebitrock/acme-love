@@ -18,6 +18,7 @@ import {
   RateLimitedError,
   RejectedIdentifierError,
   ServerInternalError,
+  ServerMaintenanceError,
   TLSError,
   UnauthorizedError,
   UnsupportedContactError,
@@ -83,7 +84,14 @@ export function createErrorFromProblem(problem: unknown): AcmeError {
   const ctor = FACTORY[type as AcmeErrorType] ?? AcmeError;
   let err: AcmeError;
 
-  if (ctor === BadSignatureAlgorithmError) {
+  // Special handling for maintenance errors
+  if (type === ACME_ERROR.serverInternal && 
+      (detail.includes('maintenance') || 
+       detail.includes('service is down') ||
+       detail.includes('letsencrypt.status.io') ||
+       status === 503)) {
+    err = new ServerMaintenanceError(detail, status);
+  } else if (ctor === BadSignatureAlgorithmError) {
     err = new BadSignatureAlgorithmError(detail, status, p.algorithms);
   } else if (ctor === RateLimitedError) {
     const retryAfter = p.retryAfter ? new Date(p.retryAfter) : undefined;

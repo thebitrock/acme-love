@@ -1,6 +1,7 @@
 import { SimpleHttpClient } from '../http/http-client.js';
 import type { ACMEDirectory } from '../types/directory.js';
 import { NonceManager, type NonceManagerOptions } from './nonce-manager.js';
+import { createErrorFromProblem } from '../errors/factory.js';
 
 export interface AcmeClientCoreOptions {
   /** Default NonceManager options; can be overridden per-account in AcmeAccountSession */
@@ -26,8 +27,9 @@ export class AcmeClientCore {
 
     const res = await this.http.get<ACMEDirectory>(this.directoryUrl);
     if (res.status !== 200) {
-      throw new Error(`Failed to fetch directory: HTTP ${res.status}`);
+      throw createErrorFromProblem(res.data);
     }
+
     this.directory = res.data;
 
     // default NonceManager instance (can be overridden per-account)

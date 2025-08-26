@@ -1,313 +1,362 @@
-git clone <repository-url>
-
 <div align="center">
 
-# ACME Love
+# 🔐 ACME Love
 
-Lightweight, strongly‑typed **ACME (RFC 8555)** toolkit for Node.js 20+/TypeScript. Provides a high‑level `ACMEClient`, CA directory presets (Let's Encrypt / Buypass / Google / ZeroSSL), nonce pooling, CSR helpers, validation utilities, and CLI tool.
+**Modern, strongly‑typed ACME (RFC 8555) toolkit for Node.js 20+**
+
+Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certificate Authorities
 
 [![NPM Version](https://img.shields.io/npm/v/acme-love.svg)](https://www.npmjs.com/package/acme-love)
 [![NPM License](https://img.shields.io/npm/l/acme-love.svg)](https://github.com/thebitrock/acme-love/blob/main/LICENSE)
 
 </div>
 
-## Key Features
+## ✨ Key Features
 
-| Feature                    | Notes                                                            |
-| -------------------------- | ---------------------------------------------------------------- |
-| **CLI Tool**               | Easy-to-use CLI for certificate management                       |
-| ESM + TS 5                 | Native Node.js ESM, strict types                                 |
-| Multiple CAs               | Built‑in directory catalog (staging & prod)                      |
-| Robust nonce management    | Pooled, prefetch, retry on `badNonce`                            |
-| Coalesced account creation | Prevent duplicate parallel `newAccount` calls                    |
-| Order & challenge helpers  | http-01, dns-01 base utilities, tls-alpn-01 digest support (WIP) |
-| CSR & key utilities        | Via WebCrypto/Jose + X.509 helpers                               |
-| Pluggable logging          | Pass any logger or use `debug` / console                         |
-| Test runner                | AVA for fast isolated ESM tests                                  |
+| Feature                     | Description                                                 |
+| --------------------------- | ----------------------------------------------------------- |
+| 🖥️ **Powerful CLI**         | Interactive & command-line modes with beautiful prompts     |
+| 🌐 **Multi-Environment**    | Staging, Production, and Custom ACME directories            |
+| 🔒 **Challenge Support**    | DNS-01 and HTTP-01 with automatic validation                |
+| 🛠️ **Smart Error Handling** | Maintenance detection, user-friendly error messages         |
+| ⚡ **Modern Architecture**  | ESM + TypeScript 5, WebCrypto, nonce pooling                |
+| 🏢 **Multiple CAs**         | Let's Encrypt, Buypass, Google, ZeroSSL presets             |
+| 🔧 **Developer Friendly**   | Multiple CLI access methods, auto-build, comprehensive docs |
 
-## Install
+## 🚀 Quick Start
 
-### CLI Tool (Global)
+### CLI Installation & Usage
 
 ```bash
-# Install globally for CLI usage
+# Global installation (recommended)
 npm install -g acme-love
-
-# Use the CLI
 acme-love --help
-acme-love cert -d example.com -e admin@example.com --staging
+
+# Or use without installation
+npx acme-love interactive --staging
 ```
 
-### Library (Local)
+### 🎮 Interactive Mode (Easiest Way)
 
 ```bash
-# Install as dependency
-npm install acme-love
-
-# Use in code
-import { ACMEClient, directory } from 'acme-love';
-```
-
-### Via npx (No Installation)
-
-```bash
-# Use CLI without installation
-npx acme-love --help
-npx acme-love cert -d example.com -e admin@example.com --staging
-```
-
-Node.js >= 20 is required (WebCrypto, modern URL, base64url support).
-
-## CLI Quick Start
-
-### Get a test certificate (recommended first step)
-
-```bash
-# Interactive mode - easiest way to start
+# Start interactive mode with environment selection
 acme-love interactive
 
-# Or with command line options
+# Or with pre-selected environment
+acme-love interactive --staging    # For testing
+acme-love interactive --production # For real certificates
+```
+
+### 📋 Command Line Mode
+
+```bash
+# Get a staging certificate (recommended first)
 acme-love cert \
   --domain test.example.com \
   --email admin@example.com \
   --staging \
-  --output ./certificates
-```
+  --challenge dns-01
 
-### Get a production certificate
-
-**⚠️ Warning:** Let's Encrypt has rate limits on production. Always test with `--staging` first!
-
-```bash
+# Get a production certificate
 acme-love cert \
   --domain example.com \
   --email admin@example.com \
   --production \
-  --output ./certificates
+  --challenge http-01
 ```
 
-### CLI Documentation
+### 🎯 Challenge Types
 
-For complete CLI documentation, see [CLI.md](./docs/CLI.md)
+**DNS-01 Challenge** (Recommended)
 
-## Library Quick Start
+```bash
+acme-love cert --challenge dns-01 --domain example.com --email user@example.com --staging
+```
+
+- ✅ Works with wildcard certificates (`*.example.com`)
+- ✅ No need for public web server
+- 🔧 Requires DNS provider access
+
+**HTTP-01 Challenge**
+
+```bash
+acme-love cert --challenge http-01 --domain example.com --email user@example.com --staging
+```
+
+- ✅ Simple validation via HTTP file
+- ✅ Automatic validation with built-in checker
+- 🔧 Requires domain to point to your web server
+
+### 🛠️ Development & Local Usage
+
+If you're developing or testing locally, you have multiple convenient options:
+
+```bash
+# Development wrapper (auto-builds when needed)
+./acme-love --help
+
+# NPM scripts
+npm run cli:help
+npm run cli:staging
+npm run cli:production
+
+# Make commands
+make help
+make interactive
+make staging
+```
+
+See [CLI-USAGE.md](./CLI-USAGE.md) for detailed development setup.
+
+## 📚 Library Usage
+
+### Installation
+
+```bash
+npm install acme-love
+```
+
+### Modern ACME Client
 
 ```ts
-import { ACMEClient, directory } from 'acme-love';
-import { generateKeyPair } from 'jose';
+import {
+  AcmeClientCore,
+  AcmeAccountSession,
+  directory,
+  createAcmeCsr,
+  generateKeyPair,
+} from 'acme-love';
 
-// 1. Key material (ES256 recommended)
-const { privateKey, publicKey } = await generateKeyPair('ES256');
+// 1. Create client core with nonce pooling
+const core = new AcmeClientCore(directory.letsencrypt.staging.directoryUrl, {
+  nonce: { maxPool: 64 },
+});
 
-// 2. Instantiate client for Let's Encrypt staging
-const client = new ACMEClient(directory.letsencrypt.staging.directoryUrl, {
-  nonce: {
-    // optional NonceManager tuning
-    maxPool: 64,
-    prefetchLowWater: 8,
-    prefetchHighWater: 32,
+// 2. Generate account keys (ES256 recommended)
+const algo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+const keyPair = await generateKeyPair(algo);
+const accountKeys = {
+  privateKey: keyPair.privateKey,
+  publicKey: keyPair.publicKey,
+};
+
+// 3. Create account session
+const acct = new AcmeAccountSession(core, accountKeys);
+
+// 4. Register account
+await acct.ensureRegistered({
+  contact: ['mailto:admin@example.com'],
+  termsOfServiceAgreed: true,
+});
+
+// 5. Create order and solve challenges
+const order = await acct.newOrder(['example.com']);
+
+// DNS-01 challenge
+const ready = await acct.solveDns01(order, {
+  setDns: async (preparation) => {
+    console.log(`Create TXT record: ${preparation.target} = ${preparation.value}`);
+    // Set DNS record via your DNS provider API
+    await waitForUserConfirmation();
+  },
+  waitFor: async (preparation) => {
+    // Validate DNS propagation
+    console.log('Validating DNS...');
   },
 });
 
-// 3. Register / set account
-client.setAccount({ privateKey, publicKey });
-await client.createAccount({ contact: ['mailto:admin@example.com'], termsOfServiceAgreed: true });
+// 6. Generate CSR and finalize
+const { derBase64Url, keys: csrKeys } = await createAcmeCsr(['example.com'], algo);
+const finalized = await acct.finalize(ready, derBase64Url);
+const valid = await acct.waitOrder(finalized.url, ['valid']);
+const certificate = await acct.downloadCertificate(valid);
 
-// 4. Create an order
-const order = await client.createOrder([{ type: 'dns', value: 'example.com' }]);
-
-// 5. Fetch keyAuthorization / DNS value
-// (choose appropriate challenge type from authorization fetch; simplified here)
-// const authz = await client.fetchResource(order.authorizations[0]);
-// const challenge = authz.challenges.find(c => c.type === 'http-01');
-// const keyAuth = await client.getChallengeKeyAuthorization(challenge);
-
-// 6. Finalize & download certificate (after validating challenge & creating CSR)
-// const csrDerB64Url = ...
-// const finalized = await client.finalizeOrder(order.finalize, csrDerB64Url);
-// const pemChain = await client.downloadCertificate(finalized.certificate!);
+console.log('Certificate obtained!', certificate);
 ```
 
-> NOTE: Challenge completion (http-01 / dns-01) requires you to provision the response resource (HTTP file or DNS TXT record) before calling `completeChallenge`. Helpers for DNS TXT validation are exported under `acme/validator`.
+### Advanced Features
 
-## CSR Generation (Finalize Order)
+**Error Handling with Maintenance Detection**
 
-After challenges are valid and the order status becomes `ready`, you must submit a CSR. A helper `createAcmeCsr` generates:
+```ts
+import { ServerMaintenanceError } from 'acme-love';
 
-- `pem`: PEM encoded PKCS#10 CSR you can store.
-- `derBase64Url`: base64url DER form required by ACME `finalize`.
+try {
+  await acct.newOrder(['example.com']);
+} catch (error) {
+  if (error instanceof ServerMaintenanceError) {
+    console.log('🔧 Service is under maintenance');
+    console.log('Check https://letsencrypt.status.io/');
+  }
+}
+```
+
+**HTTP-01 Challenge with Validation**
+
+```ts
+const ready = await acct.solveHttp01(order, {
+  setHttp: async (preparation) => {
+    // Serve challenge at: preparation.target
+    // Content: preparation.value
+    console.log(`Serve ${preparation.value} at ${preparation.target}`);
+  },
+  waitFor: async (preparation) => {
+    // Built-in HTTP validator
+    const { validateHttp01ChallengeByUrl } = await import('acme-love/validator');
+    const result = await validateHttp01ChallengeByUrl(preparation.target, preparation.value);
+    if (!result.ok) throw new Error('HTTP validation failed');
+  },
+});
+```
+
+## ⚡ Nonce Management
+
+ACME Love includes a sophisticated **NonceManager** that optimizes nonce handling for high-performance certificate operations. Nonces are automatically pooled, prefetched, and recycled to minimize network round-trips.
+
+### Global Configuration
+
+Set default nonce behavior for all accounts:
+
+```ts
+const core = new AcmeClientCore(directory.letsencrypt.production.directoryUrl, {
+  nonce: {
+    maxPool: 64, // Cache up to 64 nonces
+    prefetchLowWater: 12, // Start prefetch when < 12 remain
+    prefetchHighWater: 40, // Fill up to 40 nonces
+    maxAgeMs: 5 * 60_000, // Expire after 5 minutes
+    log: console.debug, // Optional logging
+  },
+});
+```
+
+### Per-Account Overrides
+
+Fine-tune nonce behavior for specific accounts:
+
+```ts
+const acct = new AcmeAccountSession(core, accountKeys, {
+  nonceOverrides: {
+    maxPool: 128, // Higher throughput for this account
+    prefetchLowWater: 20,
+    prefetchHighWater: 80,
+    log: (...args) => logger.info('[nonce]', ...args),
+  },
+});
+```
+
+### Configuration Options
+
+| Option              | Default | Description                                        |
+| ------------------- | ------- | -------------------------------------------------- |
+| `maxPool`           | 32      | Maximum cached nonces per namespace                |
+| `prefetchLowWater`  | 0       | Start prefetch when pool below this (0 = disabled) |
+| `prefetchHighWater` | 0       | Target fill level for prefetch                     |
+| `maxAgeMs`          | 300000  | Discard nonces older than 5 minutes                |
+| `log`               | noop    | Optional logger function for diagnostics           |
+
+### Performance Scenarios
+
+```ts
+// Low traffic / sequential operations
+{ prefetchLowWater: 0 }  // Disable prefetch
+
+// Moderate parallelism (5-10 concurrent operations)
+{ prefetchLowWater: 4, prefetchHighWater: 12, maxPool: 32 }
+
+// High burst / parallel workloads
+{ prefetchLowWater: 16, prefetchHighWater: 48, maxPool: 128 }
+```
+
+The NonceManager automatically handles `badNonce` retries, harvests nonces from response headers, and isolates nonce pools per CA/account combination.
+
+📖 **Detailed documentation**: [docs/nonce-manager.md](./docs/nonce-manager.md)
+
+## 🔧 CSR Generation
+
+The `createAcmeCsr` helper generates everything needed for certificate finalization:
 
 ```ts
 import { createAcmeCsr } from 'acme-love';
 
-// Common Name + SANs. The first entry is treated as CN.
-const { pem, derBase64Url, keys } = await createAcmeCsr(['example.com', 'www.example.com'], {
-  kind: 'ec', // or 'rsa'
-  namedCurve: 'P-256', // when kind === 'ec'
-  hash: 'SHA-256', // CSR signature hash
-});
+const { pem, derBase64Url, keys } = await createAcmeCsr(
+  ['example.com', 'www.example.com'], // domains (first = CN)
+  { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' },
+);
 
-// Persist your cert private key + CSR PEM if desired
-// fs.writeFileSync('cert.csr.pem', pem);
-
-// Finalize the order using the base64url DER
-const finalized = await client.finalizeOrder(order.finalize, derBase64Url);
-
-// Poll until order becomes valid, then download certificate
-if (finalized.status === 'valid' && finalized.certificate) {
-  const chainPem = await client.downloadCertificate(finalized.certificate);
-  // fs.writeFileSync('cert.pem', chainPem);
-}
+// pem: PEM-encoded CSR for storage
+// derBase64Url: base64url DER for ACME finalize
+// keys: Certificate private/public key pair
 ```
 
-If you already have a PEM CSR from elsewhere, strip the header/footer, base64‑decode to DER, then re‑encode using `Buffer.from(der).toString('base64url')` for `finalize`.
+## 🏢 Supported ACME Providers
 
-## DNS-01 Validation Example
-
-During a dns-01 challenge you must publish a TXT record containing the key authorization digest. Use `resolveAndValidateAcmeTxtAuthoritative` to verify authoritative DNS before notifying the CA:
-
-```ts
-import { resolveAndValidateAcmeTxtAuthoritative } from 'acme-love';
-
-// Assume you already picked the dns-01 challenge and built keyAuthorization:
-// const challenge = authz.challenges.find(c => c.type === 'dns-01');
-// const keyAuthorization = await client.getChallengeKeyAuthorization(challenge);
-
-console.log(`Create TXT _acme-challenge.${domain} => ${keyAuthorization}`);
-await waitForUser(); // your prompt / UI pause
-
-while (true) {
-  const result = await resolveAndValidateAcmeTxtAuthoritative(domain, keyAuthorization);
-  if (result.ok) {
-    console.log('DNS TXT validated (authoritative)');
-    break;
-  }
-  console.warn('Still not propagated:', result.reasons);
-  await new Promise((r) => setTimeout(r, 5000));
-}
-
-await client.completeChallenge(challenge);
-```
-
-Notes:
-
-- Always query authoritative servers (helper already does) to avoid cached stale answers.
-- Retry until TXT visible; propagation can take seconds to minutes depending on TTL.
-- After `completeChallenge`, poll the order or authorization until it moves to `valid` or `invalid`.
-
-## Directory Catalog
+Built-in directory presets for major Certificate Authorities:
 
 ```ts
 import { directory } from 'acme-love';
-console.log(directory.letsencrypt.staging.directoryUrl);
-console.log(directory.buypass.production.directoryUrl);
+
+// Let's Encrypt
+directory.letsencrypt.staging.directoryUrl;
+directory.letsencrypt.production.directoryUrl;
+
+// Buypass
+directory.buypass.staging.directoryUrl;
+directory.buypass.production.directoryUrl;
+
+// Google Trust Services
+directory.google.staging.directoryUrl;
+directory.google.production.directoryUrl;
+
+// ZeroSSL
+directory.zerossl.production.directoryUrl;
 ```
 
-Each entry: `{ directoryUrl, name, environment }`.
+## 🎨 CLI Features Showcase
 
-## Nonce Management
+### Beautiful Interactive Prompts
 
-The client internally uses a pooled nonce strategy (see [detailed docs](./docs/nonce-manager.md)). You can tune it when constructing the client:
+- 🎮 Full interactive mode with guided setup
+- 🌈 Colorful, emoji-rich interface using `@inquirer/prompts`
+- 🔧 Environment selection (staging/production/custom)
+- 📝 Challenge type selection (DNS-01/HTTP-01)
 
-```ts
-const client = new ACMEClient(directory.letsencrypt.production.directoryUrl, {
-  nonce: {
-    maxPool: 80,
-    prefetchLowWater: 10,
-    prefetchHighWater: 50,
-    maxAgeMs: 4 * 60_000,
-    log: (...a) => console.info('[nonce]', ...a),
-  },
-});
-```
+### Smart Error Handling
 
-Defaults (if you do not override):
+- 🔧 Maintenance detection with helpful messages
+- 📊 Links to service status pages
+- 💡 User-friendly error explanations
+- 🚨 Proper exit codes
 
-| Option            | Default | Description                         |
-| ----------------- | ------- | ----------------------------------- |
-| maxPool           | 64      | Max cached nonces                   |
-| prefetchLowWater  | 12      | Start prefetch when pool below this |
-| prefetchHighWater | 40      | Target fill size                    |
-| maxAgeMs          | 300000  | Discard stale nonces                |
+### Automatic Validation
 
-## Public Exports
+- 🔍 DNS record verification with authoritative lookups
+- 🌐 HTTP challenge validation with `undici`
+- ⏳ Retry logic with progress indicators
+- ✅ Success confirmation
 
-```ts
-import {
-  ACMEClient,
-  directory,
-  // Types
-  ACMEAccount,
-  ACMEOrder,
-  ACMEChallenge,
-  // Validators & CSR helpers
-} from 'acme-love';
-```
+## 📖 Documentation
 
-Types are re‑exported from `acme/types/*` for library consumers.
+- [CLI Usage Guide](./CLI-USAGE.md) - Development setup and usage examples
+- [API Documentation](./docs/) - Library API reference
+- [Examples](./examples/) - Code examples and use cases
 
-## Error Handling
+## ⚡ Requirements
 
-Server "problem+json" documents are converted into typed errors where possible; otherwise a `ServerInternalError` is thrown. For nonce replay mismatches the internal retry logic consumes `badNonce` transparently when using client high-level methods.
+- **Node.js ≥ 20** (WebCrypto, modern URL, base64url support)
+- **TypeScript ≥ 5** (for development)
 
-## Testing
+## 📄 License
 
-The project uses **AVA**.
+ISC License - see [LICENSE](./LICENSE) file for details.
 
-```bash
-npm test          # all tests
-npm run test:e2e  # only e2e tests (*.e2e.test.ts)
-```
+## 🤝 Contributing
 
-## Scripts
-
-```bash
-npm run dev      # tsx + nodemon development
-npm run build    # tsc build to dist/
-npm start        # run built version
-npm run clean    # remove dist
-```
-
-## Project Structure (simplified)
-
-```
-src/
-  index.ts                # Public entry (re-exports)
-  directory.ts            # CA directory catalog
-  acme/
-    client/
-      acme-client.ts      # High-level orchestration
-      acme-transport.ts   # Signed POST + nonce usage
-      nonce-manager.ts    # Pooled nonce implementation
-      acme-signer.ts      # JWS & key auth helpers
-    types/                # Account / order / directory type defs
-    validator/            # TXT / challenge validators
-    csr.ts                # CSR creation helpers
-docs/
-  nonce-manager.md        # Detailed nonce manager documentation
-```
-
-## Security Notes
-
-- Always use the staging environment first (Let's Encrypt staging) to avoid rate limits.
-- Persist account key material securely; losing the private key prevents certificate revocation.
-- Do not reuse nonces manually—let the client manage them.
-
-## Roadmap / Ideas
-
-- EAB (External Account Binding) support
-- Full tls-alpn-01 automation helper
-- PEM/DER CSR utilities expansion
-- Pluggable storage layer for distributed nonce pools
-
-## Contributing
-
-PRs & issues welcome. Please open an issue to discuss large changes first.
-
-## License
-
-ISC
+Contributions are welcome! Please read our contributing guidelines and submit pull requests.
 
 ---
 
-Built with a focus on correctness, clarity & low overhead.
+<div align="center">
+
+**Made with ❤️ for the Node.js community**
+
+[Report Issues](https://github.com/thebitrock/acme-love/issues) | [Request Features](https://github.com/thebitrock/acme-love/discussions)
