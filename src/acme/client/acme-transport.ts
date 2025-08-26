@@ -3,8 +3,6 @@ import { SimpleHttpClient } from '../http/http-client.js';
 import { NonceManager, type NonceManagerOptions } from './nonce-manager.js';
 import type { AcmeSigner } from './acme-signer.js';
 import type { JWSHeaderParameters } from 'jose';
-import { util } from 'undici';
-import { inspect } from 'util';
 
 /**
  * Responsible for signed ACME HTTP calls and Nonce handling.

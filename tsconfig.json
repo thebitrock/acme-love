@@ -27,6 +27,6 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["src/**/*", "test-acme-e2e.ts", "__tests__/**/*.ts", "examples/**/*"],
+  "include": ["src/**/*", "test-acme-e2e.ts", "__tests__/**/*.ts", "examples/**/*", "test.ts"],
   "exclude": ["node_modules", "dist"]
 }

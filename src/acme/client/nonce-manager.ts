@@ -98,6 +98,7 @@ export class NonceManager {
    */
   constructor(opts: NonceManagerOptions) {
     this.newNonceUrl = opts.newNonceUrl;
+    console.log('NewNonce URL:', this.newNonceUrl);
     this.fetch = opts.fetch;
     this.maxAgeMs = opts.maxAgeMs ?? 5 * 60_000;
     this.maxPool = opts.maxPool ?? 32;
@@ -110,8 +111,10 @@ export class NonceManager {
    * Produce a namespace key from a CA directory URL.
    * You may augment this (e.g. append account key thumbprint) to isolate accounts.
    */
-  static makeNamespace(caUrl: string): Namespace {
-    return new URL(caUrl).origin;
+  static makeNamespace(namespace: string): Namespace {
+    // console.log('CA URL:', caUrl);
+    // return new URL(caUrl).origin;
+    return namespace
   }
 
   /**
@@ -225,6 +228,7 @@ export class NonceManager {
 
   /** Perform network request for a fresh nonce and store it. */
   private async fetchNewNonce(namespace: Namespace): Promise<string> {
+    console.log('Fetching new nonce from', this.newNonceUrl);
     const res = await this.fetch(this.newNonceUrl);
     this.log(`Fetched new nonce from ${this.newNonceUrl}: HTTP ${res.status}`);
     if (!res.status || res.status < 200 || res.status >= 400) {

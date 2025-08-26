@@ -173,7 +173,7 @@ export async function resolveAndValidateAcmeTxtAuthoritative(
   expected?: string,
   opts: AuthoritativeOptions = {},
 ): Promise<ValidationResult> {
-  const name = `_acme-challenge.${domain}`.replace(/\.$/, '');
+  const name = domain.replace(/\.$/, '');
   const zone = (await findZoneWithNs(name)) || (await findZoneWithNs(domain));
 
   if (!zone) {
