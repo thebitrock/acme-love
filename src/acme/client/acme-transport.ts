@@ -72,18 +72,6 @@ export class AcmeTransport {
         Accept: '*/*',
       });
 
-      // if (result.status >= 400 && result.data?.detail === 'Unable to validate JWS :: No embedded JWK in JWS header') {
-      //   console.log('ACME Request:',
-      //     inspect(
-      //       {
-      //         request: { url, payload, header, jws },
-      //         response: { status: result.status, headers: result.headers, data: result.data },
-      //       },
-      //       { showHidden: false, depth: null, colors: true }
-      //     )
-      //   );
-      // }
-
       return result;
     });
   }

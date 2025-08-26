@@ -8,3 +8,16 @@ export * from './acme/types/directory.js';
 export * from './acme/validator/index.js';
 export * from './acme/csr.js';
 export * from './acme/errors/errors.js';
+
+// Debug utilities
+export { 
+  enableDebug, 
+  disableDebug, 
+  isDebugEnabled,
+  debugNonce,
+  debugHttp,
+  debugChallenge,
+  debugClient,
+  debugValidator,
+  debugMain
+} from './acme/debug.js';

@@ -9,6 +9,98 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Helper functions for algorithm selection
+async function selectAlgorithm(purpose: 'account' | 'certificate'): Promise<CsrAlgo> {
+  const purposeText = purpose === 'account' ? 'account keys' : 'certificate keys';
+  
+  const algoType = await select({
+    message: `Select cryptographic algorithm for ${purposeText}:`,
+    choices: [
+      { name: '🚀 ECDSA P-256 (recommended - fast, secure, widely supported)', value: 'ec-p256' },
+      { name: '🔒 ECDSA P-384 (enhanced security, larger keys)', value: 'ec-p384' },
+      { name: '🛡️ ECDSA P-521 (maximum security, largest keys)', value: 'ec-p521' },
+      { name: '🔧 RSA 2048 (legacy compatibility, minimum size)', value: 'rsa-2048' },
+      { name: '⚡ RSA 3072 (enhanced security, balanced performance)', value: 'rsa-3072' },
+      { name: '🏰 RSA 4096 (maximum security, slower performance)', value: 'rsa-4096' }
+    ]
+  });
+
+  switch (algoType) {
+    case 'ec-p256':
+      return { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+    case 'ec-p384':
+      return { kind: 'ec', namedCurve: 'P-384', hash: 'SHA-384' };
+    case 'ec-p521':
+      return { kind: 'ec', namedCurve: 'P-521', hash: 'SHA-512' };
+    case 'rsa-2048':
+      return { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' };
+    case 'rsa-3072':
+      return { kind: 'rsa', modulusLength: 3072, hash: 'SHA-256' };
+    case 'rsa-4096':
+      return { kind: 'rsa', modulusLength: 4096, hash: 'SHA-384' };
+    default:
+      return { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+  }
+}
+
+async function selectAdvancedOptions(): Promise<{
+  accountAlgo: CsrAlgo;
+  certAlgo: CsrAlgo;
+  separateAlgos: boolean;
+}> {
+  const useAdvanced = await confirm({
+    message: 'Configure cryptographic algorithms? (default: P-256 ECDSA for both)',
+    default: false
+  });
+
+  if (!useAdvanced) {
+    const defaultAlgo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+    return {
+      accountAlgo: defaultAlgo,
+      certAlgo: defaultAlgo,
+      separateAlgos: false
+    };
+  }
+
+  const separateAlgos = await confirm({
+    message: 'Use different algorithms for account and certificate keys?',
+    default: false
+  });
+
+  if (separateAlgos) {
+    console.log('\n📋 Account keys are used for ACME protocol authentication');
+    const accountAlgo = await selectAlgorithm('account');
+    
+    console.log('\n📋 Certificate keys are embedded in the final TLS certificate');
+    const certAlgo = await selectAlgorithm('certificate');
+    
+    return { accountAlgo, certAlgo, separateAlgos: true };
+  } else {
+    console.log('\n📋 Same algorithm will be used for both account and certificate keys');
+    const algo = await selectAlgorithm('account');
+    return { accountAlgo: algo, certAlgo: algo, separateAlgos: false };
+  }
+}
+
+function parseAlgorithm(algoStr: string): CsrAlgo {
+  switch (algoStr) {
+    case 'ec-p256':
+      return { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+    case 'ec-p384':
+      return { kind: 'ec', namedCurve: 'P-384', hash: 'SHA-384' };
+    case 'ec-p521':
+      return { kind: 'ec', namedCurve: 'P-521', hash: 'SHA-512' };
+    case 'rsa-2048':
+      return { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' };
+    case 'rsa-3072':
+      return { kind: 'rsa', modulusLength: 3072, hash: 'SHA-256' };
+    case 'rsa-4096':
+      return { kind: 'rsa', modulusLength: 4096, hash: 'SHA-384' };
+    default:
+      throw new Error(`Unknown algorithm: ${algoStr}. Supported: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096`);
+  }
+}
+
 // Load package.json version - go up 2 levels from dist/src/
 const packageJson = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
 
@@ -62,6 +154,8 @@ program
   .option('--account-key <path>', 'Path to account private key')
   .option('--force', 'Force certificate renewal even if valid')
   .option('--challenge <type>', 'Challenge type: dns-01 or http-01', 'dns-01')
+  .option('--account-algo <algo>', 'Account key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096', 'ec-p256')
+  .option('--cert-algo <algo>', 'Certificate key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096', 'ec-p256')
   .action(async (options: any) => {
     try {
       await handleCertCommand(options);
@@ -76,6 +170,7 @@ program
   .command('create-account-key')
   .description('Create new ACME account private key')
   .option('-o, --output <path>', 'Output path for account key', './account-key.json')
+  .option('--algo <algo>', 'Key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096', 'ec-p256')
   .action(async (options: any) => {
     try {
       await handleCreateAccountKey(options);
@@ -138,6 +233,22 @@ async function handleCertCommand(options: any) {
     });
   }
 
+  // Get cryptographic algorithms
+  let accountAlgo: CsrAlgo, certAlgo: CsrAlgo, separateAlgos: boolean;
+  
+  if (options.accountAlgo || options.certAlgo) {
+    // Use command line specified algorithms
+    accountAlgo = parseAlgorithm(options.accountAlgo || 'ec-p256');
+    certAlgo = parseAlgorithm(options.certAlgo || 'ec-p256');
+    separateAlgos = options.accountAlgo !== options.certAlgo;
+  } else {
+    // Interactive algorithm selection
+    const algoConfig = await selectAdvancedOptions();
+    accountAlgo = algoConfig.accountAlgo;
+    certAlgo = algoConfig.certAlgo;
+    separateAlgos = algoConfig.separateAlgos;
+  }
+
   let directoryUrl: string;
   if (options.staging) {
     directoryUrl = directory.letsencrypt.staging.directoryUrl;
@@ -175,6 +286,12 @@ async function handleCertCommand(options: any) {
   console.log(`   Domain: ${domain}`);
   console.log(`   Email: ${email}`);
   console.log(`   Challenge Type: ${challengeType}`);
+  if (separateAlgos) {
+    console.log(`   Account Algorithm: ${accountAlgo.kind === 'ec' ? `ECDSA ${accountAlgo.namedCurve}` : `RSA ${accountAlgo.modulusLength}`}`);
+    console.log(`   Certificate Algorithm: ${certAlgo.kind === 'ec' ? `ECDSA ${certAlgo.namedCurve}` : `RSA ${certAlgo.modulusLength}`}`);
+  } else {
+    console.log(`   Algorithm: ${accountAlgo.kind === 'ec' ? `ECDSA ${accountAlgo.namedCurve}` : `RSA ${accountAlgo.modulusLength}`}`);
+  }
   console.log(`   Directory: ${directoryUrl}`);
   console.log(`   Output: ${outputDir}`);
   console.log(`   Account Key: ${accountKeyPath}\n`);
@@ -183,9 +300,6 @@ async function handleCertCommand(options: any) {
   const core = new AcmeClientCore(directoryUrl, {
     nonce: { maxPool: 64 },
   });
-
-  // Algorithm for key generation
-  const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
 
   // Load or create account keys
   let accountKeys: AccountKeys;
@@ -216,7 +330,7 @@ async function handleCertCommand(options: any) {
   } else {
     console.log('🔑 Creating new ACME account...');
     // Generate new account key
-    const keyPair = await generateKeyPair(algo);
+    const keyPair = await generateKeyPair(accountAlgo);
 
     if (!keyPair.privateKey || !keyPair.publicKey) {
       throw new Error('Key generation failed');
@@ -389,7 +503,7 @@ async function handleCertCommand(options: any) {
 
   // Create CSR and finalize
   console.log('📄 Generating Certificate Signing Request...');
-  const { derBase64Url, keys: csrKeys } = await createAcmeCsr([domain], algo);
+  const { derBase64Url, keys: csrKeys } = await createAcmeCsr([domain], certAlgo);
 
   console.log('🏁 Finalizing certificate order...');
   const finalized = await acct.finalize(ready, derBase64Url);
@@ -443,8 +557,16 @@ async function handleCreateAccountKey(options: any) {
   // Create directory if needed
   mkdirSync(dirname(outputPath), { recursive: true });
 
-  // Generate keys using the same algorithm as in cert command
-  const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+  // Select algorithm for account key
+  let algo: CsrAlgo;
+  if (options.algo) {
+    algo = parseAlgorithm(options.algo);
+  } else {
+    console.log('📋 Account keys are used for ACME protocol authentication');
+    algo = await selectAlgorithm('account');
+  }
+  
+  console.log(`\n🔑 Generating ${algo.kind === 'ec' ? `ECDSA ${algo.namedCurve}` : `RSA ${algo.modulusLength}`} key pair...`);
   const keyPair = await generateKeyPair(algo);
 
   if (!keyPair.privateKey || !keyPair.publicKey) {

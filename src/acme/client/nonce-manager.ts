@@ -44,6 +44,7 @@ import { BadNonceError, ServerInternalError } from '../errors/errors.js';
 import { createErrorFromProblem } from '../errors/factory.js';
 import type { HttpResponse } from '../http/http-client.js';
 import { safeReadBody } from '../utils.js';
+import { debugNonce } from '../debug.js';
 
 /**
  * Minimal fetch‑like function signature returning an HttpResponse
@@ -98,7 +99,8 @@ export class NonceManager {
    */
   constructor(opts: NonceManagerOptions) {
     this.newNonceUrl = opts.newNonceUrl;
-    console.log('NewNonce URL:', this.newNonceUrl);
+    debugNonce('Initializing NonceManager: url=%s, maxPool=%d, prefetchLow=%d, prefetchHigh=%d', 
+      this.newNonceUrl, opts.maxPool ?? 32, opts.prefetchLowWater ?? 0, opts.prefetchHighWater ?? 0);
     this.fetch = opts.fetch;
     this.maxAgeMs = opts.maxAgeMs ?? 5 * 60_000;
     this.maxPool = opts.maxPool ?? 32;
@@ -112,9 +114,7 @@ export class NonceManager {
    * You may augment this (e.g. append account key thumbprint) to isolate accounts.
    */
   static makeNamespace(namespace: string): Namespace {
-    // console.log('CA URL:', caUrl);
-    // return new URL(caUrl).origin;
-    return namespace
+    return namespace;
   }
 
   /**
@@ -125,19 +125,23 @@ export class NonceManager {
     this.gc(namespace);
 
     const pool = this.pools.get(namespace) ?? [];
+    debugNonce('Taking nonce: namespace=%s, poolSize=%d', namespace, pool.length);
 
     while (pool.length) {
       const n = pool.pop()!;
       if (!this.isExpired(n.ts)) {
         this.pools.set(namespace, pool);
+        debugNonce('Returned cached nonce: namespace=%s, remainingInPool=%d', namespace, pool.length);
         return n.value;
       }
     }
 
+    debugNonce('No cached nonce available, queueing request: namespace=%s', namespace);
     return new Promise<string>((resolve, reject) => {
       const q = this.pending.get(namespace) ?? [];
       q.push({ resolve, reject });
       this.pending.set(namespace, q);
+      debugNonce('Queued nonce request: namespace=%s, queueLength=%d', namespace, q.length);
       void this.runRefill(namespace);
     });
   }
@@ -228,14 +232,16 @@ export class NonceManager {
 
   /** Perform network request for a fresh nonce and store it. */
   private async fetchNewNonce(namespace: Namespace): Promise<string> {
-    console.log('Fetching new nonce from', this.newNonceUrl);
+    debugNonce('Fetching new nonce: namespace=%s, url=%s', namespace, this.newNonceUrl);
     const res = await this.fetch(this.newNonceUrl);
     this.log(`Fetched new nonce from ${this.newNonceUrl}: HTTP ${res.status}`);
+    debugNonce('Nonce fetch response: status=%d', res.status);
     if (!res.status || res.status < 200 || res.status >= 400) {
       throw new ServerInternalError(`newNonce failed: HTTP ${res.status}`);
     }
     const nonce = this.nonceExtractor(res);
     this.add(namespace, nonce);
+    debugNonce('Added nonce to pool: namespace=%s, poolSize=%d', namespace, this.getPoolSize(namespace));
     return nonce;
   }
 
