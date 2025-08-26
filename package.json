@@ -1,6 +1,6 @@
 {
   "name": "acme-love",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Lightweight strongly-typed ACME (RFC 8555) client & toolkit for Node.js 20+ (nonce pooling, CSR helpers, directory presets)",
   "main": "dist/index.js",
   "type": "module",
