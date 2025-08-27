@@ -1,8 +1,5 @@
 import { describe, test, expect, beforeAll } from '@jest/globals';
-import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
-import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
-import { generateKeyPair } from '../src/acme/csr.js';
-import type { CsrAlgo } from '../src/acme/csr.js';
+import { testAccountManager } from './utils/account-manager.js';
 
 // Endpoint tracking for demo stress test
 const endpointStats = new Map<string, number>();
@@ -71,30 +68,18 @@ describe('ACME Mini Stress Test - Demo', () => {
     console.log(`⏱️  Starting demo at ${new Date().toISOString()}`);
 
     try {
-      // Create algorithm for account keys
-      const accountAlgo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
-
       // Phase 1: Create accounts concurrently
       console.log(`👥 Creating ${TOTAL_ACCOUNTS} accounts...`);
       const accountCreationStart = Date.now();
 
       const accountPromises = Array.from({ length: TOTAL_ACCOUNTS }, async (_, accountIndex) => {
-        const keyPair = await generateKeyPair(accountAlgo);
-        const accountKeys = {
-          privateKey: keyPair.privateKey!,
-          publicKey: keyPair.publicKey
-        };
-
-        const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
-          nonce: { maxPool: 32 }
-        });
-
-        const acct = new AcmeAccountSession(core, accountKeys);
-
-        await acct.ensureRegistered({
-          contact: [`mailto:demo-stress-test-${accountIndex}-${Date.now()}@acme-love.com`],
-          termsOfServiceAgreed: true
-        });
+        // Get or create persistent account session (with registration)
+        const acct = await testAccountManager.getOrCreateAccountSession(
+          `demo-stress-${accountIndex + 1}`,
+          STAGING_DIRECTORY_URL,
+          `demo-stress-test-${accountIndex}-${Date.now()}@acme-love.com`,
+          { nonce: { maxPool: 32 } }
+        );
 
         console.log(`   ✅ Account ${accountIndex + 1}/${TOTAL_ACCOUNTS} created`);
         return { accountIndex, acct };

@@ -1,8 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
-import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
-import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
-import { generateKeyPair } from '../src/acme/csr.js';
-import type { CsrAlgo } from '../src/acme/csr.js';
+import { testAccountManager } from './utils/account-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -292,39 +289,24 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
     console.log(`⏱️  Starting stress test at ${new Date().toISOString()}`);
 
     try {
-      // Create algorithm for account keys (P-256 for speed)
-      const accountAlgo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
-
       // Phase 1: Create all accounts concurrently
       console.log(`👥 Phase 1: Creating ${TOTAL_ACCOUNTS} accounts concurrently...`);
       const accountCreationStart = Date.now();
 
       const accountPromises = Array.from({ length: TOTAL_ACCOUNTS }, async (_, accountIndex) => {
-        // Generate account keys
-        const keyPair = await generateKeyPair(accountAlgo);
-        const accountKeys = {
-          privateKey: keyPair.privateKey!,
-          publicKey: keyPair.publicKey
-        };
+        // Get or create persistent account session (with registration)
+        const acct = await testAccountManager.getOrCreateAccountSession(
+          `stress-test-${accountIndex + 1}`,
+          STAGING_DIRECTORY_URL,
+          `stress-test-${accountIndex}-${Date.now()}@acme-love.com`,
+          { nonce: { maxPool: 32 } } // Reasonable pool for smaller test
+        );
 
-        // Create enhanced client with metrics
-        const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
-          nonce: { maxPool: 32 } // Reasonable pool for smaller test
-        });
-
-        // Wrap HTTP client with metrics collector
+        // Add metrics wrapper to the existing core
+        const core = (acct as any).client;
         const originalHttp = core.getHttp();
         const metricsHttp = new MetricsHttpClient(collector, originalHttp);
         (core as any).http = metricsHttp;
-
-        // Create account session
-        const acct = new AcmeAccountSession(core, accountKeys);
-
-        // Register account
-        await acct.ensureRegistered({
-          contact: [`mailto:stress-test-${accountIndex}-${Date.now()}@acme-love.com`],
-          termsOfServiceAgreed: true
-        });
 
         console.log(`   ✅ Account ${accountIndex + 1}/${TOTAL_ACCOUNTS} created`);
         return { accountIndex, acct, core };

@@ -1,6 +1,4 @@
 import { describe, test, expect, beforeAll } from '@jest/globals';
-import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
-import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
 import { testAccountManager } from './utils/account-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -219,24 +217,19 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
       const accountCreationStart = Date.now();
 
       const accountPromises = Array.from({ length: TOTAL_ACCOUNTS }, async (_, accountIndex) => {
-        // Get or create persistent account keys
-        const accountKeys = await testAccountManager.getOrCreateAccountKeys(`light-stress-${accountIndex + 1}`);
+        // Get or create persistent account session (with registration)
+        const acct = await testAccountManager.getOrCreateAccountSession(
+          `light-stress-${accountIndex + 1}`,
+          STAGING_DIRECTORY_URL,
+          `light-test-${accountIndex}-${Date.now()}@acme-love.com`,
+          { nonce: { maxPool: 16 } }
+        );
 
-        const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
-          nonce: { maxPool: 16 }
-        });
-
-        // Add metrics wrapper
+        // Add metrics wrapper to the existing core
+        const core = (acct as any).client;
         const originalHttp = core.getHttp();
         const metricsHttp = new LightMetricsHttpClient(collector, originalHttp);
         (core as any).http = metricsHttp;
-
-        const acct = new AcmeAccountSession(core, accountKeys);
-
-        await acct.ensureRegistered({
-          contact: [`mailto:light-test-${accountIndex}-${Date.now()}@acme-love.com`],
-          termsOfServiceAgreed: true
-        });
 
         console.log(`   ✅ Account ${accountIndex + 1}/${TOTAL_ACCOUNTS} ready`);
         return { accountIndex, acct, core };

@@ -1,8 +1,5 @@
 import { describe, test, expect, beforeAll } from '@jest/globals';
-import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
-import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
-import { generateKeyPair } from '../src/acme/csr.js';
-import type { CsrAlgo } from '../src/acme/csr.js';
+import { testAccountManager } from './utils/account-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -295,35 +292,25 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
     console.log(`⏱️  Starting heavy stress test at ${new Date().toISOString()}`);
 
     try {
-      const accountAlgo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
-
       // Phase 1: Account Creation
       collector.startPhase('Account Creation');
       console.log(`👥 Creating ${TOTAL_ACCOUNTS} accounts...`);
       const accountCreationStart = Date.now();
 
       const accountPromises = Array.from({ length: TOTAL_ACCOUNTS }, async (_, accountIndex) => {
-        const keyPair = await generateKeyPair(accountAlgo);
-        const accountKeys = {
-          privateKey: keyPair.privateKey!,
-          publicKey: keyPair.publicKey
-        };
+        // Get or create persistent account session (with registration)
+        const acct = await testAccountManager.getOrCreateAccountSession(
+          `heavy-stress-${accountIndex + 1}`,
+          STAGING_DIRECTORY_URL,
+          `heavy-stress-${accountIndex}-${Date.now()}@acme-love.com`,
+          { nonce: { maxPool: 20 } } // Larger pool for heavy load
+        );
 
-        const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
-          nonce: { maxPool: 20 } // Larger pool for heavy load
-        });
-
-        // Add metrics wrapper
+        // Add metrics wrapper to the existing core
+        const core = (acct as any).client;
         const originalHttp = core.getHttp();
         const metricsHttp = new HeavyMetricsHttpClient(collector, originalHttp, accountIndex);
         (core as any).http = metricsHttp;
-
-        const acct = new AcmeAccountSession(core, accountKeys);
-
-        await acct.ensureRegistered({
-          contact: [`mailto:heavy-stress-${accountIndex}-${Date.now()}@acme-love.com`],
-          termsOfServiceAgreed: true
-        });
 
         console.log(`   ✅ Account ${accountIndex + 1}/${TOTAL_ACCOUNTS} created`);
         return { accountIndex, acct, core, metricsHttp };

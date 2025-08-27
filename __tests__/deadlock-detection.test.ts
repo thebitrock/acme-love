@@ -1,9 +1,7 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
-import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
 import { NonceManager } from '../src/acme/client/nonce-manager.js';
-import { generateKeyPair } from '../src/acme/csr.js';
-import type { CsrAlgo } from '../src/acme/csr.js';
+import { testAccountManager } from './utils/account-manager.js';
 import { cleanupTestResources } from './test-utils.js';
 
 // Deadlock detection test
@@ -230,8 +228,6 @@ describe('ACME Deadlock Detection Test', () => {
     console.log(`🕵️ Starting deadlock detection monitoring...`);
 
     try {
-      const accountAlgo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
-
       // Test 1: Concurrent account creation
       console.log(`\n🧪 Test 1: Concurrent Account Creation`);
       const concurrentAccounts = 3;
@@ -241,20 +237,16 @@ describe('ACME Deadlock Detection Test', () => {
         detector.trackOperation(operationId, 'Account Creation', accountIndex);
 
         try {
-          const keyPair = await generateKeyPair(accountAlgo);
-          const accountKeys = {
-            privateKey: keyPair.privateKey!,
-            publicKey: keyPair.publicKey
-          };
+          // Get or create persistent account session (with registration)
+          const acct = await testAccountManager.getOrCreateAccountSession(
+            `deadlock-detection-${accountIndex + 1}`,
+            STAGING_DIRECTORY_URL,
+            `deadlock-test-${accountIndex}-${Date.now()}@acme-love.com`,
+            { nonce: { maxPool: 3 } } // Smaller pool to increase contention but reduce timeout issues
+          );
 
-          const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
-            nonce: {
-              maxPool: 3 // Smaller pool to increase contention but reduce timeout issues
-            }
-          });
-
-          // Initialize directory first (required for NonceManager)
-          await core.getDirectory();
+          // Get the core client for tracking
+          const core = (acct as any).client;
 
           // Add deadlock tracking
           const originalHttp = core.getHttp();
@@ -264,13 +256,6 @@ describe('ACME Deadlock Detection Test', () => {
           // Track resources for cleanup
           const nonceManager = core.getDefaultNonce();
           testResources.push({ core, nonceManager });
-
-          const acct = new AcmeAccountSession(core, accountKeys);
-
-          await acct.ensureRegistered({
-            contact: [`mailto:deadlock-test-${accountIndex}-${Date.now()}@acme-love.com`],
-            termsOfServiceAgreed: true
-          });
 
           detector.completeOperation(operationId, 'completed');
           console.log(`   ✅ Account ${accountIndex + 1} created successfully`);

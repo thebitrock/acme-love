@@ -52,13 +52,13 @@ async function main() {
 
     case 'prepare-stress':
       console.log('🚀 Preparing accounts for stress tests...');
-      
+
       // Prepare accounts for different stress tests
       const stressTests = [
         { name: 'light-stress', count: 2 },
         { name: 'quick-stress', count: 1 },
-        { name: 'demo-stress', count: 3 },
-        { name: 'heavy-stress', count: 5 },
+        { name: 'demo-stress', count: 2 },
+        { name: 'heavy-stress', count: 4 },
         { name: 'deadlock-detection', count: 3 }
       ];
 
@@ -67,7 +67,7 @@ async function main() {
         const keys = await testAccountManager.getMultipleAccountKeys(test.name, test.count);
         console.log(`   ✅ ${test.name}: ${keys.length} accounts ready`);
       }
-      
+
       console.log('🎉 All stress test accounts prepared!');
       break;
 
