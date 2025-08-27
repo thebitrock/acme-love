@@ -1,0 +1,346 @@
+import { describe, test, expect, beforeAll } from '@jest/globals';
+import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
+import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
+import { generateKeyPair } from '../src/acme/csr.js';
+import type { CsrAlgo } from '../src/acme/csr.js';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Lightweight stress test for quick demonstration
+describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
+  const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
+  const ORDERS_PER_ACCOUNT = 3;
+  const TOTAL_ACCOUNTS = 2;
+  
+  // Performance metrics collection
+  interface RequestMetrics {
+    type: string;
+    url: string;
+    method: string;
+    timestamp: number;
+    duration: number;
+    status: number;
+  }
+
+
+
+  class LightMetricsCollector {
+    private metrics: RequestMetrics[] = [];
+    private startTime: number = 0;
+    private nonceRequests: number = 0;
+
+    start() {
+      this.startTime = Date.now();
+      this.metrics = [];
+      this.nonceRequests = 0;
+    }
+
+    addRequest(type: string, url: string, method: string, duration: number, status: number) {
+      this.metrics.push({
+        type,
+        url,
+        method,
+        timestamp: Date.now() - this.startTime,
+        duration,
+        status
+      });
+
+      if (url.includes('new-nonce')) {
+        this.nonceRequests++;
+      }
+    }
+
+    getResults() {
+      const totalTime = Date.now() - this.startTime;
+      const requestsByType: Record<string, number> = {};
+      const requestsByEndpoint: Record<string, number> = {};
+      
+      let accountsCreated = 0;
+      let ordersCreated = 0;
+
+      this.metrics.forEach(metric => {
+        requestsByType[metric.type] = (requestsByType[metric.type] || 0) + 1;
+        
+        const endpoint = this.extractEndpoint(metric.url);
+        requestsByEndpoint[endpoint] = (requestsByEndpoint[endpoint] || 0) + 1;
+        
+        if (metric.url.includes('new-acct') && metric.method === 'POST') accountsCreated++;
+        if (metric.url.includes('new-order') && metric.method === 'POST') ordersCreated++;
+      });
+
+      const averageResponseTime = this.metrics.length > 0 
+        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length 
+        : 0;
+
+      return {
+        totalTime,
+        accountsCreated,
+        ordersCreated,
+        totalRequests: this.metrics.length,
+        newNonceRequests: this.nonceRequests,
+        averageResponseTime,
+        requestsByType,
+        requestsByEndpoint,
+        metrics: this.metrics
+      };
+    }
+
+    private extractEndpoint(url: string): string {
+      try {
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/');
+        return pathParts[pathParts.length - 1] || 'unknown';
+      } catch {
+        return 'unknown';
+      }
+    }
+  }
+
+  // HTTP client wrapper for metrics
+  class LightMetricsHttpClient {
+    private collector: LightMetricsCollector;
+    private originalClient: any;
+
+    constructor(collector: LightMetricsCollector, originalClient: any) {
+      this.collector = collector;
+      this.originalClient = originalClient;
+    }
+
+    async get(url: string, headers: Record<string, string> = {}): Promise<any> {
+      const start = Date.now();
+      try {
+        const result = await this.originalClient.get(url, headers);
+        const duration = Date.now() - start;
+        this.collector.addRequest('GET', url, 'GET', duration, result.status);
+        return result;
+      } catch (error: any) {
+        const duration = Date.now() - start;
+        this.collector.addRequest('GET', url, 'GET', duration, error.status || 500);
+        throw error;
+      }
+    }
+
+    async post(url: string, body: unknown, headers: Record<string, string> = {}): Promise<any> {
+      const start = Date.now();
+      try {
+        const result = await this.originalClient.post(url, body, headers);
+        const duration = Date.now() - start;
+        this.collector.addRequest('POST', url, 'POST', duration, result.status);
+        return result;
+      } catch (error: any) {
+        const duration = Date.now() - start;
+        this.collector.addRequest('POST', url, 'POST', duration, error.status || 500);
+        throw error;
+      }
+    }
+
+    async head(url: string, headers: Record<string, string> = {}): Promise<any> {
+      const start = Date.now();
+      try {
+        const result = await this.originalClient.head(url, headers);
+        const duration = Date.now() - start;
+        this.collector.addRequest('HEAD', url, 'HEAD', duration, result.status);
+        return result;
+      } catch (error: any) {
+        const duration = Date.now() - start;
+        this.collector.addRequest('HEAD', url, 'HEAD', duration, error.status || 500);
+        throw error;
+      }
+    }
+  }
+
+  let collector: LightMetricsCollector;
+
+  beforeAll(async () => {
+    if (process.env.CI && !process.env.ACME_LIGHT_STRESS_ENABLED) {
+      console.log('⚠️  Skipping light stress test in CI environment');
+      console.log('   Set ACME_LIGHT_STRESS_ENABLED=1 to run light stress test in CI');
+      return;
+    }
+
+    collector = new LightMetricsCollector();
+    console.log(`🚀 Starting ACME Lightweight Stress Test`);
+    console.log(`   Accounts: ${TOTAL_ACCOUNTS}`);
+    console.log(`   Orders per account: ${ORDERS_PER_ACCOUNT}`);
+    console.log(`   Total orders: ${TOTAL_ACCOUNTS * ORDERS_PER_ACCOUNT}`);
+  });
+
+  test('should handle lightweight concurrent load efficiently', async () => {
+    if (process.env.CI && !process.env.ACME_LIGHT_STRESS_ENABLED) {
+      return;
+    }
+
+    collector.start();
+    console.log(`⏱️  Starting test at ${new Date().toISOString()}`);
+
+    try {
+      const accountAlgo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+
+      // Phase 1: Create accounts
+      console.log(`👥 Creating ${TOTAL_ACCOUNTS} accounts...`);
+      const accountCreationStart = Date.now();
+
+      const accountPromises = Array.from({ length: TOTAL_ACCOUNTS }, async (_, accountIndex) => {
+        const keyPair = await generateKeyPair(accountAlgo);
+        const accountKeys = {
+          privateKey: keyPair.privateKey!,
+          publicKey: keyPair.publicKey
+        };
+
+        const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
+          nonce: { maxPool: 16 }
+        });
+
+        // Add metrics wrapper
+        const originalHttp = core.getHttp();
+        const metricsHttp = new LightMetricsHttpClient(collector, originalHttp);
+        (core as any).http = metricsHttp;
+
+        const acct = new AcmeAccountSession(core, accountKeys);
+
+        await acct.ensureRegistered({
+          contact: [`mailto:light-test-${accountIndex}-${Date.now()}@gmail.com`],
+          termsOfServiceAgreed: true
+        });
+
+        console.log(`   ✅ Account ${accountIndex + 1}/${TOTAL_ACCOUNTS} created`);
+        return { accountIndex, acct, core };
+      });
+
+      const accounts = await Promise.all(accountPromises);
+      const accountCreationTime = Date.now() - accountCreationStart;
+      console.log(`   🎯 All ${TOTAL_ACCOUNTS} accounts created in ${accountCreationTime}ms`);
+
+      // Phase 2: Create orders
+      console.log(`📦 Creating ${ORDERS_PER_ACCOUNT} orders per account...`);
+      const orderCreationStart = Date.now();
+
+      const allOrderPromises = accounts.flatMap(({ accountIndex, acct }) => {
+        return Array.from({ length: ORDERS_PER_ACCOUNT }, async (_, orderIndex) => {
+          const domain = `light-${accountIndex}-${orderIndex}-${Date.now()}.acme-love.test`;
+
+          try {
+            const order = await acct.newOrder([domain]);
+            const authz = await acct.fetch<any>(order.authorizations[0]);
+            const httpChallenge = authz.challenges.find((c: any) => c.type === 'http-01');
+            
+            if (httpChallenge) {
+              const keyAuth = await acct.keyAuthorization(httpChallenge.token);
+              console.log(`     📊 Account ${accountIndex + 1}, Order ${orderIndex + 1}: ${domain}`);
+              
+              return {
+                accountIndex,
+                orderIndex,
+                domain,
+                order,
+                challenge: httpChallenge,
+                keyAuth
+              };
+            }
+            
+            throw new Error('No HTTP-01 challenge found');
+          } catch (error) {
+            console.error(`     ❌ Failed order ${orderIndex + 1} for account ${accountIndex + 1}: ${error}`);
+            throw error;
+          }
+        });
+      });
+
+      const allOrders = await Promise.all(allOrderPromises);
+      const orderCreationTime = Date.now() - orderCreationStart;
+
+      // Collect nonce metrics
+      let totalNoncesRemaining = 0;
+      accounts.forEach(({ accountIndex, core }) => {
+        try {
+          const nonceManager = core.getDefaultNonce();
+          const poolSize = (nonceManager as any).pool?.length || 0;
+          totalNoncesRemaining += poolSize;
+          console.log(`   📊 Account ${accountIndex + 1} nonce pool: ${poolSize} remaining`);
+        } catch (error) {
+          console.log(`   ⚠️  Could not get nonce stats for account ${accountIndex + 1}`);
+        }
+      });
+
+      const results = collector.getResults();
+      const totalTime = Date.now() - collector['startTime'];
+
+      // Print detailed results
+      console.log(`\n📊 LIGHTWEIGHT STRESS TEST RESULTS`);
+      console.log(`====================================`);
+      console.log(`Total Time: ${totalTime}ms (${Math.round(totalTime / 1000)}s)`);
+      console.log(`Account Creation: ${accountCreationTime}ms`);
+      console.log(`Order Creation: ${orderCreationTime}ms`);
+      console.log(`Accounts Created: ${TOTAL_ACCOUNTS}`);
+      console.log(`Orders Created: ${allOrders.length}`);
+      console.log(`Total HTTP Requests: ${results.totalRequests}`);
+      console.log(`New-Nonce Requests: ${results.newNonceRequests}`);
+      console.log(`Average Response Time: ${Math.round(results.averageResponseTime)}ms`);
+      console.log(`Requests per Second: ${Math.round(results.totalRequests / (totalTime / 1000))}`);
+      console.log(`Nonces Remaining in Pools: ${totalNoncesRemaining}`);
+
+      console.log(`\n📈 REQUEST BREAKDOWN:`);
+      Object.entries(results.requestsByType).forEach(([type, count]) => {
+        console.log(`   ${type}: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`);
+      });
+
+      console.log(`\n🔗 ENDPOINT BREAKDOWN:`);
+      Object.entries(results.requestsByEndpoint).forEach(([endpoint, count]) => {
+        console.log(`   ${endpoint}: ${count}`);
+      });
+
+      // Generate summary report
+      const report = `# 🚀 ACME Love - Lightweight Stress Test Results
+
+## Test Configuration
+- **Date**: ${new Date().toISOString()}
+- **Accounts**: ${TOTAL_ACCOUNTS}
+- **Orders per Account**: ${ORDERS_PER_ACCOUNT}
+- **Total Orders**: ${allOrders.length}
+- **Target**: Let's Encrypt Staging
+
+## Performance Summary
+- **Total Time**: ${Math.round(totalTime / 1000)}s (${totalTime}ms)
+- **Account Creation**: ${accountCreationTime}ms
+- **Order Creation**: ${orderCreationTime}ms
+- **Total Requests**: ${results.totalRequests}
+- **New-Nonce Requests**: ${results.newNonceRequests}
+- **Average Response Time**: ${Math.round(results.averageResponseTime)}ms
+- **Throughput**: ${Math.round(results.totalRequests / (totalTime / 1000))} req/s
+
+## Nonce Manager Metrics
+- **Nonces Remaining**: ${totalNoncesRemaining}
+- **Network Optimization**: ${results.totalRequests - results.newNonceRequests} requests saved from pooling
+- **Pool Efficiency**: ${results.newNonceRequests > 0 ? Math.round(((results.totalRequests - results.newNonceRequests) / results.totalRequests) * 100) : 0}%
+
+## Request Distribution
+${Object.entries(results.requestsByType).map(([type, count]) => 
+  `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`
+).join('\n')}
+
+## Conclusion
+✅ Successfully processed ${allOrders.length} orders across ${TOTAL_ACCOUNTS} accounts
+✅ Maintained ${Math.round(results.averageResponseTime)}ms average response time
+✅ Achieved ${Math.round(results.totalRequests / (totalTime / 1000))} requests/second throughput
+✅ Nonce pooling saved ${results.totalRequests - results.newNonceRequests} network requests
+
+*Generated by ACME Love v1.2.1 lightweight stress test*
+`;
+
+      // Save report
+      const reportPath = path.join(process.cwd(), 'LIGHT-STRESS-TEST-RESULTS.md');
+      fs.writeFileSync(reportPath, report);
+      console.log(`\n📋 Report saved to ${reportPath}`);
+
+      // Assertions
+      expect(allOrders.length).toBe(TOTAL_ACCOUNTS * ORDERS_PER_ACCOUNT);
+      expect(results.totalRequests).toBeGreaterThan(0);
+      expect(results.newNonceRequests).toBeGreaterThan(0);
+      expect(results.averageResponseTime).toBeLessThan(3000);
+      
+    } catch (error) {
+      console.error(`💥 Light stress test failed:`, error);
+      throw error;
+    }
+  }, 60000); // 1 minute timeout
+});
