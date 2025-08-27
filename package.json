@@ -20,6 +20,7 @@
   "files": [
     "dist",
     "README.md",
+    "TESTING.md", 
     "docs"
   ],
   "scripts": {

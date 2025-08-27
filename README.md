@@ -1074,6 +1074,8 @@ npm run test:stress:all   # Run all stress tests (takes ~15 minutes)
 
 **Note**: Stress tests are excluded from the default `npm test` command to keep CI/CD pipelines fast. They should be run manually or in dedicated test environments.
 
+📋 **Detailed testing guide**: [TESTING.md](./TESTING.md)
+
 ## 📄 License
 
 ISC License - see [LICENSE](./LICENSE) file for details.
