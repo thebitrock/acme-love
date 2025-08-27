@@ -9,6 +9,12 @@ export default {
     '**/?(*.)+(spec|test).ts'
   ],
 
+  // Don't exclude anything globally - let npm scripts handle filtering
+  testPathIgnorePatterns: [
+    'node_modules/',
+    'dist/'
+  ],
+
   // Transform configuration for ESM + TypeScript
   transform: {
     '^.+\\.ts$': ['ts-jest', {
@@ -37,7 +43,7 @@ export default {
   // Extensions to treat as ESM
   extensionsToTreatAsEsm: ['.ts'],
 
-  // Test timeout for E2E tests
+  // Test timeout for regular tests (stress tests have their own timeout)
   testTimeout: 60000,
 
   // Clear mocks between tests

@@ -1043,19 +1043,36 @@ ACME Love maintains comprehensive test coverage to ensure reliability and qualit
 - 🌐 **Integration Tests**: Real requests to Let's Encrypt staging
 - ⚡ **Async Behavior Tests**: Concurrent operations and memory leak prevention
 - 🔄 **E2E Tests**: Full workflow testing with staging environment
-- 🚀 **Stress Tests**: High-volume production scenario validation
+- 🚀 **Stress Tests**: High-volume production scenario validation (run separately)
 
 ```bash
-# Run all tests
+# Run standard test suite (fast, excludes stress tests)
 npm test
 
 # Run with coverage report
 npm run test:coverage
 
+# Run all tests including stress tests (takes several minutes)
+npm run test:all
+
 # Run specific test types
 npm run test:unit       # Unit tests only
 npm run test:e2e        # Integration tests with Let's Encrypt staging
+
+# Stress test commands (run individually, requires staging access)
+npm run test:quick      # Quick stress test (30s)
+npm run test:light      # Light stress test (30s) 
+npm run test:demo       # Demo stress test (30s)
+npm run test:stress     # Standard stress test (2 min)
+npm run test:heavy      # Heavy stress test (10 min)
+npm run test:deadlock   # Deadlock detection test (2 min)
+
+# Stress test groups
+npm run test:stress:fast  # Run quick + light + demo tests
+npm run test:stress:all   # Run all stress tests (takes ~15 minutes)
 ```
+
+**Note**: Stress tests are excluded from the default `npm test` command to keep CI/CD pipelines fast. They should be run manually or in dedicated test environments.
 
 ## 📄 License
 
