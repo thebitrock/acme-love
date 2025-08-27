@@ -15,107 +15,6 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 
 ## ✨ Key Features
 
-| Feature                     | Description                                                 |
-| --------------------------- | ----------------------------------------------------------- |
-| 🖥️ **Powerful CLI**         | Interactive & command-line modes with beautiful prompts     |
-| 🌐 **Multi-Environment**    | Staging, Production, and Custom ACME directories            |
-| 🔒 **Challenge Support**    | DNS-01 and HTTP-01 with automatic validation                |
-| 🔑 **Crypto Algorithms**    | ECDSA (P-256/P-384/P-521) and RSA (2048/3072/4096) support  |
-| 🛠️ **Smart Error Handling** | Maintenance detection, user-friendly error messages         |
-| ⚡ **Modern Architecture**  | ESM + TypeScript 5, WebCrypto, nonce pooling                |
-| 🏢 **Multiple CAs**         | Let's Encrypt, Buypass, Google, ZeroSSL presets             |
-| 🔧 **Developer Friendly**   | Multiple CLI access methods, auto-build, comprehensive docs |
-
-## 🚀 Quick Start
-
-### CLI Installation & Usage
-
-```bash
-# Global installation (recommended)
-npm install -g acme-love
-acme-love --help
-
-# Or use without installation
-npx acme-love interactive --staging
-```
-
-### 🎮 Interactive Mode (Easiest Way)
-
-```bash
-# Start interactive mode with environment selection
-acme-love interactive
-
-# Or with pre-selected environment
-acme-love interactive --staging    # For testing
-acme-love interactive --production # For real certificates
-```
-
-### 📋 Command Line Mode
-
-```bash
-# Get a staging certificate (recommended first)
-acme-love cert
-  --domain test.example.com
-  --email admin@example.com
-  --staging
-  --challenge dns-01
-
-# Get a production certificate with custom algorithms
-acme-love cert
-  --domain example.com
-  --email admin@example.com
-  --production
-  --challenge http-01
-  --account-algo ec-p256
-  --cert-algo rsa-4096
-
-# Create an account key with specific algorithm
-acme-love create-account-key
-  --algo ec-p384
-  --output ./my-account-key.json
-```
-
-### 🎯 Challenge Types
-
-**DNS-01 Challenge** (Recommended)
-
-```bash
-acme-love cert --challenge dns-01 --domain example.com --email user@example.com --staging
-```
-
-- ✅ Works with wildcard certificates (`*.example.com`)
-- ✅ No need for public web server
-- 🔧 Requires DNS provider access
-
-**HTTP-01 Challenge**
-
-```bash
-acme-love cert --challenge http-01 --domain example.com --email user@example.com --staging
-```
-
-- ✅ Simple validation via HTTP file
-- ✅ Automatic validation with built-in checker
-- 🔧 Requires domain to point to your web server
-
-```bash
-# Interactive algorithm selection
-acme-love interactive --staging
-
-# Command-line algorithm specification
-acme-love cert --account-algo ec-p384 --cert-algo rsa-4096 --domain example.com
-```
-
-For programmatic usage via the library, you can choose from multiple algorithms including different ECDSA curves (P-256, P-384, P-521) and RSA key sizes (2048, 3072, 4096 bits). See the [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms) section for details.erful CLI tool + TypeScript library for Let's Encrypt and other ACME Certificate Authorities
-
-[![NPM Version](https://img.shields.io/npm/v/acme-love.svg)](https://www.npmjs.com/package/acme-love)
-[![NPM License](https://img.shields.io/npm/l/acme-love.svg)](https://github.com/thebitrock/acme-love/blob/main/LICENSE)
-[![Tests](https://img.shields.io/badge/tests-42%20passing-brightgreen.svg)](https://github.com/thebitrock/acme-love)
-[![Coverage](https://img.shields.io/badge/coverage-94%25%20CSR%20%7C%2069%25%20NonceManager-green.svg)](https://github.com/thebitrock/acme-love)
-
-</div>
-
-## ✨ Key Features
-
 | Feature                      | Description                                                 |
 | ---------------------------- | ----------------------------------------------------------- |
 | 🖥️ **Powerful CLI**          | Interactive & command-line modes with beautiful prompts     |
@@ -911,24 +810,24 @@ ACME Love has been extensively tested under high-load scenarios to ensure produc
 
 Our comprehensive stress testing validates the library's capability to handle enterprise-scale certificate management:
 
-| Metric | Performance |
-|--------|------------|
-| **Heavy Load Test** | 4 accounts × 100 orders = 400 orders |
-| **Total Time** | 33 seconds |
-| **Success Rate** | 100% (0 errors) |
-| **Request Rate** | 25+ requests/second sustained |
-| **Order Throughput** | 12+ orders/second |
-| **Average Response** | <350ms per request |
-| **P99 Response Time** | <700ms |
-| **Nonce Pool Efficiency** | 98% (saves 95%+ network requests) |
+| Metric                    | Performance                          |
+| ------------------------- | ------------------------------------ |
+| **Heavy Load Test**       | 4 accounts × 100 orders = 400 orders |
+| **Total Time**            | 33 seconds                           |
+| **Success Rate**          | 100% (0 errors)                      |
+| **Request Rate**          | 25+ requests/second sustained        |
+| **Order Throughput**      | 12+ orders/second                    |
+| **Average Response**      | <350ms per request                   |
+| **P99 Response Time**     | <700ms                               |
+| **Nonce Pool Efficiency** | 98% (saves 95%+ network requests)    |
 
 ### Real-World Scenarios Tested
 
-✅ **4 concurrent ACME accounts** registration and management  
-✅ **400 certificate orders** (100 per account) processed efficiently  
-✅ **Zero rate limit violations** with automatic 503 detection and backoff  
-✅ **Production load simulation** with Let's Encrypt staging environment  
-✅ **98% nonce pool efficiency** saving 95%+ network requests  
+✅ **4 concurrent ACME accounts** registration and management
+✅ **400 certificate orders** (100 per account) processed efficiently
+✅ **Zero rate limit violations** with automatic 503 detection and backoff
+✅ **Production load simulation** with Let's Encrypt staging environment
+✅ **98% nonce pool efficiency** saving 95%+ network requests
 ✅ **Sub-second response times** with consistent performance
 
 ### Optimization Features
@@ -943,11 +842,11 @@ Our comprehensive stress testing validates the library's capability to handle en
 ```typescript
 // Optimized configuration for high-volume scenarios
 const core = new AcmeClientCore(directoryUrl, {
-  nonce: { 
-    maxPool: 64,        // Handle burst traffic
+  nonce: {
+    maxPool: 64, // Handle burst traffic
     prefetchLowWater: 8,
-    prefetchHighWater: 32
-  }
+    prefetchHighWater: 32,
+  },
 });
 
 // With rate limiting enabled by default
@@ -968,7 +867,7 @@ npm run test:metrics        # ~3 seconds, validates core performance
 # Quick stress test (1 account × 2 orders)
 npm run test:quick         # ~30 seconds, basic validation testing
 
-# Light stress test (2 accounts × 3 orders each)  
+# Light stress test (2 accounts × 3 orders each)
 npm run test:light         # ~30 seconds, basic load testing
 
 # Demo test (2 accounts × 5 orders each)
@@ -982,6 +881,7 @@ npm run test:heavy         # ~35 seconds, enterprise load testing
 ```
 
 **Test Results Summary** (Latest performance testing):
+
 - ⚡ **400 Orders Processed**: 33 seconds total time
 - 🌐 **HTTP Performance**: Sub-350ms average, <700ms P99 response time
 - 🔄 **Nonce Pool Efficiency**: 98% network request reduction
@@ -989,6 +889,7 @@ npm run test:heavy         # ~35 seconds, enterprise load testing
 - 🎯 **Production Ready**: 25+ req/s sustained, 12+ orders/sec throughput
 
 **Heavy Stress Test** (4 accounts × 100 orders = 400 orders):
+
 - 🎯 **Enterprise Scale**: Production-grade performance validation
 - 📊 **Advanced Metrics**: Fast sub-second response times
 - 🔍 **Rate Limiting**: Zero 503 errors with automatic backoff
@@ -996,6 +897,7 @@ npm run test:heavy         # ~35 seconds, enterprise load testing
 - 🚀 **Throughput**: 25+ req/s, 12+ orders/sec sustained performance
 
 **Performance Improvements** (vs. earlier versions):
+
 - 🔥 **10x Faster**: Tests now complete in 30-35 seconds vs 5-10 minutes
 - 🚀 **Better Efficiency**: 98% nonce pooling vs basic pooling
 - 🎯 **Zero Failures**: 100% success rate in enterprise load testing
@@ -1009,14 +911,16 @@ npm run test:heavy         # ~35 seconds, enterprise load testing
 
 **Previous Issue**: Deadlock detected in concurrent ACME account creation operations.
 
-**✅ Resolution**: 
+**✅ Resolution**:
+
 - Implemented comprehensive rate limiting system with HTTP 503 detection
-- Added exponential backoff with Retry-After header support  
+- Added exponential backoff with Retry-After header support
 - Optimized nonce pool management with 98% efficiency
 - Unified debug logging system with printf-style formatting
 - **Latest test results**: 4 accounts × 100 orders = 400 operations completed successfully in 33 seconds
 
-**Current Status**: 
+**Current Status**:
+
 - ✅ **100% success rate** in heavy stress testing
 - ✅ **Zero rate limit violations** with automatic backoff
 - ✅ **Production-ready** performance (25+ req/s sustained)
@@ -1061,7 +965,7 @@ npm run test:e2e        # Integration tests with Let's Encrypt staging
 
 # Stress test commands (run individually, requires staging access)
 npm run test:quick      # Quick stress test (30s)
-npm run test:light      # Light stress test (30s) 
+npm run test:light      # Light stress test (30s)
 npm run test:demo       # Demo stress test (30s)
 npm run test:stress     # Standard stress test (2 min)
 npm run test:heavy      # Heavy stress test (10 min)
