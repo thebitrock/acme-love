@@ -1,5 +1,7 @@
 import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
 import { NonceManager } from '../src/acme/client/nonce-manager.js';
+import { afterAll } from '@jest/globals';
+import { cleanupTestResources } from './test-utils.js';
 
 const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
 
@@ -112,4 +114,9 @@ describe('Simple Nonce Test', () => {
       throw error;
     }
   }, 60000);
+
+  afterAll(() => {
+    // Comprehensive cleanup
+    cleanupTestResources();
+  });
 });

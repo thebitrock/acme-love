@@ -411,8 +411,9 @@ export class NonceManager {
     })();
 
     // Add timeout wrapper around refill operation
+    let timeoutId: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<void>((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         debugNonce('Refill operation timed out: namespace=%s', namespace);
         // Reject all pending waiters on timeout
         const q = this.pending.get(namespace) ?? [];
@@ -425,9 +426,16 @@ export class NonceManager {
       }, refillTimeoutMs);
     });
 
-    const result = await Promise.race([refillPromise, timeoutPromise]);
-    debugNonce('Refill completed for namespace: %s', namespace);
-    return result;
+    try {
+      const result = await Promise.race([refillPromise, timeoutPromise]);
+      debugNonce('Refill completed for namespace: %s', namespace);
+      return result;
+    } finally {
+      // Always clear the timeout to prevent open handles
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
   }  /** Insert a nonce into the pool (deduplicated, size‑bounded). */
   private add(namespace: Namespace, value: string): void {
     const pool = this.pools.get(namespace) ?? [];
@@ -462,5 +470,27 @@ export class NonceManager {
   /** Current pool size (diagnostics / metrics). */
   public getPoolSize(namespace: Namespace): number {
     return (this.pools.get(namespace) ?? []).length;
+  }
+
+  /**
+   * Cleanup all resources and reject pending operations
+   * Useful for testing or graceful shutdown
+   */
+  public cleanup(): void {
+    debugNonce('Cleaning up NonceManager resources');
+    
+    // Reject all pending waiters
+    for (const [namespace, waiters] of this.pending.entries()) {
+      debugNonce('Rejecting %d pending waiters for namespace: %s', waiters.length, namespace);
+      for (const waiter of waiters) {
+        waiter.reject(new Error('NonceManager cleanup - operation cancelled'));
+      }
+    }
+    
+    // Clear all data structures
+    this.pending.clear();
+    this.pools.clear();
+    
+    debugNonce('NonceManager cleanup completed');
   }
 }

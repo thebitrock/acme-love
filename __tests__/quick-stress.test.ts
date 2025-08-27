@@ -1,10 +1,11 @@
-import { describe, test, expect, beforeAll } from '@jest/globals';
+import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
 import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
 import { generateKeyPair } from '../src/acme/csr.js';
 import type { CsrAlgo } from '../src/acme/csr.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { cleanupHttpTests } from './test-utils.js';
 
 // Endpoint tracking for quick stress test
 const endpointStats = new Map<string, number>();
@@ -363,4 +364,9 @@ ${Object.entries(results.requestsByType).map(([type, count]) =>
       throw error;
     }
   }, 45000); // 45 seconds timeout
+
+  afterAll(() => {
+    // Comprehensive cleanup
+    cleanupHttpTests(originalFetch);
+  });
 });
