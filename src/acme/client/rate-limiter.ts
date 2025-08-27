@@ -2,20 +2,20 @@
  * ACME Rate Limiter
  * -----------------
  * Handles Let's Encrypt rate limits to prevent hitting API limitations:
- * 
+ *
  * 1. Overall Requests Limit (per IP):
  *    - /acme/new-nonce: 20/sec, retry after 10 seconds
- *    - /acme/new-order: 300/sec, retry after 200 seconds  
+ *    - /acme/new-order: 300/sec, retry after 200 seconds
  *    - /acme/* (general): 250/sec, retry after 125 seconds
- * 
+ *
  * 2. Account Registration Limits:
  *    - New Registrations per IP: 10 per 3 hours
- * 
+ *
  * 3. Certificate Issuance Limits:
  *    - New Orders per Account: 300 per 3 hours
  *    - Authorization Failures: 5 per hour per identifier
  *    - Duplicate Certificate: 5 per exact set of identifiers per 7 days
- * 
+ *
  * Features:
  * - Automatic retry with exponential backoff
  * - Rate limit detection from 503 responses with Retry-After header
@@ -93,29 +93,29 @@ export class RateLimiter {
         }
 
         const result = await fn();
-        
+
         // Success - clear any rate limit window
         this.rateLimitWindows.delete(endpoint);
-        
+
         if (attempt > 1) {
           debugRateLimit('Rate limit retry succeeded for %s on attempt %d', endpoint, attempt);
         }
-        
+
         return result;
 
       } catch (error: any) {
         lastError = error;
-        
+
         // Check if this is a rate limit error (503 with Retry-After)
         const rateLimitInfo = this.parseRateLimitError(error, endpoint, attempt);
-        
+
         if (rateLimitInfo) {
-          debugRateLimit('Rate limit detected: %s, retryAfter=%d, attempt=%d/%d', 
+          debugRateLimit('Rate limit detected: %s, retryAfter=%d, attempt=%d/%d',
             endpoint, rateLimitInfo.retryAfter, attempt, this.maxRetries + 1);
-          
+
           // Store the rate limit window
           this.rateLimitWindows.set(endpoint, rateLimitInfo.retryAfter);
-          
+
           if (attempt <= this.maxRetries) {
             const delayMs = this.calculateRetryDelay(rateLimitInfo, attempt);
             debugRateLimit('Rate limited on %s, waiting %dms (attempt %d/%d)', endpoint, delayMs, attempt, this.maxRetries + 1);
@@ -144,14 +144,14 @@ export class RateLimiter {
     // Check for HTTP 503 status (Service Unavailable) in various places
     const status = error?.response?.status || error?.status;
     const headers = error?.response?.headers || error?.headers;
-    
+
     // Also check if it's our ServerInternalError with status 503 from fetch
-    const isHttp503 = status === 503 || 
-                      (error?.message && error.message.includes('HTTP 503'));
-    
+    const isHttp503 = status === 503 ||
+      (error?.message && error.message.includes('HTTP 503'));
+
     if (isHttp503) {
       const retryAfterHeader = headers?.['retry-after'];
-      
+
       if (retryAfterHeader) {
         const retryDelaySeconds = parseInt(retryAfterHeader, 10);
         if (!isNaN(retryDelaySeconds)) {
@@ -163,7 +163,7 @@ export class RateLimiter {
           };
         }
       }
-      
+
       // 503 without Retry-After header - use exponential backoff
       return {
         endpoint,
@@ -190,7 +190,7 @@ export class RateLimiter {
             };
           }
         }
-        
+
         // Generic rate limit error - use exponential backoff
         return {
           endpoint,
@@ -213,7 +213,7 @@ export class RateLimiter {
       const serverDelay = rateLimitInfo.retryDelaySeconds * 1000;
       return Math.min(serverDelay, this.maxDelayMs);
     }
-    
+
     // Fall back to exponential backoff
     return this.calculateExponentialDelay(attempt);
   }
@@ -257,7 +257,7 @@ export class RateLimiter {
   static getKnownEndpoints() {
     return {
       NEW_NONCE: '/acme/new-nonce',
-      NEW_ACCOUNT: '/acme/new-account', 
+      NEW_ACCOUNT: '/acme/new-account',
       NEW_ORDER: '/acme/new-order',
       REVOKE_CERT: '/acme/revoke-cert',
       RENEWAL_INFO: '/acme/renewal-info',
