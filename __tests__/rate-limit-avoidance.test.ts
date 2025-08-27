@@ -41,8 +41,7 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
         maxRetries: 5,
         baseDelayMs: 2000,      // 2 second base delay
         maxDelayMs: 300000,     // 5 minute max delay  
-        respectRetryAfter: true,
-        log: (msg) => console.log(`[RateLimit] ${msg}`)
+        respectRetryAfter: true
       });
 
       nonceManager = new NonceManager({
@@ -51,8 +50,7 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
         rateLimiter,
         prefetchLowWater: 2,    // Keep some nonces ready
         prefetchHighWater: 5,   // Don't over-fetch
-        maxPool: 10,
-        log: (msg) => console.log(`[NonceManager] ${msg}`)
+        maxPool: 10
       });
     });
 
@@ -193,8 +191,7 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
         rateLimiter: conservativeRateLimiter,
         prefetchLowWater: 1,    // Minimal prefetch
         prefetchHighWater: 3,   
-        maxPool: 5,
-        log: (msg) => console.log(`[Conservative] ${msg}`)
+        maxPool: 5
       });
 
       const namespace = NonceManager.makeNamespace('conservative-test');
@@ -222,8 +219,7 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
       // Show how to create domain-specific rate limiters
       const domainSpecificRateLimiter = new RateLimiter({
         maxRetries: 3,
-        baseDelayMs: 1000,
-        log: (msg) => console.log(`[Domain-Specific] ${msg}`)
+        baseDelayMs: 1000
       });
       
       // Simulate different scenarios
