@@ -12,7 +12,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
   const ORDERS_PER_ACCOUNT = 100;
   const TOTAL_ACCOUNTS = 4;
   const TOTAL_ORDERS = TOTAL_ACCOUNTS * ORDERS_PER_ACCOUNT;
-  
+
   // Advanced performance metrics
   interface RequestMetrics {
     type: string;
@@ -71,10 +71,10 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 
     endPhase() {
       if (!this.currentPhase) return;
-      
+
       const now = Date.now();
-      const phaseMetrics = this.metrics.filter(m => 
-        m.timestamp >= this.phaseStartTime - this.startTime && 
+      const phaseMetrics = this.metrics.filter(m =>
+        m.timestamp >= this.phaseStartTime - this.startTime &&
         m.timestamp <= now - this.startTime
       );
 
@@ -85,8 +85,8 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
         duration: now - this.phaseStartTime,
         requestCount: phaseMetrics.length,
         errorCount: phaseMetrics.filter(m => m.status >= 400).length,
-        averageResponseTime: phaseMetrics.length > 0 
-          ? phaseMetrics.reduce((sum, m) => sum + m.duration, 0) / phaseMetrics.length 
+        averageResponseTime: phaseMetrics.length > 0
+          ? phaseMetrics.reduce((sum, m) => sum + m.duration, 0) / phaseMetrics.length
           : 0
       });
 
@@ -116,26 +116,26 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 
     getResults() {
       this.endPhase(); // End current phase if any
-      
+
       const totalTime = Date.now() - this.startTime;
       const requestsByType: Record<string, number> = {};
       const requestsByEndpoint: Record<string, number> = {};
       const requestsByAccount: Record<number, number> = {};
-      
+
       let accountsCreated = 0;
       let ordersCreated = 0;
       let authorizationsCreated = 0;
 
       this.metrics.forEach(metric => {
         requestsByType[metric.type] = (requestsByType[metric.type] || 0) + 1;
-        
+
         const endpoint = this.extractEndpoint(metric.url);
         requestsByEndpoint[endpoint] = (requestsByEndpoint[endpoint] || 0) + 1;
-        
+
         if (metric.accountIndex !== undefined) {
           requestsByAccount[metric.accountIndex] = (requestsByAccount[metric.accountIndex] || 0) + 1;
         }
-        
+
         if (metric.url.includes('new-acct') && metric.method === 'POST') accountsCreated++;
         if (metric.url.includes('new-order') && metric.method === 'POST') ordersCreated++;
         if (metric.url.includes('authz-v3') && metric.method === 'POST') authorizationsCreated++;
@@ -147,8 +147,8 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       const p95 = responseTimes[Math.floor(responseTimes.length * 0.95)] || 0;
       const p99 = responseTimes[Math.floor(responseTimes.length * 0.99)] || 0;
 
-      const averageResponseTime = this.metrics.length > 0 
-        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length 
+      const averageResponseTime = this.metrics.length > 0
+        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
         : 0;
 
       const requestsPerSecond = this.metrics.length / (totalTime / 1000);
@@ -177,11 +177,11 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
     private extractEndpoint(url: string): string {
       try {
         const urlObj = new URL(url);
-        
+
         // For Let's Encrypt staging URLs, extract meaningful endpoint names
         if (urlObj.hostname === 'acme-staging-v02.api.letsencrypt.org') {
           const path = urlObj.pathname;
-          
+
           // Common ACME endpoints
           if (path.includes('/acme/new-nonce')) return 'new-nonce';
           if (path.includes('/acme/new-acct')) return 'new-account';
@@ -191,15 +191,15 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
           if (path.includes('/acme/finalize/')) return 'finalize';
           if (path.includes('/acme/cert/')) return 'certificate';
           if (path.includes('/directory')) return 'directory';
-          
+
           // Order status URLs (with order ID)
           if (path.includes('/acme/order/')) return 'order-status';
-          
+
           // Fallback to last path segment for other endpoints
           const pathParts = path.split('/');
           return pathParts[pathParts.length - 1] || 'unknown-acme';
         }
-        
+
         // For other URLs, use the last path segment
         const pathParts = urlObj.pathname.split('/');
         return pathParts[pathParts.length - 1] || 'directory';
@@ -321,7 +321,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
         const acct = new AcmeAccountSession(core, accountKeys);
 
         await acct.ensureRegistered({
-          contact: [`mailto:heavy-stress-${accountIndex}-${Date.now()}@gmail.com`],
+          contact: [`mailto:heavy-stress-${accountIndex}-${Date.now()}@acme-love.com`],
           termsOfServiceAgreed: true
         });
 
@@ -344,12 +344,12 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 
       for (let batchStart = 0; batchStart < TOTAL_ORDERS; batchStart += batchSize) {
         const batchPromises = [];
-        
+
         for (let i = 0; i < batchSize && batchStart + i < TOTAL_ORDERS; i++) {
           const globalOrderIndex = batchStart + i;
           const accountIndex = globalOrderIndex % TOTAL_ACCOUNTS;
           const orderIndex = Math.floor(globalOrderIndex / TOTAL_ACCOUNTS);
-          
+
           const { acct, metricsHttp } = accounts[accountIndex];
           metricsHttp.setOrderIndex(orderIndex);
 
@@ -360,18 +360,18 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
               const order = await acct.newOrder([domain]);
               const authz = await acct.fetch<any>(order.authorizations[0]);
               const httpChallenge = authz.challenges.find((c: any) => c.type === 'http-01');
-              
+
               if (httpChallenge) {
                 const keyAuth = await acct.keyAuthorization(httpChallenge.token);
                 completedOrders++;
-                
+
                 if (completedOrders % reportingInterval === 0) {
                   const progress = Math.round((completedOrders / TOTAL_ORDERS) * 100);
                   const elapsed = Date.now() - orderCreationStart;
                   const rate = completedOrders / (elapsed / 1000);
                   console.log(`     📊 ${completedOrders}/${TOTAL_ORDERS} orders (${progress}%) - ${Math.round(rate)} orders/sec`);
                 }
-                
+
                 return {
                   accountIndex,
                   orderIndex,
@@ -381,7 +381,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
                   keyAuth
                 };
               }
-              
+
               throw new Error('No HTTP-01 challenge found');
             } catch (error) {
               console.error(`     ❌ Failed order ${orderIndex + 1} for account ${accountIndex + 1}: ${error}`);
@@ -411,7 +411,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       // Phase 3: Nonce Pool Analysis
       collector.startPhase('Nonce Analysis');
       console.log(`📊 Analyzing nonce pool statistics...`);
-      
+
       const nonceStats: NoncePoolStats[] = [];
       let totalNoncesRemaining = 0;
 
@@ -420,7 +420,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
           const nonceManager = core.getDefaultNonce();
           const poolSize = (nonceManager as any).pool?.length || 0;
           totalNoncesRemaining += poolSize;
-          
+
           const stats: NoncePoolStats = {
             accountIndex,
             initialPool: 0, // Would need to track from beginning
@@ -429,7 +429,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
             totalGenerated: 0, // Would need enhanced tracking
             totalConsumed: 0   // Would need enhanced tracking
           };
-          
+
           nonceStats.push(stats);
           console.log(`   📊 Account ${accountIndex + 1} final nonce pool: ${poolSize}`);
         } catch (error) {
@@ -464,14 +464,14 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 
       console.log(`\n📈 REQUEST BREAKDOWN:`);
       Object.entries(results.requestsByType)
-        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .sort(([, a], [, b]) => (b as number) - (a as number))
         .forEach(([type, count]) => {
           console.log(`   ${type}: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`);
         });
 
       console.log(`\n🔗 TOP ENDPOINTS:`);
       Object.entries(results.requestsByEndpoint)
-        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .sort(([, a], [, b]) => (b as number) - (a as number))
         .slice(0, 10)
         .forEach(([endpoint, count]) => {
           console.log(`   ${endpoint}: ${count}`);
@@ -480,7 +480,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       console.log(`\n🏢 LET'S ENCRYPT STAGING API:`);
       Object.entries(results.requestsByEndpoint)
         .filter(([endpoint]) => ['new-nonce', 'new-account', 'new-order', 'authorization', 'challenge', 'finalize', 'certificate', 'directory', 'order-status'].includes(endpoint))
-        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .sort(([, a], [, b]) => (b as number) - (a as number))
         .forEach(([endpoint, count]) => {
           const percentage = Math.round(((count as number) / results.totalRequests) * 100);
           console.log(`   ${endpoint}: ${count} (${percentage}%)`);
@@ -531,31 +531,31 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 
 ## Request Distribution
 ${Object.entries(results.requestsByType)
-  .sort(([,a], [,b]) => (b as number) - (a as number))
-  .map(([type, count]) => `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`)
-  .join('\n')}
+          .sort(([, a], [, b]) => (b as number) - (a as number))
+          .map(([type, count]) => `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`)
+          .join('\n')}
 
 ## Top Endpoints
 ${Object.entries(results.requestsByEndpoint)
-  .sort(([,a], [,b]) => (b as number) - (a as number))
-  .slice(0, 10)
-  .map(([endpoint, count]) => `- **${endpoint}**: ${count} requests`)
-  .join('\n')}
+          .sort(([, a], [, b]) => (b as number) - (a as number))
+          .slice(0, 10)
+          .map(([endpoint, count]) => `- **${endpoint}**: ${count} requests`)
+          .join('\n')}
 
 ## Let's Encrypt Staging API Breakdown
 ${Object.entries(results.requestsByEndpoint)
-  .filter(([endpoint]) => ['new-nonce', 'new-account', 'new-order', 'authorization', 'challenge', 'finalize', 'certificate', 'directory', 'order-status'].includes(endpoint))
-  .sort(([,a], [,b]) => (b as number) - (a as number))
-  .map(([endpoint, count]) => {
-    const percentage = Math.round(((count as number) / results.totalRequests) * 100);
-    return `- **${endpoint}**: ${count} requests (${percentage}%)`;
-  })
-  .join('\n')}
+          .filter(([endpoint]) => ['new-nonce', 'new-account', 'new-order', 'authorization', 'challenge', 'finalize', 'certificate', 'directory', 'order-status'].includes(endpoint))
+          .sort(([, a], [, b]) => (b as number) - (a as number))
+          .map(([endpoint, count]) => {
+            const percentage = Math.round(((count as number) / results.totalRequests) * 100);
+            return `- **${endpoint}**: ${count} requests (${percentage}%)`;
+          })
+          .join('\n')}
 
 ## Per-Account Performance
 ${Object.entries(results.requestsByAccount)
-  .map(([accountIndex, count]) => `- **Account ${parseInt(accountIndex) + 1}**: ${count} requests`)
-  .join('\n')}
+          .map(([accountIndex, count]) => `- **Account ${parseInt(accountIndex) + 1}**: ${count} requests`)
+          .join('\n')}
 
 ## Nonce Manager Performance
 - **Total New-Nonce Requests**: ${results.newNonceRequests}
@@ -564,13 +564,13 @@ ${Object.entries(results.requestsByAccount)
 - **Final Pool State**: ${totalNoncesRemaining} nonces remaining
 
 ## Phase Breakdown
-${results.phases.map(phase => 
-  `### ${phase.phase}
+${results.phases.map(phase =>
+            `### ${phase.phase}
 - **Duration**: ${Math.round(phase.duration / 1000)}s
 - **Requests**: ${phase.requestCount}
 - **Errors**: ${phase.errorCount}
 - **Avg Response**: ${Math.round(phase.averageResponseTime)}ms`
-).join('\n\n')}
+          ).join('\n\n')}
 
 ## Key Performance Indicators
 ✅ Successfully processed ${completedOrders} orders out of ${TOTAL_ORDERS} (${Math.round((completedOrders / TOTAL_ORDERS) * 100)}% success rate)
@@ -580,7 +580,7 @@ ${results.phases.map(phase =>
 ✅ Error rate kept under ${Math.round((results.errorCount / results.totalRequests) * 100)}%
 
 ## Stress Test Validation
-This heavy stress test validates that ACME Love can handle enterprise-scale certificate 
+This heavy stress test validates that ACME Love can handle enterprise-scale certificate
 management with hundreds of concurrent orders while maintaining performance and reliability.
 
 *Generated by ACME Love v1.2.1 heavy stress test*
@@ -598,7 +598,7 @@ management with hundreds of concurrent orders while maintaining performance and 
       expect(results.averageResponseTime).toBeLessThan(5000); // Under 5 seconds average
       expect(results.errorCount / results.totalRequests).toBeLessThan(0.1); // Under 10% error rate
       expect(results.requestsPerSecond).toBeGreaterThan(1); // At least 1 request per second
-      
+
     } catch (error) {
       console.error(`💥 Heavy stress test failed:`, error);
       throw error;

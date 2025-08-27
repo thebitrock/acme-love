@@ -63,13 +63,13 @@ export class TestAccountManager {
     }
 
     console.log(`🔧 Creating new test account keys: ${id}`);
-    
+
     // Generate new key pair
     const keyPair = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' });
     const privateKeyPem = await exportPKCS8(keyPair.privateKey!);
     const publicKeyPem = await exportSPKI(keyPair.publicKey);
 
-    const accountEmail = email || `stress-test-${id}-${Date.now()}@gmail.com`;
+    const accountEmail = email || `stress-test-${id}-${Date.now()}@acme-love.com`;
 
     const account: TestAccount = {
       id,
@@ -83,7 +83,7 @@ export class TestAccountManager {
 
     await this.saveAccount(account);
     console.log(`✅ Created and saved test account keys: ${id} (${accountEmail})`);
-    
+
     return {
       privateKey: keyPair.privateKey!,
       publicKey: keyPair.publicKey
@@ -141,7 +141,7 @@ export class TestAccountManager {
 
   /** Create or load a complete ACME account with registration */
   async getOrCreateAccountSession(
-    id: string, 
+    id: string,
     directoryUrl: string,
     email?: string,
     options?: any
@@ -159,7 +159,7 @@ export class TestAccountManager {
       kid = existing.kid;
     } else {
       console.log(`🔧 Creating new test account: ${id}`);
-      
+
       // Generate new key pair
       const keyPair = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' });
       const privateKeyPem = await exportPKCS8(keyPair.privateKey!);
@@ -170,7 +170,7 @@ export class TestAccountManager {
         publicKey: keyPair.publicKey
       };
 
-      const accountEmail = email || `stress-test-${id}-${Date.now()}@gmail.com`;
+      const accountEmail = email || `stress-test-${id}-${Date.now()}@acme-love.com`;
 
       // Save basic account info (without kid yet)
       const account: TestAccount = {
@@ -194,7 +194,7 @@ export class TestAccountManager {
     // Ensure account is registered and get/save kid
     try {
       const registrationKid = await session.ensureRegistered({
-        contact: [`mailto:${existing?.email || `stress-test-${id}-${Date.now()}@gmail.com`}`],
+        contact: [`mailto:${existing?.email || `stress-test-${id}-${Date.now()}@acme-love.com`}`],
         termsOfServiceAgreed: true
       });
 
@@ -203,7 +203,7 @@ export class TestAccountManager {
         const updatedAccount: TestAccount = {
           ...(existing || {
             id,
-            email: `stress-test-${id}-${Date.now()}@gmail.com`,
+            email: `stress-test-${id}-${Date.now()}@acme-love.com`,
             keyPair: {
               privateKeyPem: await exportPKCS8(accountKeys.privateKey as any),
               publicKeyPem: await exportSPKI(accountKeys.publicKey as any),

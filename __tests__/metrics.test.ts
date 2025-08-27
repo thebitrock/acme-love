@@ -10,7 +10,7 @@ import * as path from 'path';
 describe('ACME Metrics Test - Account Operations Only', () => {
   const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
   const TOTAL_ACCOUNTS = 1;
-  
+
   // Performance metrics collection
   interface RequestMetrics {
     type: string;
@@ -51,22 +51,22 @@ describe('ACME Metrics Test - Account Operations Only', () => {
       const totalTime = Date.now() - this.startTime;
       const requestsByType: Record<string, number> = {};
       const requestsByEndpoint: Record<string, number> = {};
-      
+
       let accountsCreated = 0;
       let directoryRequests = 0;
 
       this.metrics.forEach(metric => {
         requestsByType[metric.type] = (requestsByType[metric.type] || 0) + 1;
-        
+
         const endpoint = this.extractEndpoint(metric.url);
         requestsByEndpoint[endpoint] = (requestsByEndpoint[endpoint] || 0) + 1;
-        
+
         if (metric.url.includes('new-acct') && metric.method === 'POST') accountsCreated++;
         if (metric.url.includes('directory') && metric.method === 'GET') directoryRequests++;
       });
 
-      const averageResponseTime = this.metrics.length > 0 
-        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length 
+      const averageResponseTime = this.metrics.length > 0
+        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
         : 0;
 
       return {
@@ -185,7 +185,7 @@ describe('ACME Metrics Test - Account Operations Only', () => {
         const acct = new AcmeAccountSession(core, accountKeys);
 
         await acct.ensureRegistered({
-          contact: [`mailto:metrics-test-${accountIndex}-${Date.now()}@gmail.com`],
+          contact: [`mailto:metrics-test-${accountIndex}-${Date.now()}@acme-love.com`],
           termsOfServiceAgreed: true
         });
 
@@ -200,7 +200,7 @@ describe('ACME Metrics Test - Account Operations Only', () => {
       // Collect additional metrics from nonce managers
       let totalNoncesRemaining = 0;
       const nonceStats: Array<{ accountIndex: number; noncesRemaining: number }> = [];
-      
+
       accounts.forEach(({ accountIndex, core }) => {
         try {
           const nonceManager = core.getDefaultNonce();
@@ -219,12 +219,12 @@ describe('ACME Metrics Test - Account Operations Only', () => {
       const core = new AcmeClientCore(STAGING_DIRECTORY_URL);
       const metricsHttp = new MetricsHttpClient(collector, core.getHttp());
       (core as any).http = metricsHttp;
-      
+
       // Fetch directory multiple times to test caching
       await core.getDirectory();
       await core.getDirectory();
       await core.getDirectory();
-      
+
       const directoryTestTime = Date.now() - directoryTestStart;
       console.log(`   📖 Directory fetching test completed in ${directoryTestTime}ms`);
 
@@ -252,7 +252,7 @@ describe('ACME Metrics Test - Account Operations Only', () => {
 
       console.log(`\n🔗 ENDPOINT BREAKDOWN:`);
       Object.entries(results.requestsByEndpoint)
-        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .sort(([, a], [, b]) => (b as number) - (a as number))
         .forEach(([endpoint, count]) => {
           console.log(`   ${endpoint}: ${count}`);
         });
@@ -282,15 +282,15 @@ describe('ACME Metrics Test - Account Operations Only', () => {
 - **Throughput**: ${Math.round(results.totalRequests / (totalTime / 1000))} req/s
 
 ## HTTP Request Analysis
-${Object.entries(results.requestsByType).map(([type, count]) => 
-  `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`
-).join('\n')}
+${Object.entries(results.requestsByType).map(([type, count]) =>
+        `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`
+      ).join('\n')}
 
 ## Endpoint Performance
 ${Object.entries(results.requestsByEndpoint)
-  .sort(([,a], [,b]) => (b as number) - (a as number))
-  .map(([endpoint, count]) => `- **${endpoint}**: ${count} requests`)
-  .join('\n')}
+          .sort(([, a], [, b]) => (b as number) - (a as number))
+          .map(([endpoint, count]) => `- **${endpoint}**: ${count} requests`)
+          .join('\n')}
 
 ## Nonce Manager Performance
 - **Total New-Nonce Requests**: ${results.newNonceRequests}
@@ -313,14 +313,14 @@ ${nonceStats.map(stat => `- **Account ${stat.accountIndex + 1}**: ${stat.noncesR
 ✅ Overall throughput: ${Math.round(results.totalRequests / (totalTime / 1000))} requests/second
 
 ## Detailed Request Log
-${results.allRequestDetails.slice(0, 10).map(req => 
-  `${req.timestamp}ms: ${req.method} ${req.type} (${req.duration}ms, status ${req.status})`
-).join('\n')}
+${results.allRequestDetails.slice(0, 10).map(req =>
+            `${req.timestamp}ms: ${req.method} ${req.type} (${req.duration}ms, status ${req.status})`
+          ).join('\n')}
 ${results.allRequestDetails.length > 10 ? `... and ${results.allRequestDetails.length - 10} more requests` : ''}
 
 ## Conclusion
-The ACME Love library demonstrated excellent performance characteristics with efficient nonce pooling, 
-fast account creation, and optimized HTTP request patterns. The NonceManager successfully reduced 
+The ACME Love library demonstrated excellent performance characteristics with efficient nonce pooling,
+fast account creation, and optimized HTTP request patterns. The NonceManager successfully reduced
 network overhead by ${results.totalRequests - results.newNonceRequests} requests through intelligent pooling.
 
 *Generated by ACME Love v1.2.1 metrics test*
@@ -337,7 +337,7 @@ network overhead by ${results.totalRequests - results.newNonceRequests} requests
       expect(results.newNonceRequests).toBeGreaterThan(0);
       expect(results.averageResponseTime).toBeLessThan(4000);
       expect(results.accountsCreated).toBe(TOTAL_ACCOUNTS);
-      
+
     } catch (error) {
       console.error(`💥 Metrics test failed:`, error);
       throw error;

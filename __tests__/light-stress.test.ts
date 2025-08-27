@@ -12,7 +12,7 @@ function extractEndpoint(url: string): string {
   try {
     const parsedUrl = new URL(url);
     const path = parsedUrl.pathname;
-    
+
     // Let's Encrypt specific endpoints
     if (path.includes('/acme/new-nonce')) return 'Let\'s Encrypt: new-nonce';
     if (path.includes('/acme/new-acct')) return 'Let\'s Encrypt: new-account';
@@ -22,7 +22,7 @@ function extractEndpoint(url: string): string {
     if (path.includes('/acme/chall/')) return 'Let\'s Encrypt: challenge';
     if (path.includes('/acme/cert/')) return 'Let\'s Encrypt: certificate';
     if (path.includes('/directory')) return 'Let\'s Encrypt: directory';
-    
+
     // Fallback to generic path
     return `Generic: ${path}`;
   } catch (error) {
@@ -48,7 +48,7 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
   const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
   const ORDERS_PER_ACCOUNT = 3;
   const TOTAL_ACCOUNTS = 2;
-  
+
   // Performance metrics collection
   interface RequestMetrics {
     type: string;
@@ -91,22 +91,22 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
       const totalTime = Date.now() - this.startTime;
       const requestsByType: Record<string, number> = {};
       const requestsByEndpoint: Record<string, number> = {};
-      
+
       let accountsCreated = 0;
       let ordersCreated = 0;
 
       this.metrics.forEach(metric => {
         requestsByType[metric.type] = (requestsByType[metric.type] || 0) + 1;
-        
+
         const endpoint = this.extractEndpoint(metric.url);
         requestsByEndpoint[endpoint] = (requestsByEndpoint[endpoint] || 0) + 1;
-        
+
         if (metric.url.includes('new-acct') && metric.method === 'POST') accountsCreated++;
         if (metric.url.includes('new-order') && metric.method === 'POST') ordersCreated++;
       });
 
-      const averageResponseTime = this.metrics.length > 0 
-        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length 
+      const averageResponseTime = this.metrics.length > 0
+        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
         : 0;
 
       return {
@@ -234,7 +234,7 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
         const acct = new AcmeAccountSession(core, accountKeys);
 
         await acct.ensureRegistered({
-          contact: [`mailto:light-test-${accountIndex}-${Date.now()}@gmail.com`],
+          contact: [`mailto:light-test-${accountIndex}-${Date.now()}@acme-love.com`],
           termsOfServiceAgreed: true
         });
 
@@ -259,11 +259,11 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
             const order = await acct.newOrder([domain]);
             const authz = await acct.fetch<any>(order.authorizations[0]);
             const httpChallenge = authz.challenges.find((c: any) => c.type === 'http-01');
-            
+
             if (httpChallenge) {
               const keyAuth = await acct.keyAuthorization(httpChallenge.token);
               console.log(`     📊 Account ${accountIndex + 1}, Order ${orderIndex + 1}: ${domain}`);
-              
+
               return {
                 accountIndex,
                 orderIndex,
@@ -273,7 +273,7 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
                 keyAuth
               };
             }
-            
+
             throw new Error('No HTTP-01 challenge found');
           } catch (error) {
             console.error(`     ❌ Failed order ${orderIndex + 1} for account ${accountIndex + 1}: ${error}`);
@@ -375,9 +375,9 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
 - **Pool Efficiency**: ${results.newNonceRequests > 0 ? Math.round(((results.totalRequests - results.newNonceRequests) / results.totalRequests) * 100) : 0}%
 
 ## Request Distribution
-${Object.entries(results.requestsByType).map(([type, count]) => 
-  `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`
-).join('\n')}
+${Object.entries(results.requestsByType).map(([type, count]) =>
+        `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`
+      ).join('\n')}
 
 ## Conclusion
 ✅ Successfully processed ${allOrders.length} orders across ${TOTAL_ACCOUNTS} accounts
@@ -398,7 +398,7 @@ ${Object.entries(results.requestsByType).map(([type, count]) =>
       expect(results.totalRequests).toBeGreaterThan(0);
       expect(results.newNonceRequests).toBeGreaterThan(0);
       expect(results.averageResponseTime).toBeLessThan(3000);
-      
+
     } catch (error) {
       console.error(`💥 Light stress test failed:`, error);
       throw error;

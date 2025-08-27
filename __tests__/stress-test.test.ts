@@ -13,7 +13,7 @@ function extractEndpoint(url: string): string {
   try {
     const parsedUrl = new URL(url);
     const path = parsedUrl.pathname;
-    
+
     // Let's Encrypt specific endpoints
     if (path.includes('/acme/new-nonce')) return 'Let\'s Encrypt: new-nonce';
     if (path.includes('/acme/new-acct')) return 'Let\'s Encrypt: new-account';
@@ -23,7 +23,7 @@ function extractEndpoint(url: string): string {
     if (path.includes('/acme/chall/')) return 'Let\'s Encrypt: challenge';
     if (path.includes('/acme/cert/')) return 'Let\'s Encrypt: certificate';
     if (path.includes('/directory')) return 'Let\'s Encrypt: directory';
-    
+
     // Fallback to generic path
     return `Generic: ${path}`;
   } catch (error) {
@@ -322,7 +322,7 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
 
         // Register account
         await acct.ensureRegistered({
-          contact: [`mailto:stress-test-${accountIndex}-${Date.now()}@gmail.com`],
+          contact: [`mailto:stress-test-${accountIndex}-${Date.now()}@acme-love.com`],
           termsOfServiceAgreed: true
         });
 
@@ -414,12 +414,12 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
           const nonceManager = core.getDefaultNonce();
           // Try to access private fields through type assertion for metrics
           const nonceStats = (nonceManager as any);
-          
+
           console.log(`   Account ${accountIndex + 1} nonce stats:`, {
             poolSize: nonceStats.pool?.length || 0,
             // Add more stats if available
           });
-          
+
           totalNoncesRemaining += nonceStats.pool?.length || 0;
         } catch (error) {
           console.log(`   ⚠️  Could not get nonce stats for account ${accountIndex + 1}`);

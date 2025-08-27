@@ -11,7 +11,7 @@ function extractEndpoint(url: string): string {
   try {
     const parsedUrl = new URL(url);
     const path = parsedUrl.pathname;
-    
+
     // Let's Encrypt specific endpoints
     if (path.includes('/acme/new-nonce')) return 'Let\'s Encrypt: new-nonce';
     if (path.includes('/acme/new-acct')) return 'Let\'s Encrypt: new-account';
@@ -21,7 +21,7 @@ function extractEndpoint(url: string): string {
     if (path.includes('/acme/chall/')) return 'Let\'s Encrypt: challenge';
     if (path.includes('/acme/cert/')) return 'Let\'s Encrypt: certificate';
     if (path.includes('/directory')) return 'Let\'s Encrypt: directory';
-    
+
     // Fallback to generic path
     return `Generic: ${path}`;
   } catch (error) {
@@ -47,7 +47,7 @@ describe('ACME Mini Stress Test - Demo', () => {
   const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
   const ORDERS_PER_ACCOUNT = 5;
   const TOTAL_ACCOUNTS = 2;
-  
+
   beforeAll(async () => {
     // Skip in CI unless explicitly enabled
     if (process.env.CI && !process.env.ACME_DEMO_STRESS_ENABLED) {
@@ -92,7 +92,7 @@ describe('ACME Mini Stress Test - Demo', () => {
         const acct = new AcmeAccountSession(core, accountKeys);
 
         await acct.ensureRegistered({
-          contact: [`mailto:demo-stress-test-${accountIndex}-${Date.now()}@gmail.com`],
+          contact: [`mailto:demo-stress-test-${accountIndex}-${Date.now()}@acme-love.com`],
           termsOfServiceAgreed: true
         });
 
@@ -117,7 +117,7 @@ describe('ACME Mini Stress Test - Demo', () => {
             const order = await acct.newOrder([domain]);
             const authz = await acct.fetch<any>(order.authorizations[0]);
             const httpChallenge = authz.challenges.find((c: any) => c.type === 'http-01');
-            
+
             if (httpChallenge) {
               const keyAuth = await acct.keyAuthorization(httpChallenge.token);
               console.log(`     📊 Account ${accountIndex + 1}, Order ${orderIndex + 1}: ${domain} (HTTP-01)`);
@@ -130,7 +130,7 @@ describe('ACME Mini Stress Test - Demo', () => {
                 keyAuth
               };
             }
-            
+
             throw new Error('No HTTP-01 challenge found');
           } catch (error) {
             console.error(`     ❌ Failed order ${orderIndex + 1} for account ${accountIndex + 1}: ${error}`);
@@ -180,7 +180,7 @@ describe('ACME Mini Stress Test - Demo', () => {
       // Assertions
       expect(allOrders.length).toBe(TOTAL_ACCOUNTS * ORDERS_PER_ACCOUNT);
       expect(totalTime).toBeLessThan(60000); // Less than 1 minute
-      
+
     } catch (error) {
       console.error(`💥 Demo failed:`, error);
       throw error;
