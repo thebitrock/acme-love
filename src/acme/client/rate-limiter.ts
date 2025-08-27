@@ -34,8 +34,6 @@ export interface RateLimiterOptions {
   maxDelayMs?: number;
   /** Whether to respect Retry-After header from 503 responses (default: true) */
   respectRetryAfter?: boolean;
-  /** Custom logger function */
-  log?: (msg: string, ...args: unknown[]) => void;
 }
 
 export interface RateLimitInfo {
@@ -64,7 +62,6 @@ export class RateLimiter {
   private readonly baseDelayMs: number;
   private readonly maxDelayMs: number;
   private readonly respectRetryAfter: boolean;
-  private readonly log: (msg: string, ...args: unknown[]) => void;
 
   // Track rate limit windows per endpoint
   private rateLimitWindows = new Map<string, number>();
@@ -74,7 +71,6 @@ export class RateLimiter {
     this.baseDelayMs = options.baseDelayMs ?? 1000;
     this.maxDelayMs = options.maxDelayMs ?? 300_000; // 5 minutes
     this.respectRetryAfter = options.respectRetryAfter ?? true;
-    this.log = options.log ?? (() => {});
   }
 
   /**
@@ -102,7 +98,7 @@ export class RateLimiter {
         this.rateLimitWindows.delete(endpoint);
         
         if (attempt > 1) {
-          this.log(`Rate limit retry succeeded for ${endpoint} on attempt ${attempt}`);
+          debugRateLimit('Rate limit retry succeeded for %s on attempt %d', endpoint, attempt);
         }
         
         return result;
@@ -122,7 +118,7 @@ export class RateLimiter {
           
           if (attempt <= this.maxRetries) {
             const delayMs = this.calculateRetryDelay(rateLimitInfo, attempt);
-            this.log(`Rate limited on ${endpoint}, waiting ${delayMs}ms (attempt ${attempt}/${this.maxRetries + 1})`);
+            debugRateLimit('Rate limited on %s, waiting %dms (attempt %d/%d)', endpoint, delayMs, attempt, this.maxRetries + 1);
             await this.delay(delayMs);
             continue;
           } else {
