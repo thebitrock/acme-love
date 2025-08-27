@@ -1,18 +1,18 @@
 # 🚀 ACME Love - Metrics Test Results
 
 ## Test Configuration
-- **Date**: 2025-08-27T23:04:44.143Z
+- **Date**: 2025-08-27T23:28:26.321Z
 - **Test Type**: Account Operations Metrics
 - **Accounts Created**: 1
 - **Target**: Let's Encrypt Staging
 - **Algorithm**: EC P-256
 
 ## Performance Summary
-- **Total Time**: 2s (2034ms)
-- **Account Creation**: 1445ms (1445ms avg per account)
-- **Directory Test**: 589ms
+- **Total Time**: 2s (2162ms)
+- **Account Creation**: 1553ms (1553ms avg per account)
+- **Directory Test**: 608ms
 - **Total Requests**: 4
-- **Average Response Time**: 507ms
+- **Average Response Time**: 539ms
 - **Throughput**: 2 req/s
 
 ## HTTP Request Analysis
@@ -35,21 +35,21 @@
 - **Account 1**: 0 nonces remaining
 
 ## Request Timeline Analysis
-- **Account Creation Phase**: 1445ms for 1 accounts
-- **Directory Caching Test**: 589ms for 3 directory fetches
-- **Average Account Setup**: 1445ms per account
+- **Account Creation Phase**: 1553ms for 1 accounts
+- **Directory Caching Test**: 608ms for 3 directory fetches
+- **Average Account Setup**: 1553ms per account
 
 ## Key Performance Indicators
 ✅ Account creation rate: 1 accounts/second
-✅ HTTP response time: 507ms average
+✅ HTTP response time: 539ms average
 ✅ Nonce pooling efficiency: 75% reduction in network calls
 ✅ Overall throughput: 2 requests/second
 
 ## Detailed Request Log
-626ms: GET GET (622ms, status 200)
+627ms: GET GET (624ms, status 200)
 830ms: HEAD HEAD (202ms, status 200)
-1445ms: POST POST (613ms, status 201)
-2034ms: GET GET (589ms, status 200)
+1553ms: POST POST (721ms, status 201)
+2161ms: GET GET (608ms, status 200)
 
 
 ## Conclusion
