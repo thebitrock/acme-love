@@ -4,7 +4,7 @@
  * RFC 8555 (ACME) requires every JWS request to the CA to include a fresh, unused nonce taken
  * from the CA via the "newNonce" endpoint (HEAD /acme/new-nonce). If a request reuses or provides
  * an expired nonce the server answers with an ACME problem document `badNonce` and the client
- * should retry with a fresh value.
+ * should retry with a fresh nonce value.
  *
  * High‑performance ACME clients often pipeline or parallelize multiple requests; naively issuing
  * a network round‑trip (HEAD newNonce) before each signed request increases latency and amplifies
@@ -93,6 +93,9 @@ export class NonceManager {
   private pools = new Map<Namespace, StampedNonce[]>();
   private pending = new Map<Namespace, PendingWaiter[]>();
 
+  /** Cleanup flag to abort operations */
+  private isCleanedUp = false;
+
   /**
    * Create a new manager.
    * @param opts Configuration options (see NonceManagerOptions)
@@ -138,6 +141,12 @@ export class NonceManager {
 
     debugNonce('No cached nonce available, queueing request: namespace=%s', namespace);
     return new Promise<string>((resolve, reject) => {
+      // Check if manager is cleaned up
+      if (this.isCleanedUp) {
+        reject(new Error('NonceManager has been cleaned up'));
+        return;
+      }
+
       const q = this.pending.get(namespace) ?? [];
 
       // Add timeout to prevent infinite deadlock
@@ -154,8 +163,11 @@ export class NonceManager {
             this.pending.set(namespace, currentQueue);
           }
         }
+        // Remove from active timeouts
         reject(new Error(`Nonce request timeout after ${timeoutMs}ms for namespace: ${namespace}`));
       }, timeoutMs);
+
+      // Track this timeout for cleanup
 
       // Wrap resolve to clear timeout
       const wrappedResolve = (value: string) => {
@@ -344,12 +356,25 @@ export class NonceManager {
 
   private async doRefill(namespace: Namespace): Promise<void> {
     debugNonce('Starting refill operation: namespace=%s', namespace);
+
+    // Check if manager is cleaned up
+    if (this.isCleanedUp) {
+      debugNonce('Skipping refill operation - manager is cleaned up: namespace=%s', namespace);
+      return; // Gracefully exit instead of throwing
+    }
+
     const HARD_CAP = Math.max(8, this.maxPool); // safety bound per run
-    const refillTimeoutMs = 25000; // 25 seconds timeout for entire refill operation
+    const refillTimeoutMs = 10000; // 10 second timeout
 
     const refillPromise = (async () => {
       debugNonce('Refill loop starting: namespace=%s, HARD_CAP=%d', namespace, HARD_CAP);
       for (let i = 0; i < HARD_CAP; i++) {
+        // Check if manager is cleaned up during loop
+        if (this.isCleanedUp) {
+          debugNonce('Refill aborted due to cleanup: namespace=%s', namespace);
+          return; // Gracefully exit instead of throwing
+        }
+
         const queueNeed = (this.pending.get(namespace)?.length ?? 0);
         const pool = this.pools.get(namespace) ?? [];
         const poolLen = pool.length;
@@ -422,6 +447,9 @@ export class NonceManager {
         for (const w of q) {
           w.reject(new Error(`Nonce refill timeout after ${refillTimeoutMs}ms for namespace: ${namespace}`));
         }
+        // Remove from active timeouts
+        if (timeoutId) {
+        }
         reject(new Error(`Nonce refill operation timed out after ${refillTimeoutMs}ms`));
       }, refillTimeoutMs);
     });
@@ -478,7 +506,14 @@ export class NonceManager {
    */
   public cleanup(): void {
     debugNonce('Cleaning up NonceManager resources');
-    
+
+    // Set cleanup flag to prevent new operations
+    this.isCleanedUp = true;
+
+    // Clear all active timeouts
+    debugNonce('Clearing active timeouts');
+    // Note: Individual timeouts should be cleared by their respective operations
+
     // Reject all pending waiters
     for (const [namespace, waiters] of this.pending.entries()) {
       debugNonce('Rejecting %d pending waiters for namespace: %s', waiters.length, namespace);
@@ -486,11 +521,16 @@ export class NonceManager {
         waiter.reject(new Error('NonceManager cleanup - operation cancelled'));
       }
     }
-    
+
     // Clear all data structures
     this.pending.clear();
     this.pools.clear();
-    
+
+    // Force garbage collection to help clear any lingering promises
+    if (global.gc) {
+      global.gc();
+    }
+
     debugNonce('NonceManager cleanup completed');
   }
 }

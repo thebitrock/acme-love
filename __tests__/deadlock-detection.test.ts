@@ -1,9 +1,10 @@
-import { describe, test, expect, beforeAll } from '@jest/globals';
+import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
 import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
 import { NonceManager } from '../src/acme/client/nonce-manager.js';
 import { generateKeyPair } from '../src/acme/csr.js';
 import type { CsrAlgo } from '../src/acme/csr.js';
+import { cleanupTestResources } from './test-utils.js';
 
 // Deadlock detection test
 describe('ACME Deadlock Detection Test', () => {
@@ -36,6 +37,8 @@ describe('ACME Deadlock Detection Test', () => {
         clearInterval(this.checkInterval);
         this.checkInterval = null;
       }
+      // Clear operations to free memory
+      this.operations.clear();
     }
 
     trackOperation(operationId: string, operation: string, accountIndex?: number): void {
@@ -184,11 +187,42 @@ describe('ACME Deadlock Detection Test', () => {
   }
 
   let detector: DeadlockDetector;
+  let testResources: { core: AcmeClientCore, nonceManager: NonceManager }[] = [];
 
   beforeAll(async () => {
     detector = new DeadlockDetector();
+    testResources = [];
     console.log(`🔍 Starting ACME Deadlock Detection Test`);
     console.log(`   This test will create concurrent operations and monitor for deadlocks`);
+  });
+
+  afterAll(async () => {
+    console.log(`🧹 Cleaning up deadlock detection test resources...`);
+    
+    // Stop the detector and clear any intervals
+    if (detector) {
+      detector.stop();
+    }
+    
+    // Cleanup all NonceManagers
+    for (const resource of testResources) {
+      try {
+        if (resource.nonceManager && typeof resource.nonceManager.cleanup === 'function') {
+          resource.nonceManager.cleanup();
+        }
+      } catch (error) {
+        console.warn(`Warning: Could not cleanup nonce manager:`, error);
+      }
+    }
+    testResources = [];
+    
+    // Clean up any remaining test resources
+    await cleanupTestResources();
+    
+    // Give some time for cleanup to complete
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    console.log(`✅ Deadlock detection test cleanup complete`);
   });
 
   test('should detect deadlocks in concurrent ACME operations', async () => {
@@ -214,13 +248,22 @@ describe('ACME Deadlock Detection Test', () => {
           };
 
           const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
-            nonce: { maxPool: 5 } // Smaller pool to increase contention
+            nonce: { 
+              maxPool: 3 // Smaller pool to increase contention but reduce timeout issues
+            }
           });
+
+          // Initialize directory first (required for NonceManager)
+          await core.getDirectory();
 
           // Add deadlock tracking
           const originalHttp = core.getHttp();
           const trackingHttp = new DeadlockTrackingHttpClient(detector, originalHttp, accountIndex);
           (core as any).http = trackingHttp;
+
+          // Track resources for cleanup
+          const nonceManager = core.getDefaultNonce();
+          testResources.push({ core, nonceManager });
 
           const acct = new AcmeAccountSession(core, accountKeys);
 
@@ -362,7 +405,6 @@ describe('ACME Deadlock Detection Test', () => {
       expect(stats.longestDuration).toBeLessThan(30000); // No operation over 30 seconds
 
     } catch (error) {
-      detector.stop();
       console.error(`💥 Deadlock detection test failed:`, error);
       
       const stats = detector.getStats();
@@ -372,6 +414,9 @@ describe('ACME Deadlock Detection Test', () => {
       }
       
       throw error;
+    } finally {
+      // Ensure detector is always stopped
+      detector.stop();
     }
   }, 120000); // 2 minutes timeout
 
@@ -384,11 +429,15 @@ describe('ACME Deadlock Detection Test', () => {
         nonce: { maxPool: 2 } // Very small pool to force contention
       });
 
-      // Initialize directory first
+      // Initialize directory first (required for NonceManager)
       const initOpId = 'init-directory';
       detector.trackOperation(initOpId, 'Directory Initialization');
       await core.getDirectory();
       detector.completeOperation(initOpId, 'completed');
+
+      // Track resources for cleanup
+      const nonceManager = core.getDefaultNonce();
+      testResources.push({ core, nonceManager });
 
       const trackingHttp = new DeadlockTrackingHttpClient(detector, core.getHttp());
       (core as any).http = trackingHttp;
@@ -429,8 +478,10 @@ describe('ACME Deadlock Detection Test', () => {
       expect(nonces.length).toBe(20);
 
     } catch (error) {
-      detector.stop();
       throw error;
+    } finally {
+      // Ensure detector is always stopped
+      detector.stop();
     }
   }, 60000);
 });

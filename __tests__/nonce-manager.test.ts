@@ -386,8 +386,8 @@ describe('NonceManager', () => {
       };
       nonceManager = new NonceManager(opts);
       
-      const namespace1 = NonceManager.makeNamespace('https://ca1.example.com');
-      const namespace2 = NonceManager.makeNamespace('https://ca2.example.com');
+      const namespace1 = NonceManager.makeNamespace('https://ca1.acme-love.com');
+      const namespace2 = NonceManager.makeNamespace('https://ca2.acme-love.com');
       
       const nonce1 = await nonceManager.take(namespace1);
       const nonce2 = await nonceManager.take(namespace2);
@@ -398,7 +398,7 @@ describe('NonceManager', () => {
     });
 
     test('should create consistent namespaces', () => {
-      const url = 'https://example.com/directory';
+      const url = 'https://acme-love.com/directory';
       const ns1 = NonceManager.makeNamespace(url);
       const ns2 = NonceManager.makeNamespace(url);
       

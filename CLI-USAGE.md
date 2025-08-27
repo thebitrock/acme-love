@@ -10,7 +10,7 @@ Instead of typing `node dist/src/cli.js` every time, you now have several conven
 ./acme-love --help
 ./acme-love interactive
 ./acme-love interactive --staging
-./acme-love cert -d example.com -e user@example.com
+./acme-love cert -d acme-love.com -e user@acme-love.com
 ```
 
 ### 📦 Option 2: NPM Scripts

@@ -1,34 +1,34 @@
 # 🚀 ACME Love - Lightweight Stress Test Results
 
 ## Test Configuration
-- **Date**: 2025-08-27T00:42:45.176Z
+- **Date**: 2025-08-27T17:19:28.092Z
 - **Accounts**: 2
 - **Orders per Account**: 3
 - **Total Orders**: 6
 - **Target**: Let's Encrypt Staging
 
 ## Performance Summary
-- **Total Time**: 4s (4362ms)
-- **Account Creation**: 2540ms
-- **Order Creation**: 1821ms
-- **Total Requests**: 31
-- **New-Nonce Requests**: 15
-- **Average Response Time**: 642ms
+- **Total Time**: 4s (3966ms)
+- **Account Creation**: 2036ms
+- **Order Creation**: 1928ms
+- **Total Requests**: 28
+- **New-Nonce Requests**: 12
+- **Average Response Time**: 551ms
 - **Throughput**: 7 req/s
 
 ## Nonce Manager Metrics
 - **Nonces Remaining**: 0
 - **Network Optimization**: 16 requests saved from pooling
-- **Pool Efficiency**: 52%
+- **Pool Efficiency**: 57%
 
 ## Request Distribution
-- **GET**: 2 (6%)
-- **HEAD**: 15 (48%)
-- **POST**: 14 (45%)
+- **GET**: 2 (7%)
+- **HEAD**: 12 (43%)
+- **POST**: 14 (50%)
 
 ## Conclusion
 ✅ Successfully processed 6 orders across 2 accounts
-✅ Maintained 642ms average response time
+✅ Maintained 551ms average response time
 ✅ Achieved 7 requests/second throughput
 ✅ Nonce pooling saved 16 network requests
 

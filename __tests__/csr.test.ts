@@ -2,7 +2,7 @@ import { describe, test, expect } from '@jest/globals';
 import { generateKeyPair, createAcmeCsr, type CsrAlgo, type EcAlgo, type RsaAlgo } from '../src/acme/csr.js';
 
 describe('CSR and Key Generation', () => {
-  const testDomain = 'test.example.com';
+  const testDomain = 'test.acme-love.com';
   
   describe('ECDSA Key Generation', () => {
     test('should generate P-256 ECDSA keys', async () => {
@@ -117,7 +117,7 @@ describe('CSR and Key Generation', () => {
     });
 
     test('should create CSR with multiple domains', async () => {
-      const domains = ['test.example.com', 'www.test.example.com', 'api.test.example.com'];
+      const domains = ['test.acme-love.com', 'www.test.acme-love.com', 'api.test.acme-love.com'];
       const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
       const result = await createAcmeCsr(domains, algo);
       
@@ -131,8 +131,8 @@ describe('CSR and Key Generation', () => {
     });
 
     test('should create CSR with custom common name', async () => {
-      const domains = ['www.example.com', 'example.com'];
-      const customCN = 'example.com';
+      const domains = ['www.acme-love.com', 'acme-love.com'];
+      const customCN = 'acme-love.com';
       const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
       
       const result = await createAcmeCsr(domains, algo, customCN);

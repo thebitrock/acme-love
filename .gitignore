@@ -90,3 +90,7 @@ coverage/
 tmp/
 temp/ 
 certificates/
+
+# Test accounts and keys (should not be committed)
+test-accounts/
+stress-test-accounts/

@@ -1,8 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
-import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
-import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
-import { generateKeyPair } from '../src/acme/csr.js';
-import type { CsrAlgo } from '../src/acme/csr.js';
+import { testAccountManager } from './utils/account-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { cleanupHttpTests } from './test-utils.js';
@@ -188,36 +185,25 @@ describe('ACME Quick Stress Test - 1 Account × 2 Orders', () => {
     console.log(`⏱️  Starting test at ${new Date().toISOString()}`);
 
     try {
-      const accountAlgo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
-
-      // Phase 1: Create account
-      console.log(`👥 Creating account...`);
+      // Phase 1: Load or create account with full registration
+      console.log(`👥 Loading/creating account...`);
       const accountCreationStart = Date.now();
 
-      const keyPair = await generateKeyPair(accountAlgo);
-      const accountKeys = {
-        privateKey: keyPair.privateKey!,
-        publicKey: keyPair.publicKey
-      };
-
-      const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
-        nonce: { maxPool: 8 }
-      });
+      const acct = await testAccountManager.getOrCreateAccountSession(
+        'quick-stress-1',
+        STAGING_DIRECTORY_URL,
+        `quick-stress-${Date.now()}@gmail.com`,
+        { nonce: { maxPool: 8 } }
+      );
 
       // Add metrics wrapper
+      const core = (acct as any).client;
       const originalHttp = core.getHttp();
       const metricsHttp = new QuickMetricsHttpClient(collector, originalHttp);
       (core as any).http = metricsHttp;
 
-      const acct = new AcmeAccountSession(core, accountKeys);
-
-      await acct.ensureRegistered({
-        contact: [`mailto:quick-test-${Date.now()}@gmail.com`],
-        termsOfServiceAgreed: true
-      });
-
       const accountCreationTime = Date.now() - accountCreationStart;
-      console.log(`   ✅ Account created in ${accountCreationTime}ms`);
+      console.log(`   ✅ Account ready in ${accountCreationTime}ms`);
 
       // Phase 2: Create orders sequentially
       console.log(`📦 Creating ${ORDERS_PER_ACCOUNT} orders...`);

@@ -137,7 +137,7 @@ describe('ACME Integration Tests (E2E)', () => {
       return;
     }
 
-    const testDomain = 'test-e2e.example.com'; // Use example.com for testing (won't be validated)
+    const testDomain = 'test-e2e.acme-love.com'; // Use acme-love.com for testing (won't be validated)
     
     // Test different key algorithms
     const algorithms: CsrAlgo[] = [
@@ -207,11 +207,11 @@ describe('ACME Integration Tests (E2E)', () => {
 
     // Test nonce manager with invalid URL
     const invalidNonceManager = new NonceManager({
-      newNonceUrl: 'https://invalid-acme-server.example.com/new-nonce',
+      newNonceUrl: 'https://invalid-acme-server.acme-love.com/new-nonce',
       fetch: invalidHttpClient.head.bind(invalidHttpClient),
     });
 
-    const namespace = NonceManager.makeNamespace('https://invalid-acme-server.example.com');
+    const namespace = NonceManager.makeNamespace('https://invalid-acme-server.acme-love.com');
     await expect(invalidNonceManager.take(namespace)).rejects.toThrow();
     console.log('Invalid nonce URL handled correctly');
   }, 15000);

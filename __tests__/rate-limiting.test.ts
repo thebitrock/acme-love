@@ -26,7 +26,7 @@ describe('ACME Rate Limiting Tests', () => {
     });
     
     nonceManager = new NonceManager({
-      newNonceUrl: 'https://test-staging.example.com/acme/new-nonce', // Fake URL for testing
+      newNonceUrl: 'https://test-staging.acme-love.com/acme/new-nonce', // Fake URL for testing
       fetch: mockFetch,
       rateLimiter
     });

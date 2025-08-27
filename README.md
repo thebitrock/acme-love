@@ -55,15 +55,15 @@ acme-love interactive --production # For real certificates
 ```bash
 # Get a staging certificate (recommended first)
 acme-love cert \
-  --domain test.example.com \
-  --email admin@example.com \
+  --domain test.acme-love.com \
+  --email admin@acme-love.com \
   --staging \
   --challenge dns-01
 
 # Get a production certificate with custom algorithms
 acme-love cert \
-  --domain example.com \
-  --email admin@example.com \
+  --domain acme-love.com \
+  --email admin@acme-love.com \
   --production \
   --challenge http-01 \
   --account-algo ec-p256 \
@@ -80,17 +80,17 @@ acme-love create-account-key \
 **DNS-01 Challenge** (Recommended)
 
 ```bash
-acme-love cert --challenge dns-01 --domain example.com --email user@example.com --staging
+acme-love cert --challenge dns-01 --domain acme-love.com --email user@acme-love.com --staging
 ```
 
-- ✅ Works with wildcard certificates (`*.example.com`)
+- ✅ Works with wildcard certificates (`*.acme-love.com`)
 - ✅ No need for public web server
 - 🔧 Requires DNS provider access
 
 **HTTP-01 Challenge**
 
 ```bash
-acme-love cert --challenge http-01 --domain example.com --email user@example.com --staging
+acme-love cert --challenge http-01 --domain acme-love.com --email user@acme-love.com --staging
 ```
 
 - ✅ Simple validation via HTTP file
@@ -147,7 +147,7 @@ See [CLI-USAGE.md](./CLI-USAGE.md) for detailed development setup.
 acme-love create-account-key --algo ec-p384 --output ./my-account.json
 
 # Mixed algorithms: P-256 account, RSA-4096 certificate
-acme-love cert --account-algo ec-p256 --cert-algo rsa-4096 --domain example.com
+acme-love cert --account-algo ec-p256 --cert-algo rsa-4096 --domain acme-love.com
 
 # Interactive mode with full algorithm selection
 acme-love interactive --staging
@@ -190,12 +190,12 @@ const acct = new AcmeAccountSession(core, accountKeys);
 
 // 4. Register account
 await acct.ensureRegistered({
-  contact: ['mailto:admin@example.com'],
+  contact: ['mailto:admin@acme-love.com'],
   termsOfServiceAgreed: true,
 });
 
 // 5. Create order and solve challenges
-const order = await acct.newOrder(['example.com']);
+const order = await acct.newOrder(['acme-love.com']);
 
 // DNS-01 challenge
 const ready = await acct.solveDns01(order, {
@@ -211,7 +211,7 @@ const ready = await acct.solveDns01(order, {
 });
 
 // 6. Generate CSR and finalize
-const { derBase64Url, keys: csrKeys } = await createAcmeCsr(['example.com'], algo);
+const { derBase64Url, keys: csrKeys } = await createAcmeCsr(['acme-love.com'], algo);
 const finalized = await acct.finalize(ready, derBase64Url);
 const valid = await acct.waitOrder(finalized.url, ['valid']);
 const certificate = await acct.downloadCertificate(valid);
@@ -288,7 +288,7 @@ const accountKeys = await generateKeyPair(accountAlgo);
 
 // Use P-384 for certificate keys (enhanced security in final certificate)
 const certAlgo = { kind: 'ec', namedCurve: 'P-384', hash: 'SHA-384' };
-const { derBase64Url, keys: certKeys } = await createAcmeCsr(['example.com'], certAlgo);
+const { derBase64Url, keys: certKeys } = await createAcmeCsr(['acme-love.com'], certAlgo);
 
 // Or mix ECDSA and RSA
 const accountAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' }; // Fast ECDSA for account
@@ -303,7 +303,7 @@ When you already have a registered ACME account, you can reuse it by providing t
 // First time: Register new account and save the kid
 const acct = new AcmeAccountSession(core, accountKeys);
 const kid = await acct.ensureRegistered({
-  contact: ['mailto:admin@example.com'],
+  contact: ['mailto:admin@acme-love.com'],
   termsOfServiceAgreed: true,
 });
 
@@ -342,7 +342,7 @@ const acct = new AcmeAccountSession(core, accountKeys, {
 });
 
 // No need to call ensureRegistered() - account already exists
-const order = await acct.newOrder(['example.com']);
+const order = await acct.newOrder(['acme-love.com']);
 ```
 
 ### Advanced Features
@@ -353,7 +353,7 @@ const order = await acct.newOrder(['example.com']);
 import { ServerMaintenanceError } from 'acme-love';
 
 try {
-  await acct.newOrder(['example.com']);
+  await acct.newOrder(['acme-love.com']);
 } catch (error) {
   if (error instanceof ServerMaintenanceError) {
     console.log('🔧 Service is under maintenance');
@@ -390,12 +390,12 @@ const accountAlgo = { kind: 'ec', namedCurve: 'P-521', hash: 'SHA-512' };
 const certAlgo = { kind: 'rsa', modulusLength: 4096, hash: 'SHA-384' };
 
 const accountKeys = await generateKeyPair(accountAlgo);
-const { derBase64Url, keys: certKeys } = await createAcmeCsr(['example.com'], certAlgo);
+const { derBase64Url, keys: certKeys } = await createAcmeCsr(['acme-love.com'], certAlgo);
 
 // Performance-optimized setup: P-256 for both
 const fastAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
 const accountKeys = await generateKeyPair(fastAlgo);
-const { derBase64Url } = await createAcmeCsr(['example.com'], fastAlgo);
+const { derBase64Url } = await createAcmeCsr(['acme-love.com'], fastAlgo);
 ```
 
 **Debug Logging for Library Usage**
@@ -557,7 +557,7 @@ import {
 
 // Authoritative DNS validation (queries actual NS servers)
 const result = await resolveAndValidateAcmeTxtAuthoritative(
-  '_acme-challenge.example.com',
+  '_acme-challenge.acme-love.com',
   'expected-challenge-value',
 );
 
@@ -569,7 +569,7 @@ if (result.ok) {
 
 // Standard DNS validation with fallback to public resolvers
 const quickResult = await resolveAndValidateAcmeTxt(
-  '_acme-challenge.example.com',
+  '_acme-challenge.acme-love.com',
   'expected-challenge-value',
 );
 ```
@@ -581,13 +581,13 @@ import { validateHttp01ChallengeByUrl, validateHttp01Challenge } from 'acme-love
 
 // Direct URL validation
 const result = await validateHttp01ChallengeByUrl(
-  'http://example.com/.well-known/acme-challenge/token123',
+  'http://acme-love.com/.well-known/acme-challenge/token123',
   'expected-key-authorization',
 );
 
 // Domain + token validation
 const result2 = await validateHttp01Challenge(
-  'example.com',
+  'acme-love.com',
   'token123',
   'expected-key-authorization',
 );
@@ -600,7 +600,7 @@ When using the CLI, ACME Love automatically handles file organization and config
 ```bash
 # Default directory structure created by CLI
 ./certificates/
-├── example.com/
+├── acme-love.com/
 │   ├── cert.pem          # Certificate chain
 │   ├── cert-key.json     # Certificate private key (JWK format)
 │   ├── cert.csr.pem      # Certificate signing request
@@ -624,7 +624,7 @@ The `createAcmeCsr` helper generates everything needed for certificate finalizat
 import { createAcmeCsr } from 'acme-love';
 
 const { pem, derBase64Url, keys } = await createAcmeCsr(
-  ['example.com', 'www.example.com'], // domains (first = CN)
+  ['acme-love.com', 'www.acme-love.com'], // domains (first = CN)
   { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' },
 );
 
@@ -979,6 +979,32 @@ npm run test:stress:all   # Run all stress tests (takes ~15 minutes)
 **Note**: Stress tests are excluded from the default `npm test` command to keep CI/CD pipelines fast. They should be run manually or in dedicated test environments.
 
 📋 **Detailed testing guide**: [TESTING.md](./TESTING.md)
+
+### 🔑 Test Account Management
+
+ACME Love includes a sophisticated test account management system to avoid Let's Encrypt rate limits during development and testing:
+
+```bash
+# Prepare accounts for all stress tests (run once)
+npm run accounts prepare-stress
+
+# List all test accounts
+npm run accounts list
+
+# Create specific account
+npm run accounts create my-test-account
+
+# Clean up old accounts (older than 24 hours)
+npm run accounts cleanup 24
+```
+
+**Benefits**:
+- ✅ Avoid Let's Encrypt's 50 registrations per IP per 3 hours limit
+- ✅ Faster test execution (reuse existing accounts)
+- ✅ Isolated accounts per test type
+- ✅ Automatic git ignore protection
+
+📋 **Detailed account management guide**: [TEST-ACCOUNT-MANAGEMENT.md](./TEST-ACCOUNT-MANAGEMENT.md)
 
 ## 📄 License
 

@@ -80,14 +80,14 @@ acme-love interactive
 
 ```bash
 npm install -g acme-love
-acme-love cert -d example.com -e admin@example.com --staging
+acme-love cert -d acme-love.com -e admin@acme-love.com --staging
 ```
 
 ### Local installation
 
 ```bash
 npm install acme-love
-npx acme-love cert -d example.com -e admin@example.com --staging
+npx acme-love cert -d acme-love.com -e admin@acme-love.com --staging
 ```
 
 ### In project as dependency

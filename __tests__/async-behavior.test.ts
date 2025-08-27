@@ -87,9 +87,9 @@ describe('ACME Library Async Behavior Tests', () => {
     console.log('Testing parallel CSR creation...');
     
     const testDomains = [
-      ['test1.example.com'],
-      ['test2.example.com', 'www.test2.example.com'],
-      ['test3.example.com', 'api.test3.example.com', 'www.test3.example.com'],
+      ['test1.acme-love.com'],
+      ['test2.acme-love.com', 'www.test2.acme-love.com'],
+      ['test3.acme-love.com', 'api.test3.acme-love.com', 'www.test3.acme-love.com'],
     ];
     
     const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
@@ -189,7 +189,7 @@ describe('ACME Library Async Behavior Tests', () => {
       // CSR creation (after key generation)
       (async () => {
         const keyPair = await generateKeyPair(algo);
-        return createAcmeCsr(['mixed-test.example.com'], algo, 'mixed-test.example.com', keyPair);
+        return createAcmeCsr(['mixed-test.acme-love.com'], algo, 'mixed-test.acme-love.com', keyPair);
       })(),
     ];
     
@@ -259,7 +259,7 @@ describe('ACME Library Async Behavior Tests', () => {
       
       // Each iteration: generate key, create CSR, get nonce
       const keyPair = await generateKeyPair(algo);
-      const csr = await createAcmeCsr([`seq-test-${i}.example.com`], algo, `seq-test-${i}.example.com`, keyPair);
+      const csr = await createAcmeCsr([`seq-test-${i}.acme-love.com`], algo, `seq-test-${i}.acme-love.com`, keyPair);
       const nonce = await nonceManager.take(namespace);
       
       const batchDuration = Date.now() - batchStart;

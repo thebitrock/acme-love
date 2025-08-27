@@ -65,13 +65,13 @@ acme-love create-account-key -o ./my-account.json
 acme-love cert
 
 # With command line parameters
-acme-love cert -d example.com -e admin@example.com --staging
+acme-love cert -d acme-love.com -e admin@acme-love.com --staging
 
 # Production mode (careful! there are rate limits)
-acme-love cert -d example.com -e admin@example.com --production
+acme-love cert -d acme-love.com -e admin@acme-love.com --production
 
 # Custom ACME directory
-acme-love cert -d example.com -e admin@example.com --directory https://acme.example.com/directory
+acme-love cert -d acme-love.com -e admin@acme-love.com --directory https://acme.acme-love.com/directory
 ```
 
 #### 4. Interactive mode
@@ -86,18 +86,18 @@ acme-love i
 
 ```bash
 # Check local certificate
-acme-love status -c ./certificates/example.com.crt
+acme-love status -c ./certificates/acme-love.com.crt
 
 # Check domain (in development)
-acme-love status -d example.com
+acme-love status -d acme-love.com
 ```
 
 ### Parameters for cert command
 
 | Parameter               | Description                         | Example                               |
 | ----------------------- | ----------------------------------- | ------------------------------------- |
-| `-d, --domain <domain>` | Domain name for certificate         | `-d example.com`                      |
-| `-e, --email <email>`   | Email for ACME account registration | `-e admin@example.com`                |
+| `-d, --domain <domain>` | Domain name for certificate         | `-d acme-love.com`                      |
+| `-e, --email <email>`   | Email for ACME account registration | `-e admin@acme-love.com`                |
 | `--staging`             | Use Let's Encrypt staging           | `--staging`                           |
 | `--production`          | Use Let's Encrypt production        | `--production`                        |
 | `--directory <url>`     | Custom ACME directory               | `--directory https://acme.ca.com/dir` |
@@ -115,8 +115,8 @@ acme-love create-account-key -o ./staging-account.json
 
 # 2. Get test certificate
 acme-love cert \
-  -d test.example.com \
-  -e admin@example.com \
+  -d test.acme-love.com \
+  -e admin@acme-love.com \
   --staging \
   --account-key ./staging-account.json \
   -o ./certificates
@@ -132,8 +132,8 @@ acme-love create-account-key -o ./production-account.json
 
 # 2. Get production certificate
 acme-love cert \
-  -d example.com \
-  -e admin@example.com \
+  -d acme-love.com \
+  -e admin@acme-love.com \
   --production \
   --account-key ./production-account.json \
   -o ./certificates
@@ -144,20 +144,20 @@ acme-love cert \
 ```bash
 # Buypass
 acme-love cert \
-  -d example.com \
-  -e admin@example.com \
+  -d acme-love.com \
+  -e admin@acme-love.com \
   --directory https://api.buypass.com/acme/directory
 
 # Google Trust Services
 acme-love cert \
-  -d example.com \
-  -e admin@example.com \
+  -d acme-love.com \
+  -e admin@acme-love.com \
   --directory https://dv.acme-v02.api.pki.goog/directory
 
 # ZeroSSL
 acme-love cert \
-  -d example.com \
-  -e admin@example.com \
+  -d acme-love.com \
+  -e admin@acme-love.com \
   --directory https://acme.zerossl.com/v2/DV90
 ```
 
@@ -178,9 +178,9 @@ After successful certificate obtaining, these files are created:
 
 ```
 certificates/
-├── example.com.crt    # SSL certificate
-├── example.com.key    # Private key
-├── example.com.csr    # Certificate Signing Request
+├── acme-love.com.crt    # SSL certificate
+├── acme-love.com.key    # Private key
+├── acme-love.com.csr    # Certificate Signing Request
 └── account-key.json   # ACME account key (if created automatically)
 ```
 
@@ -192,7 +192,7 @@ CLI supports only DNS-01 challenge for maximum compatibility and security:
 
    ```
    Record Type: TXT
-   Record Name: _acme-challenge.example.com
+   Record Name: _acme-challenge.acme-love.com
    Record Value: AbCdEf123456...
    ```
 
@@ -203,7 +203,7 @@ CLI supports only DNS-01 challenge for maximum compatibility and security:
 4. Check propagation:
 
    ```bash
-   nslookup -type=TXT _acme-challenge.example.com
+   nslookup -type=TXT _acme-challenge.acme-love.com
    ```
 
 5. Confirm in CLI that record is added
@@ -216,8 +216,8 @@ CLI supports only DNS-01 challenge for maximum compatibility and security:
 #!/bin/bash
 # renew-cert.sh
 
-DOMAIN="example.com"
-EMAIL="admin@example.com"
+DOMAIN="acme-love.com"
+EMAIL="admin@acme-love.com"
 CERT_DIR="./certificates"
 ACCOUNT_KEY="./account-key.json"
 
@@ -275,8 +275,8 @@ jobs:
             --account-key ./account-key.json
         env:
           # Add these secrets in GitHub
-          DOMAIN: example.com
-          EMAIL: admin@example.com
+          DOMAIN: acme-love.com
+          EMAIL: admin@acme-love.com
           ACCOUNT_KEY: ${{ secrets.ACME_ACCOUNT_KEY }}
 ```
 
@@ -286,17 +286,17 @@ jobs:
 
 ```bash
 export DEBUG=acme-love:*
-acme-love cert -d example.com -e admin@example.com --staging
+acme-love cert -d acme-love.com -e admin@acme-love.com --staging
 ```
 
 ### Check DNS record
 
 ```bash
 # Linux/macOS
-nslookup -type=TXT _acme-challenge.example.com
+nslookup -type=TXT _acme-challenge.acme-love.com
 
 # Windows
-nslookup -type=TXT _acme-challenge.example.com
+nslookup -type=TXT _acme-challenge.acme-love.com
 
 # Online tools
 # https://toolbox.googleapps.com/apps/dig/

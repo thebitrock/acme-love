@@ -1,8 +1,7 @@
 import { describe, test, expect, beforeAll } from '@jest/globals';
 import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
 import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
-import { generateKeyPair } from '../src/acme/csr.js';
-import type { CsrAlgo } from '../src/acme/csr.js';
+import { testAccountManager } from './utils/account-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -215,18 +214,13 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
     console.log(`⏱️  Starting test at ${new Date().toISOString()}`);
 
     try {
-      const accountAlgo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
-
-      // Phase 1: Create accounts
-      console.log(`👥 Creating ${TOTAL_ACCOUNTS} accounts...`);
+      // Phase 1: Load or create accounts
+      console.log(`👥 Loading/creating ${TOTAL_ACCOUNTS} accounts...`);
       const accountCreationStart = Date.now();
 
       const accountPromises = Array.from({ length: TOTAL_ACCOUNTS }, async (_, accountIndex) => {
-        const keyPair = await generateKeyPair(accountAlgo);
-        const accountKeys = {
-          privateKey: keyPair.privateKey!,
-          publicKey: keyPair.publicKey
-        };
+        // Get or create persistent account keys
+        const accountKeys = await testAccountManager.getOrCreateAccountKeys(`light-stress-${accountIndex + 1}`);
 
         const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
           nonce: { maxPool: 16 }
@@ -244,7 +238,7 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
           termsOfServiceAgreed: true
         });
 
-        console.log(`   ✅ Account ${accountIndex + 1}/${TOTAL_ACCOUNTS} created`);
+        console.log(`   ✅ Account ${accountIndex + 1}/${TOTAL_ACCOUNTS} ready`);
         return { accountIndex, acct, core };
       });
 

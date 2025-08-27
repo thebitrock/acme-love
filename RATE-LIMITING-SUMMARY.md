@@ -1,190 +1,190 @@
 # ACME Love - Rate Limiting Implementation Summary
 
-## Что было реализовано
+## What Has Been Implemented
 
-### 1. Комплексная система управления лимитами API
+### 1. Comprehensive API Rate Limit Management System
 
-✅ **RateLimiter класс** (`src/acme/client/rate-limiter.ts`)
-- Автоматическое обнаружение HTTP 503 ответов с заголовками Retry-After
-- Парсинг сообщений об ошибках с текстом "rate limit" и "too many"
-- Экспоненциальная задержка с настраиваемыми параметрами
-- Отслеживание окон rate limit по endpoint'ам
-- Соблюдение серверных заголовков Retry-After
+✅ **RateLimiter Class** (`src/acme/client/rate-limiter.ts`)
+- Automatic detection of HTTP 503 responses with Retry-After headers
+- Parsing of error messages containing "rate limit" and "too many" text
+- Exponential backoff with configurable parameters
+- Rate limit window tracking per endpoint
+- Compliance with server Retry-After headers
 
-✅ **Интеграция с NonceManager**
-- Автоматическое применение rate limiting к новым nonce запросам
-- Правильная обработка и передача ошибок 503 с метаданными
-- Сохранение всей отладочной информации
+✅ **NonceManager Integration**
+- Automatic application of rate limiting to new nonce requests
+- Proper handling and forwarding of 503 errors with metadata
+- Preservation of all debug information
 
-✅ **Улучшенная система debug логирования**
-- Собственная реализация debug логгера без внешних зависимостей
-- Поддержка переменной среды DEBUG с wildcards
-- Форматирование сообщений в стиле printf (%s, %d, %j)
-- Раздельные логгеры для nonce, ratelimit, http, client компонентов
+✅ **Enhanced Debug Logging System**
+- Custom debug logger implementation without external dependencies
+- Support for DEBUG environment variable with wildcards
+- Printf-style message formatting (%s, %d, %j)
+- Separate loggers for nonce, ratelimit, http, client components
 
-### 2. Исчерпывающее тестирование
+### 2. Comprehensive Testing
 
-✅ **Unit тесты** (`__tests__/rate-limiting.test.ts`)
-- Тестирование обработки 503 ответов с Retry-After заголовками
-- Парсинг rate limit сообщений в тексте ошибок  
-- Правильные повторы с exponential backoff
-- Отслеживание окон rate limiting
-- Интеграция с NonceManager
+✅ **Unit Tests** (`__tests__/rate-limiting.test.ts`)
+- Testing of 503 response handling with Retry-After headers
+- Parsing of rate limit messages in error text
+- Proper retries with exponential backoff
+- Rate limiting window tracking
+- NonceManager integration
 
-✅ **Реальные тесты** (`__tests__/rate-limit-avoidance.test.ts`)
-- Тесты с настоящим Let's Encrypt staging API
-- Проверка последовательных и параллельных запросов
-- Демонстрация recovery от rate limits
-- Различные конфигурации для разных сред
+✅ **Real-world Tests** (`__tests__/rate-limit-avoidance.test.ts`)
+- Tests with actual Let's Encrypt staging API
+- Sequential and parallel request verification
+- Rate limit recovery demonstration
+- Different configurations for various environments
 
-✅ **Debug тесты**
-- Проверка работы debug системы
-- Валидация форматирования сообщений
+✅ **Debug Tests**
+- Debug system functionality verification
+- Message formatting validation
 
-### 3. Производственные конфигурации
+### 3. Production Configurations
 
-✅ **Конфигурации для разных сред**
+✅ **Environment-specific Configurations**
 ```typescript
-// Разработка - быстрые retry для тестов
+// Development - fast retries for testing
 const devRateLimiter = new RateLimiter({
   maxRetries: 2,
   baseDelayMs: 100,
   maxDelayMs: 5000
 });
 
-// Продакшен - консервативные настройки
+// Production - conservative settings
 const prodRateLimiter = new RateLimiter({
   maxRetries: 5, 
   baseDelayMs: 5000,
-  maxDelayMs: 600000 // 10 минут
+  maxDelayMs: 600000 // 10 minutes
 });
 ```
 
-✅ **Интеграция с пулингом nonces**
-- prefetchLowWater/prefetchHighWater для оптимизации запросов
-- Умное управление размером пула с учетом rate limits
-- Предотвращение избыточных запросов к API
+✅ **Nonce Pooling Integration**
+- prefetchLowWater/prefetchHighWater for request optimization
+- Smart pool size management considering rate limits
+- Prevention of excessive API requests
 
-### 4. Подробная документация
+### 4. Detailed Documentation
 
-✅ **Руководство по использованию** (`RATE-LIMIT-GUIDE.md`)
-- Описание всех лимитов Let's Encrypt
-- Лучшие практики избежания лимитов
-- Примеры конфигураций для разных случаев
-- Диагностика и мониторинг проблем
+✅ **Usage Guide** (`RATE-LIMIT-GUIDE.md`)
+- Description of all Let's Encrypt limits
+- Best practices for limit avoidance
+- Configuration examples for different use cases
+- Problem diagnosis and monitoring
 
-✅ **Примеры кода** 
-- Простое использование
-- Обработка ошибок rate limiting
-- Параллельная обработка с семафорами
-- Debug логирование
+✅ **Code Examples** 
+- Simple usage
+- Rate limiting error handling
+- Parallel processing with semaphores
+- Debug logging
 
-## Ключевые возможности
+## Key Features
 
-### Автоматическое обнаружение лимитов
+### Automatic Limit Detection
 ```typescript
-// Система автоматически распознает:
+// System automatically recognizes:
 // 1. HTTP 503 + Retry-After header  
-// 2. Сообщения "rate limit", "too many"
-// 3. Устанавливает правильные задержки
+// 2. Messages containing "rate limit", "too many"
+// 3. Sets appropriate delays
 ```
 
-### Умные повторы
+### Smart Retries
 ```typescript
-// Экспоненциальная задержка:
-// Попытка 1: 2s
-// Попытка 2: 4s  
-// Попытка 3: 8s
-// Максимум: 10 минут (настраивается)
+// Exponential backoff:
+// Attempt 1: 2s
+// Attempt 2: 4s  
+// Attempt 3: 8s
+// Maximum: 10 minutes (configurable)
 ```
 
-### Endpoint-специфичное отслеживание
+### Endpoint-specific Tracking
 ```typescript
-// Каждый endpoint отслеживается отдельно:
+// Each endpoint is tracked separately:
 // /acme/new-nonce - 20/sec, retry 10s
 // /acme/new-order - 300/sec, retry 200s
 // /acme/* - 250/sec, retry 125s
 ```
 
-### Полная observability  
+### Full Observability  
 ```bash
-# Включить все debug логи
+# Enable all debug logs
 DEBUG="acme-love:*" node app.js
 
-# Только rate limiting
+# Rate limiting only
 DEBUG="acme-love:ratelimit" node app.js
 
-# Только nonce management  
+# Nonce management only  
 DEBUG="acme-love:nonce" node app.js
 ```
 
-## Результаты тестирования
+## Testing Results
 
-### ✅ Unit тесты - все проходят
-- Rate limiter правильно обнаруживает 503 ошибки
-- Соблюдает Retry-After заголовки  
-- Применяет exponential backoff
-- Интегрируется с NonceManager
+### ✅ Unit Tests - All Passing
+- Rate limiter correctly detects 503 errors
+- Complies with Retry-After headers  
+- Applies exponential backoff
+- Integrates with NonceManager
 
-### ✅ Integration тесты с Let's Encrypt staging
-- Успешные запросы nonces без rate limits
-- Правильная обработка параллельных запросов
-- Recovery после temporary rate limiting
+### ✅ Integration Tests with Let's Encrypt Staging
+- Successful nonce requests without rate limits
+- Proper handling of parallel requests
+- Recovery after temporary rate limiting
 
-### ✅ Debug система
-- Все логи выводятся корректно
-- Форматирование работает правильно
-- Переменные среды обрабатываются
+### ✅ Debug System
+- All logs output correctly
+- Formatting works properly
+- Environment variables processed correctly
 
-## Состояние deadlock проблемы
+## Deadlock Issue Status
 
-### ✅ ПОЛНОСТЬЮ РЕШЕНО
-- Удалена библиотека promise-coalesce (источник deadlock)
-- Прямые async операции без coalescing  
-- Все тесты проходят стабильно
-- Производительность улучшена на 54%
+### ✅ COMPLETELY RESOLVED
+- Removed promise-coalesce library (source of deadlock)
+- Direct async operations without coalescing  
+- All tests pass stably
+- Performance improved by 54%
 
-### Метрики после исправления:
-- Sequential nonce requests: 1590ms (было: TIMEOUT)
-- Concurrent nonce requests: 644ms (было: 1400ms) 
-- Account creation: 100% success (было: 67% deadlock)
+### Metrics after fix:
+- Sequential nonce requests: 1590ms (was: TIMEOUT)
+- Concurrent nonce requests: 644ms (was: 1400ms) 
+- Account creation: 100% success (was: 67% deadlock)
 
-## Готовность к продакшену
+## Production Readiness
 
-### ✅ Все критические компоненты реализованы:
-1. **Rate limiting** - автоматическая обработка всех лимитов LE
-2. **Nonce pooling** - эффективное управление nonces  
-3. **Error handling** - robust обработка ошибок
-4. **Debug logging** - полная observability
-5. **Documentation** - исчерпывающие руководства
+### ✅ All Critical Components Implemented:
+1. **Rate limiting** - automatic handling of all LE limits
+2. **Nonce pooling** - efficient nonce management  
+3. **Error handling** - robust error processing
+4. **Debug logging** - full observability
+5. **Documentation** - comprehensive guides
 
-### ✅ Тестирование:
-- Unit тесты: 100% покрытие core функций
-- Integration тесты: реальные сценарии с LE API
-- Performance тесты: проверка на высокой нагрузке
-- Deadlock тесты: полная стабильность
+### ✅ Testing:
+- Unit tests: 100% coverage of core functions
+- Integration tests: real scenarios with LE API
+- Performance tests: verification under high load
+- Deadlock tests: complete stability
 
-### ✅ Производственные настройки:
-- Консервативные retry policies
-- Правильные timeout'ы
-- Endpoint-специфичные лимиты
+### ✅ Production Settings:
+- Conservative retry policies
+- Proper timeouts
+- Endpoint-specific limits
 - Graceful degradation
 
-## Следующие шаги
+## Next Steps
 
-1. **Финальное тестирование** - прогон всех тестов
-2. **Documentation review** - проверка документации  
-3. **Production deployment** - готово к развертыванию
-4. **Monitoring setup** - метрики и алерты
+1. **Final Testing** - run all test suites
+2. **Documentation Review** - verify documentation  
+3. **Production Deployment** - ready for deployment
+4. **Monitoring Setup** - metrics and alerts
 
-## Заключение
+## Conclusion
 
-Система управления rate limits в ACME Love теперь полностью готова к продакшену и обеспечивает:
+The rate limit management system in ACME Love is now fully production-ready and provides:
 
-- 🛡️ **Надежность** - никаких deadlock'ов, стабильная работа
-- 🚀 **Производительность** - на 54% быстрее, оптимальное использование API  
-- 🔍 **Observability** - полное логирование и мониторинг
-- 📚 **Usability** - простая интеграция, понятная документация
-- ⚡ **Scalability** - готова к высоким нагрузкам
+- 🛡️ **Reliability** - no deadlocks, stable operation
+- 🚀 **Performance** - 54% faster, optimal API usage  
+- 🔍 **Observability** - complete logging and monitoring
+- 📚 **Usability** - simple integration, clear documentation
+- ⚡ **Scalability** - ready for high loads
 
-Библиотека готова к использованию в продакшене для любых масштабов - от небольших приложений до enterprise систем с тысячами сертификатов.
+The library is ready for production use at any scale - from small applications to enterprise systems with thousands of certificates.

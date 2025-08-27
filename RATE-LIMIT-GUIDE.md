@@ -1,59 +1,59 @@
 # ACME Love - Rate Limit Management Guide
 
-## Обзор
+## Overview
 
-ACME Love включает комплексную систему управления лимитами Let's Encrypt для предотвращения превышения API ограничений и обеспечения стабильной работы в продакшене.
+ACME Love includes a comprehensive Let's Encrypt rate limit management system to prevent API limit violations and ensure stable production operation.
 
-## Основные лимиты Let's Encrypt
+## Core Let's Encrypt Limits
 
-### 1. Общие лимиты запросов (на IP адрес)
-- `/acme/new-nonce`: 20 запросов/сек, блокировка на 10 сек
-- `/acme/new-order`: 300 запросов/сек, блокировка на 200 сек  
-- `/acme/*` (общие): 250 запросов/сек, блокировка на 125 сек
+### 1. General Request Limits (per IP address)
+- `/acme/new-nonce`: 20 requests/sec, 10 sec block
+- `/acme/new-order`: 300 requests/sec, 200 sec block  
+- `/acme/*` (general): 250 requests/sec, 125 sec block
 
-### 2. Лимиты регистрации аккаунтов
-- Новые регистрации на IP: 10 за 3 часа
+### 2. Account Registration Limits
+- New registrations per IP: 10 per 3 hours
 
-### 3. Лимиты выпуска сертификатов
-- Новые заказы на аккаунт: 300 за 3 часа
-- Ошибки авторизации: 5 в час на домен
-- Дублированные сертификаты: 5 на один набор доменов за 7 дней
+### 3. Certificate Issuance Limits
+- New orders per account: 300 per 3 hours
+- Authorization failures: 5 per hour per domain
+- Duplicate certificates: 5 per domain set per 7 days
 
-## Встроенные решения
+## Built-in Solutions
 
-### 1. Автоматическое управление лимитами
+### 1. Automatic Rate Limit Management
 ```typescript
 import { NonceManager, RateLimiter } from 'acme-love';
 
-// Создание rate limiter с настройками для продакшена
+// Create rate limiter with production settings
 const rateLimiter = new RateLimiter({
-  maxRetries: 5,           // 5 попыток повтора
-  baseDelayMs: 2000,       // 2 секунды базовая задержка
-  maxDelayMs: 300000,      // 5 минут максимальная задержка
-  respectRetryAfter: true  // Уважать заголовки Retry-After
+  maxRetries: 5,           // 5 retry attempts
+  baseDelayMs: 2000,       // 2 seconds base delay
+  maxDelayMs: 300000,      // 5 minutes maximum delay
+  respectRetryAfter: true  // Respect Retry-After headers
 });
 
-// NonceManager с rate limiting
+// NonceManager with rate limiting
 const nonceManager = new NonceManager({
   newNonceUrl: 'https://acme-v02.api.letsencrypt.org/acme/new-nonce',
   fetch: yourFetchFunction,
   rateLimiter,
-  prefetchLowWater: 2,     // Минимум 2 nonce в пуле
-  prefetchHighWater: 5,    // Максимум 5 nonce в пуле
-  maxPool: 10              // Абсолютный максимум пула
+  prefetchLowWater: 2,     // Minimum 2 nonces in pool
+  prefetchHighWater: 5,    // Maximum 5 nonces in pool
+  maxPool: 10              // Absolute pool maximum
 });
 ```
 
-### 2. Обнаружение и обработка rate limits
+### 2. Rate Limit Detection and Handling
 ```typescript
-// Rate limiter автоматически обнаруживает:
-// - HTTP 503 ответы с заголовком Retry-After
-// - Сообщения об ошибках с текстом "rate limit" или "too many"
-// - Автоматически повторяет с экспоненциальной задержкой
+// Rate limiter automatically detects:
+// - HTTP 503 responses with Retry-After header
+// - Error messages containing "rate limit" or "too many"
+// - Automatically retries with exponential backoff
 
 try {
   const nonce = await nonceManager.take(namespace);
-  // Используйте nonce...
+  // Use nonce...
 } catch (error) {
   if (error instanceof RateLimitError) {
     console.log(`Rate limit: ${error.rateLimitInfo.endpoint}`);
@@ -62,154 +62,154 @@ try {
 }
 ```
 
-### 3. Debug логирование
+### 3. Debug Logging
 ```bash
-# Включить debug логи для всех компонентов
+# Enable debug logs for all components
 DEBUG="acme-love:*" node your-app.js
 
-# Только для nonce manager
+# Only for nonce manager
 DEBUG="acme-love:nonce" node your-app.js
 
-# Только для rate limiter
+# Only for rate limiter
 DEBUG="acme-love:ratelimit" node your-app.js
 ```
 
-## Лучшие практики
+## Best Practices
 
-### 1. Использование staging среды
+### 1. Using Staging Environment
 ```typescript
-// Для разработки и тестирования всегда используйте staging
+// Always use staging for development and testing
 const STAGING_DIRECTORY = 'https://acme-staging-v02.api.letsencrypt.org/directory';
 
-// Staging имеет гораздо более высокие лимиты:
-// - 30,000 регистраций на IP за 3 часа (vs 10 в prod)
-// - 300,000 новых заказов за 3 часа (vs 300 в prod)
+// Staging has much higher limits:
+// - 30,000 registrations per IP per 3 hours (vs 10 in prod)
+// - 300,000 new orders per 3 hours (vs 300 in prod)
 ```
 
-### 2. Разнесение доменов
+### 2. Domain Distribution
 ```typescript
-// Избегайте дублированных сертификатов, используя разные домены
+// Avoid duplicate certificates by using different domains
 const domains = [
   ['example1.com', 'www.example1.com'],
   ['example2.com', 'www.example2.com'],
   ['example3.com', 'www.example3.com']
 ];
 
-// Каждый набор доменов может иметь до 5 сертификатов за 7 дней
+// Each domain set can have up to 5 certificates per 7 days
 ```
 
-### 3. Пространственное разнесение запросов
+### 3. Request Spacing
 ```typescript
-// Добавляйте небольшие задержки между неurgent запросами
-await delay(500); // 500ms между запросами
+// Add small delays between non-urgent requests
+await delay(500); // 500ms between requests
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 ```
 
-### 4. Мониторинг лимитов
+### 4. Rate Limit Monitoring
 ```typescript
-// Проверка статуса rate limit
+// Check rate limit status
 const status = rateLimiter.getRateLimitStatus('/acme/new-nonce');
 if (status.isLimited) {
   console.log(`Rate limited until: ${new Date(status.retryAfter!)}`);
 }
 
-// Очистка rate limit (для тестирования)
+// Clear rate limit (for testing)
 rateLimiter.clearRateLimit('/acme/new-nonce');
 ```
 
-## Конфигурация для разных сред
+## Configuration for Different Environments
 
-### Разработка/Тестирование
+### Development/Testing
 ```typescript
 const devRateLimiter = new RateLimiter({
   maxRetries: 2,
-  baseDelayMs: 100,    // Быстро для тестов
-  maxDelayMs: 5000,    // Короткие таймауты
+  baseDelayMs: 100,    // Fast for tests
+  maxDelayMs: 5000,    // Short timeouts
   respectRetryAfter: true
 });
 ```
 
-### Продакшен
+### Production
 ```typescript
 const prodRateLimiter = new RateLimiter({
   maxRetries: 5,
-  baseDelayMs: 5000,   // Консервативные задержки
-  maxDelayMs: 600000,  // 10 минут максимум
+  baseDelayMs: 5000,   // Conservative delays
+  maxDelayMs: 600000,  // 10 minutes maximum
   respectRetryAfter: true
 });
 ```
 
-### Высоконагруженные системы
+### High-Volume Systems
 ```typescript
 const highVolumeRateLimiter = new RateLimiter({
   maxRetries: 3,
-  baseDelayMs: 10000,  // Долгие задержки
-  maxDelayMs: 1800000, // 30 минут максимум
+  baseDelayMs: 10000,  // Long delays
+  maxDelayMs: 1800000, // 30 minutes maximum
   respectRetryAfter: true
 });
 ```
 
-## Диагностика проблем
+## Problem Diagnosis
 
-### 1. Включите debug логи
+### 1. Enable Debug Logs
 ```bash
 DEBUG="acme-love:*" npm start
 ```
 
-### 2. Мониторинг метрик
+### 2. Metrics Monitoring
 ```typescript
-// Размер пула nonces
+// Nonce pool size
 console.log('Pool size:', nonceManager.getPoolSize(namespace));
 
-// Статус rate limit
+// Rate limit status
 const limitStatus = rateLimiter.getRateLimitStatus('/acme/new-nonce');
 console.log('Rate limit status:', limitStatus);
 ```
 
-### 3. Типичные ошибки
-- **503 Service Unavailable**: Rate limit, будет автоматически обработан
-- **"too many new registrations"**: Слишком много регистраций с IP
-- **"too many certificates for domain"**: Превышен лимит на домен
-- **"duplicate certificate"**: Дублированный сертификат (5 за 7 дней)
+### 3. Common Errors
+- **503 Service Unavailable**: Rate limit, will be automatically handled
+- **"too many new registrations"**: Too many registrations from IP
+- **"too many certificates for domain"**: Domain limit exceeded
+- **"duplicate certificate"**: Duplicate certificate (5 per 7 days)
 
-## Примеры использования
+## Usage Examples
 
-### Простое получение nonce
+### Simple Nonce Retrieval
 ```typescript
 const namespace = NonceManager.makeNamespace('https://acme-v02.api.letsencrypt.org');
 const nonce = await nonceManager.take(namespace);
 ```
 
-### Обработка rate limits в цикле
+### Rate Limit Handling in Loop
 ```typescript
 for (const domain of domains) {
   try {
     const nonce = await nonceManager.take(namespace);
-    // Создать заказ сертификата...
-    await delay(1000); // Пауза между запросами
+    // Create certificate order...
+    await delay(1000); // Pause between requests
   } catch (error) {
     if (error instanceof RateLimitError) {
       const waitTime = error.rateLimitInfo.retryAfter - Date.now();
       console.log(`Waiting ${waitTime}ms for rate limit...`);
       await delay(waitTime);
-      // Повторить итерацию
+      // Retry iteration
     }
   }
 }
 ```
 
-### Параллельная обработка с лимитами
+### Parallel Processing with Limits
 ```typescript
-const semaphore = new Semaphore(3); // Максимум 3 параллельных запроса
+const semaphore = new Semaphore(3); // Maximum 3 parallel requests
 
 const promises = domains.map(async (domain) => {
   await semaphore.acquire();
   try {
     const nonce = await nonceManager.take(namespace);
-    // Обработать домен...
+    // Process domain...
   } finally {
     semaphore.release();
   }
@@ -218,14 +218,14 @@ const promises = domains.map(async (domain) => {
 await Promise.all(promises);
 ```
 
-## Заключение
+## Conclusion
 
-Система управления лимитами в ACME Love обеспечивает:
-- ✅ Автоматическое обнаружение и обработку rate limits
-- ✅ Интеллектуальные повторы с экспоненциальной задержкой  
-- ✅ Пулинг nonces для снижения нагрузки на API
-- ✅ Подробное debug логирование
-- ✅ Конфигурируемые стратегии для разных сред
-- ✅ Совместимость с Let's Encrypt production и staging
+The rate limit management system in ACME Love provides:
+- ✅ Automatic rate limit detection and handling
+- ✅ Intelligent retries with exponential backoff  
+- ✅ Nonce pooling to reduce API load
+- ✅ Detailed debug logging
+- ✅ Configurable strategies for different environments
+- ✅ Compatibility with Let's Encrypt production and staging
 
-Библиотека готова к использованию в продакшене для высоконагруженных приложений без риска превышения лимитов API.
+The library is production-ready for high-volume applications without risk of API limit violations.
