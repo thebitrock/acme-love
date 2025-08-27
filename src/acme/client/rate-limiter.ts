@@ -1,28 +1,3 @@
-/**
- * ACME Rate Limiter
- * -----------------
- * Handles Let's Encrypt rate limits to prevent hitting API limitations:
- *
- * 1. Overall Requests Limit (per IP):
- *    - /acme/new-nonce: 20/sec, retry after 10 seconds
- *    - /acme/new-order: 300/sec, retry after 200 seconds
- *    - /acme/* (general): 250/sec, retry after 125 seconds
- *
- * 2. Account Registration Limits:
- *    - New Registrations per IP: 10 per 3 hours
- *
- * 3. Certificate Issuance Limits:
- *    - New Orders per Account: 300 per 3 hours
- *    - Authorization Failures: 5 per hour per identifier
- *    - Duplicate Certificate: 5 per exact set of identifiers per 7 days
- *
- * Features:
- * - Automatic retry with exponential backoff
- * - Rate limit detection from 503 responses with Retry-After header
- * - Endpoint-specific rate limiting
- * - Configurable retry strategies
- */
-
 import { debugRateLimit } from '../debug.js';
 
 export interface RateLimiterOptions {
@@ -30,9 +5,9 @@ export interface RateLimiterOptions {
   maxRetries?: number;
   /** Base delay for exponential backoff in ms (default: 1000) */
   baseDelayMs?: number;
-  /** Maximum delay between retries in ms (default: 300000 = 5 minutes) */
+  /** Maximum delay between retries in ms (default: 5 minutes) */
   maxDelayMs?: number;
-  /** Whether to respect Retry-After header from 503 responses (default: true) */
+  /** Whether to respect Retry-After header from 503/429 responses (default: true) */
   respectRetryAfter?: boolean;
 }
 
@@ -50,7 +25,7 @@ export interface RateLimitInfo {
 export class RateLimitError extends Error {
   constructor(
     message: string,
-    public readonly rateLimitInfo: RateLimitInfo
+    public readonly rateLimitInfo: RateLimitInfo,
   ) {
     super(message);
     this.name = 'RateLimitError';
@@ -68,135 +43,116 @@ export class RateLimiter {
 
   constructor(options: RateLimiterOptions = {}) {
     this.maxRetries = options.maxRetries ?? 3;
-    this.baseDelayMs = options.baseDelayMs ?? 1000;
+    this.baseDelayMs = options.baseDelayMs ?? 1_000;
     this.maxDelayMs = options.maxDelayMs ?? 300_000; // 5 minutes
     this.respectRetryAfter = options.respectRetryAfter ?? true;
   }
 
-  /**
-   * Execute a function with automatic rate limit handling
-   */
-  async executeWithRateLimit<T>(
-    fn: () => Promise<T>,
-    endpoint: string
-  ): Promise<T> {
+  async executeWithRateLimit<T>(fn: () => Promise<T>, endpoint: string): Promise<T> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.maxRetries + 1; attempt++) {
       try {
-        // Check if we're still in a rate limit window
-        const rateLimitUntil = this.rateLimitWindows.get(endpoint);
-        if (rateLimitUntil && Date.now() < rateLimitUntil) {
-          const waitMs = rateLimitUntil - Date.now();
+        // Honor active rate-limit window if any
+        const until = this.rateLimitWindows.get(endpoint);
+        if (until && Date.now() < until) {
+          const waitMs = until - Date.now();
           debugRateLimit('Rate limit active for %s, waiting %dms', endpoint, waitMs);
           await this.delay(waitMs);
         }
 
         const result = await fn();
-
-        // Success - clear any rate limit window
         this.rateLimitWindows.delete(endpoint);
 
         if (attempt > 1) {
-          debugRateLimit('Rate limit retry succeeded for %s on attempt %d', endpoint, attempt);
+          debugRateLimit('Retry succeeded for %s on attempt %d', endpoint, attempt);
         }
-
         return result;
-
       } catch (error: any) {
         lastError = error;
 
-        // Check if this is a rate limit error (503 with Retry-After)
-        const rateLimitInfo = this.parseRateLimitError(error, endpoint, attempt);
-
-        if (rateLimitInfo) {
-          debugRateLimit('Rate limit detected: %s, retryAfter=%d, attempt=%d/%d',
-            endpoint, rateLimitInfo.retryAfter, attempt, this.maxRetries + 1);
-
-          // Store the rate limit window
-          this.rateLimitWindows.set(endpoint, rateLimitInfo.retryAfter);
+        const info = this.parseRateLimitError(error, endpoint, attempt);
+        if (info) {
+          debugRateLimit(
+            'Rate limit detected: %s, retryAfter=%d (%ds), attempt=%d/%d',
+            endpoint,
+            info.retryAfter,
+            info.retryDelaySeconds,
+            attempt,
+            this.maxRetries + 1,
+          );
+          this.rateLimitWindows.set(endpoint, info.retryAfter);
 
           if (attempt <= this.maxRetries) {
-            const delayMs = this.calculateRetryDelay(rateLimitInfo, attempt);
-            debugRateLimit('Rate limited on %s, waiting %dms (attempt %d/%d)', endpoint, delayMs, attempt, this.maxRetries + 1);
+            const delayMs = this.calculateRetryDelay(info, attempt);
+            debugRateLimit('Waiting %dms before retry on %s (attempt %d/%d)', delayMs, endpoint, attempt, this.maxRetries + 1);
             await this.delay(delayMs);
             continue;
           } else {
             throw new RateLimitError(
               `Rate limit exceeded for ${endpoint} after ${this.maxRetries + 1} attempts`,
-              rateLimitInfo
+              info,
             );
           }
-        } else {
-          // Not a rate limit error, re-throw immediately
-          throw error;
         }
+
+        // Not a rate-limit case — rethrow immediately
+        throw error;
       }
     }
 
     throw lastError || new Error('Unexpected error in rate limiter');
   }
 
-  /**
-   * Parse error to detect rate limiting
-   */
+  /** Detect 503/429 (with case-insensitive Retry-After) or common "too many" messages. */
   private parseRateLimitError(error: any, endpoint: string, attempt: number): RateLimitInfo | null {
-    // Check for HTTP 503 status (Service Unavailable) in various places
-    const status = error?.response?.status || error?.status;
-    const headers = error?.response?.headers || error?.headers;
+    const status = error?.response?.status ?? error?.status;
+    // headers might be a plain object; try both lower and capitalized
+    const headers: Record<string, string | string[] | undefined> =
+      error?.response?.headers ?? error?.headers ?? {};
 
-    // Also check if it's our ServerInternalError with status 503 from fetch
-    const isHttp503 = status === 503 ||
-      (error?.message && error.message.includes('HTTP 503'));
+    const isLimitedHttp =
+      status === 503 ||
+      status === 429 ||
+      (typeof error?.message === 'string' && /HTTP (?:503|429)/i.test(error.message));
 
-    if (isHttp503) {
-      const retryAfterHeader = headers?.['retry-after'];
+    if (isLimitedHttp) {
+      const retryAfterHeader =
+        (headers['retry-after'] as string | undefined) ??
+        (headers['Retry-After'] as string | undefined);
 
       if (retryAfterHeader) {
-        const retryDelaySeconds = parseInt(retryAfterHeader, 10);
-        if (!isNaN(retryDelaySeconds)) {
+        // Retry-After seconds are most common in LE; HTTP-date support could be added if needed
+        const secs = parseInt(retryAfterHeader, 10);
+        if (!isNaN(secs)) {
           return {
             endpoint,
-            retryAfter: Date.now() + (retryDelaySeconds * 1000),
-            retryDelaySeconds,
-            attempts: attempt
+            retryAfter: Date.now() + secs * 1000,
+            retryDelaySeconds: secs,
+            attempts: attempt,
           };
         }
       }
 
-      // 503 without Retry-After header - use exponential backoff
+      // No header or unparsable — exponential backoff
+      const backoff = this.calculateExponentialDelay(attempt);
       return {
         endpoint,
-        retryAfter: Date.now() + this.calculateExponentialDelay(attempt),
-        retryDelaySeconds: this.calculateExponentialDelay(attempt) / 1000,
-        attempts: attempt
+        retryAfter: Date.now() + backoff,
+        retryDelaySeconds: Math.ceil(backoff / 1000),
+        attempts: attempt,
       };
     }
 
-    // Check for rate limit in error message
-    if (error?.message && typeof error.message === 'string') {
-      const message = error.message.toLowerCase();
-      if (message.includes('rate limit') || message.includes('too many')) {
-        // Try to parse retry time from message
-        const retryMatch = message.match(/retry after ([0-9-]+ [0-9:]+)/);
-        if (retryMatch) {
-          const retryTime = new Date(retryMatch[1]).getTime();
-          if (!isNaN(retryTime)) {
-            return {
-              endpoint,
-              retryAfter: retryTime,
-              retryDelaySeconds: Math.ceil((retryTime - Date.now()) / 1000),
-              attempts: attempt
-            };
-          }
-        }
-
-        // Generic rate limit error - use exponential backoff
+    if (typeof error?.message === 'string') {
+      const m = error.message.toLowerCase();
+      if (m.includes('rate limit') || m.includes('too many')) {
+        const backoff = this.calculateExponentialDelay(attempt);
         return {
           endpoint,
-          retryAfter: Date.now() + this.calculateExponentialDelay(attempt),
-          retryDelaySeconds: this.calculateExponentialDelay(attempt) / 1000,
-          attempts: attempt
+          retryAfter: Date.now() + backoff,
+          retryDelaySeconds: Math.ceil(backoff / 1000),
+          attempts: attempt,
         };
       }
     }
@@ -204,38 +160,22 @@ export class RateLimiter {
     return null;
   }
 
-  /**
-   * Calculate retry delay based on rate limit info and attempt number
-   */
-  private calculateRetryDelay(rateLimitInfo: RateLimitInfo, attempt: number): number {
-    if (this.respectRetryAfter && rateLimitInfo.retryDelaySeconds > 0) {
-      // Use server-provided delay, but cap it at maxDelayMs
-      const serverDelay = rateLimitInfo.retryDelaySeconds * 1000;
-      return Math.min(serverDelay, this.maxDelayMs);
+  private calculateRetryDelay(info: RateLimitInfo, attempt: number): number {
+    if (this.respectRetryAfter && info.retryDelaySeconds > 0) {
+      return Math.min(info.retryDelaySeconds * 1000, this.maxDelayMs);
     }
-
-    // Fall back to exponential backoff
     return this.calculateExponentialDelay(attempt);
   }
 
-  /**
-   * Calculate exponential backoff delay
-   */
   private calculateExponentialDelay(attempt: number): number {
     const delay = this.baseDelayMs * Math.pow(2, attempt - 1);
     return Math.min(delay, this.maxDelayMs);
   }
 
-  /**
-   * Sleep for specified milliseconds
-   */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((r) => setTimeout(r, ms));
   }
 
-  /**
-   * Get current rate limit status for an endpoint
-   */
   getRateLimitStatus(endpoint: string): { isLimited: boolean; retryAfter?: number } {
     const retryAfter = this.rateLimitWindows.get(endpoint);
     if (retryAfter && Date.now() < retryAfter) {
@@ -244,16 +184,10 @@ export class RateLimiter {
     return { isLimited: false };
   }
 
-  /**
-   * Clear rate limit window for an endpoint (useful for testing)
-   */
   clearRateLimit(endpoint: string): void {
     this.rateLimitWindows.delete(endpoint);
   }
 
-  /**
-   * Get recommended endpoints for rate limiting
-   */
   static getKnownEndpoints() {
     return {
       NEW_NONCE: '/acme/new-nonce',
@@ -262,7 +196,7 @@ export class RateLimiter {
       REVOKE_CERT: '/acme/revoke-cert',
       RENEWAL_INFO: '/acme/renewal-info',
       ACME_GENERAL: '/acme/*',
-      DIRECTORY: '/directory'
+      DIRECTORY: '/directory',
     } as const;
   }
 }

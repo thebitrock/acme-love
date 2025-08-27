@@ -16,7 +16,7 @@ describe('Debug Rate Limiter', () => {
     const mockFn = jest.fn(async () => {
       callCount++;
       console.log(`Mock function called: ${callCount}`);
-      
+
       const error = new Error('Rate limited');
       (error as any).status = 503;
       (error as any).headers = { 'retry-after': '1' };
@@ -25,7 +25,7 @@ describe('Debug Rate Limiter', () => {
     });
 
     console.log('Starting rate limit test...');
-    
+
     try {
       await rateLimiter.executeWithRateLimit(mockFn, '/test-endpoint');
       console.log('Unexpected success');

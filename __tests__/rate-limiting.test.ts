@@ -16,7 +16,7 @@ describe('ACME Rate Limiting Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockFetch = jest.fn();
     rateLimiter = new RateLimiter({
       maxRetries: 2,
@@ -24,7 +24,7 @@ describe('ACME Rate Limiting Tests', () => {
       maxDelayMs: 1000,
       respectRetryAfter: true
     });
-    
+
     nonceManager = new NonceManager({
       newNonceUrl: 'https://test-staging.acme-love.com/acme/new-nonce', // Fake URL for testing
       fetch: mockFetch,
@@ -163,7 +163,7 @@ describe('ACME Rate Limiting Tests', () => {
       mockFetch.mockImplementation(async () => {
         const error = new Error('newNonce failed: HTTP 503');
         (error as any).status = 503;
-        (error as any).headers = { 
+        (error as any).headers = {
           'retry-after': '10',
           'content-type': 'application/problem+json'
         };
@@ -171,10 +171,10 @@ describe('ACME Rate Limiting Tests', () => {
       });
 
       const namespace = NonceManager.makeNamespace('test-ca');
-      
+
       // Should fail after retries due to persistent rate limiting
       await expect(nonceManager.take(namespace)).rejects.toThrow(/Rate limit exceeded/);
-      
+
       // Should have attempted multiple times
       expect(mockFetch).toHaveBeenCalledTimes(3); // Initial + 2 retries
     });
@@ -216,7 +216,7 @@ describe('ACME Rate Limiting Tests', () => {
       });
 
       const namespace = NonceManager.makeNamespace('test-ca');
-      
+
       // Make 3 concurrent requests
       const promises = [
         nonceManager.take(namespace),
@@ -225,7 +225,7 @@ describe('ACME Rate Limiting Tests', () => {
       ];
 
       const results = await Promise.all(promises);
-      
+
       // All should succeed eventually
       expect(results).toHaveLength(3);
       results.forEach(nonce => {
@@ -253,7 +253,7 @@ describe('ACME Rate Limiting Tests', () => {
       });
 
       expect(prodNonceManager).toBeDefined();
-      
+
       // Test that rate limiter has correct settings
       const status = prodRateLimiter.getRateLimitStatus('/test');
       expect(status.isLimited).toBe(false);
@@ -261,7 +261,7 @@ describe('ACME Rate Limiting Tests', () => {
 
     test('should provide known endpoint constants', () => {
       const endpoints = RateLimiter.getKnownEndpoints();
-      
+
       expect(endpoints.NEW_NONCE).toBe('/acme/new-nonce');
       expect(endpoints.NEW_ACCOUNT).toBe('/acme/new-account');
       expect(endpoints.NEW_ORDER).toBe('/acme/new-order');

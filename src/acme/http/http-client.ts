@@ -1,4 +1,5 @@
 import { request } from 'undici';
+import { debugHttp } from '../debug.js';
 
 export interface HttpResponse<T = unknown> {
   status: number;
@@ -8,8 +9,24 @@ export interface HttpResponse<T = unknown> {
 
 export class SimpleHttpClient {
   async get<T>(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<T>> {
-    const res = await request(url, { method: 'GET', headers });
-    const data = await res.body.json();
+    debugHttp('GET %s init headers=%j', url, headers);
+    let res;
+    let data: unknown;
+    const start = Date.now();
+    try {
+      res = await request(url, { method: 'GET', headers });
+      debugHttp('GET %s response status=%d durationMs=%d content-type=%s', url, res.statusCode, Date.now() - start, res.headers['content-type']);
+      try {
+        data = await res.body.json();
+        debugHttp('GET %s parsed json ok', url);
+      } catch (e) {
+        debugHttp('GET %s json parse failed: %s', url, (e as Error).message);
+        throw e;
+      }
+    } catch (err) {
+      debugHttp('GET %s error: %s', url, (err as Error).message);
+      throw err;
+    }
 
     return {
       status: res.statusCode,
@@ -40,23 +57,41 @@ export class SimpleHttpClient {
       serializedBody = JSON.stringify(body);
     }
 
-    const res = await request(url, {
-      method: 'POST',
-      headers,
-      body: serializedBody,
-    });
+    const bodyDesc = this.describeBodyForDebug(serializedBody);
+    debugHttp('POST %s init headers=%j body=%j', url, headers, bodyDesc);
+    const start = Date.now();
+    let res;
+    try {
+      res = await request(url, {
+        method: 'POST',
+        headers,
+        body: serializedBody,
+      });
+      debugHttp('POST %s response status=%d durationMs=%d content-type=%s', url, res.statusCode, Date.now() - start, res.headers['content-type']);
+    } catch (err) {
+      debugHttp('POST %s network error: %s', url, (err as Error).message);
+      throw err;
+    }
 
     const rawCt = res.headers["content-type"];
     const ct = (Array.isArray(rawCt) ? rawCt[0] : rawCt)?.toLowerCase() ?? "";
 
     let data: unknown;
-    if (ct.includes("application/json") || ct.includes("application/problem+json")) {
-      data = await res.body.json();
-    } else if (ct.startsWith("text/") || ct.includes("application/pem-certificate-chain")) {
-      data = await res.body.text();
-    } else {
-      const buf = await res.body.arrayBuffer();
-      data = Buffer.from(buf);
+    try {
+      if (ct.includes("application/json") || ct.includes("application/problem+json")) {
+        data = await res.body.json();
+        debugHttp('POST %s parsed json', url);
+      } else if (ct.startsWith("text/") || ct.includes("application/pem-certificate-chain")) {
+        data = await res.body.text();
+        debugHttp('POST %s read text len=%d', url, typeof data === 'string' ? data.length : 0);
+      } else {
+        const buf = await res.body.arrayBuffer();
+        data = Buffer.from(buf);
+        debugHttp('POST %s read binary len=%d', url, (data as Buffer).length);
+      }
+    } catch (e) {
+      debugHttp('POST %s body parse error: %s', url, (e as Error).message);
+      throw e;
     }
 
     return {
@@ -67,7 +102,16 @@ export class SimpleHttpClient {
   }
 
   async head(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<void>> {
-    const res = await request(url, { method: 'HEAD', headers });
+    debugHttp('HEAD %s init headers=%j', url, headers);
+    const start = Date.now();
+    let res;
+    try {
+      res = await request(url, { method: 'HEAD', headers });
+      debugHttp('HEAD %s response status=%d durationMs=%d', url, res.statusCode, Date.now() - start);
+    } catch (err) {
+      debugHttp('HEAD %s error: %s', url, (err as Error).message);
+      throw err;
+    }
 
     return {
       status: res.statusCode,
@@ -90,5 +134,18 @@ export class SimpleHttpClient {
     }
 
     return result;
+  }
+
+  private describeBodyForDebug(body: string | Uint8Array | Buffer | null): any {
+    if (body === null) return { type: 'null' };
+    if (typeof body === 'string') {
+      return { type: 'string', length: body.length, preview: body.length > 120 ? body.slice(0, 120) + '…' : body };
+    }
+    if (body instanceof Uint8Array) {
+      // Covers Buffer too since Buffer extends Uint8Array in Node.js
+      const isBuffer = typeof Buffer !== 'undefined' && body instanceof Buffer;
+      return { type: isBuffer ? 'buffer' : 'uint8array', length: body.length };
+    }
+    return { type: typeof body };
   }
 }

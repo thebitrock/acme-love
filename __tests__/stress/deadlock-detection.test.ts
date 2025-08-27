@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
-import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
-import { NonceManager } from '../src/acme/client/nonce-manager.js';
-import { testAccountManager } from './utils/account-manager.js';
-import { cleanupTestResources } from './test-utils.js';
+import { AcmeClientCore } from '../../src/acme/client/acme-client-core.js';
+import { NonceManager } from '../../src/acme/client/nonce-manager.js';
+import { testAccountManager } from '../utils/account-manager.js';
+import { cleanupTestResources } from '../test-utils.js';
 
 // Deadlock detection test
 describe('ACME Deadlock Detection Test', () => {

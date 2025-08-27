@@ -15,27 +15,13 @@ export function cleanupTestResources(): void {
       // Ignore gc errors
     }
   }
-  
+
   // Small delay to allow any pending microtasks to complete
   return new Promise<void>((resolve) => {
     setImmediate(() => {
       resolve();
     });
   }) as any;
-}
-
-/**
- * Cleanup function specifically for NonceManager instances
- * Ensures all pending operations are cancelled and resources are freed
- */
-export function cleanupNonceManager(nonceManager: any): void {
-  if (nonceManager && typeof nonceManager.cleanup === 'function') {
-    try {
-      nonceManager.cleanup();
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  }
 }
 
 /**

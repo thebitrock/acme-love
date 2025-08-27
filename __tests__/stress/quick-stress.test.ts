@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
-import { testAccountManager } from './utils/account-manager.js';
+import { testAccountManager } from '../utils/account-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import { cleanupHttpTests } from './test-utils.js';
+import { cleanupHttpTests } from '../test-utils.js';
 
 // Endpoint tracking for quick stress test
 const endpointStats = new Map<string, number>();

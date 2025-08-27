@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll } from '@jest/globals';
-import { testAccountManager } from './utils/account-manager.js';
+import { testAccountManager } from '../utils/account-manager.js';
 
 // Endpoint tracking for demo stress test
 const endpointStats = new Map<string, number>();

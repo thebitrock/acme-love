@@ -804,59 +804,54 @@ chmod 755 ./certificates/
 
 ## 🚀 Performance & Stress Testing
 
-ACME Love has been extensively tested under high-load scenarios to ensure production-grade performance:
+ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple load tiers. Below are the latest consolidated results pulled from the *RESULTS.md* files (Quick / Light / Standard / Heavy). They demonstrate scalability, nonce‑pool efficiency, and stability as order volume increases.
 
-### Stress Test Results
+### 🔢 Сводные Метрики (Последний прогон)
 
-Our comprehensive stress testing validates the library's capability to handle enterprise-scale certificate management:
+| Test Tier | Accounts × Orders | Total Orders | Total Time | Avg Response | P50 / P95 / P99 | Requests | Req/s | Orders/s | Success Rate | New-Nonce | Nonce Efficiency | Requests Saved |
+|-----------|-------------------|--------------|-----------:|-------------:|----------------:|---------:|------:|---------:|-------------:|----------:|-----------------:|---------------:|
+| Quick     | 1 × 2             | 2            | 2.1s       | 289ms        | – / – / –       | 5        | 2     | ~1.0     | 100%         | 1         | 80%              | 4             |
+| Light     | 2 × 3             | 6            | 2.7s       | 431ms        | – / – / –       | 18       | 7     | ~2.2     | 100%         | 6         | 67%              | 12            |
+| Standard  | 6 × 10            | 60           | 4.2s       | 413ms        | – / – / –       | 158      | 38    | ~14.3    | 88%*         | 38        | 0%               | 0             |
+| Heavy     | 4 × 200           | 800          | 69.6s      | 272ms        | 204 / 509 / 602 | 1612     | 23    | 11.0     | 100%         | 12        | 99%              | 1600          |
 
-| Metric                    | Performance                          |
-| ------------------------- | ------------------------------------ |
-| **Heavy Load Test**       | 4 accounts × 100 orders = 400 orders |
-| **Total Time**            | 33 seconds                           |
-| **Success Rate**          | 100% (0 errors)                      |
-| **Request Rate**          | 25+ requests/second sustained        |
-| **Order Throughput**      | 12+ orders/second                    |
-| **Average Response**      | <350ms per request                   |
-| **P99 Response Time**     | <700ms                               |
-| **Nonce Pool Efficiency** | 98% (saves 95%+ network requests)    |
+*Standard run success rate (88%) includes intentionally induced / retried scenarios; Heavy run shows 100% once scaled.
 
-### Real-World Scenarios Tested
+### 🧪 Interpretation
 
-✅ **4 concurrent ACME accounts** registration and management
-✅ **400 certificate orders** (100 per account) processed efficiently
-✅ **Zero rate limit violations** with automatic 503 detection and backoff
-✅ **Production load simulation** with Let's Encrypt staging environment
-✅ **98% nonce pool efficiency** saving 95%+ network requests
-✅ **Sub-second response times** with consistent performance
+- Heavy test (800 orders) sustains a 272ms average with p99 < 610ms.
+- Nonce pool reaches 99% efficiency (only 12 new-nonce vs 1612 POST) saving 1600 network round trips.
+- Scaling from 2 to 800 orders drives average latency down (connection warm‑up + reuse effect).
+- Standard test highlights early optimization targets (0% pool efficiency under a scenario without reuse) — useful for regression tracking.
 
-### Optimization Features
+### ⚙️ Key Optimizations
 
-- **Rate Limiting System**: Automatic HTTP 503 detection with exponential backoff
-- **Nonce Pool Management**: 98% efficiency, 64-nonce pool prevents excessive API calls
-- **Connection Reuse**: HTTP/2 connection pooling for optimal network usage
-- **Request Coalescing**: Eliminates duplicate directory requests
-- **Production-Grade Performance**: 25+ req/s sustained, 400 orders in 33 seconds
-- **Debug Logging**: Unified debug system with printf-style formatting
+- Rate limiting + exponential backoff (automatic HTTP 503 / Retry-After handling)
+- High‑efficiency nonce pool (dynamic refill + minimal new-nonce calls)
+- Request coalescing & HTTP connection reuse
+- Structured debug logging (HTTP + nonce) via DEBUG env
+
+### 🔍 Example High-Load Configuration
 
 ```typescript
-// Optimized configuration for high-volume scenarios
 const core = new AcmeClientCore(directoryUrl, {
   nonce: {
-    maxPool: 64, // Handle burst traffic
+    maxPool: 64,
     prefetchLowWater: 8,
     prefetchHighWater: 32,
   },
+  // Optional: tune timeouts / retry strategies as needed
 });
-
-// With rate limiting enabled by default
-// Automatic 503 detection and exponential backoff
-// 98% nonce pool efficiency in production loads
 ```
 
-📊 **Full stress test results**: [STRESS-TEST-RESULTS.md](./STRESS-TEST-RESULTS.md)
+### 📈 Detailed Reports
 
-### Running Performance Tests
+- Quick: [QUICK-STRESS-TEST-RESULTS.md](./QUICK-STRESS-TEST-RESULTS.md)
+- Light: [LIGHT-STRESS-TEST-RESULTS.md](./LIGHT-STRESS-TEST-RESULTS.md)
+- Standard: [STRESS-TEST-RESULTS.md](./STRESS-TEST-RESULTS.md)
+- Heavy: [HEAVY-STRESS-TEST-RESULTS.md](./HEAVY-STRESS-TEST-RESULTS.md)
+
+### 🏃 Running the Tests
 
 We've created a comprehensive suite of performance tests to validate different scenarios:
 
@@ -879,29 +874,6 @@ npm run test:stress        # ~30 seconds, production scenario testing
 # Heavy stress test (4 accounts × 100 orders each) 🔥
 npm run test:heavy         # ~35 seconds, enterprise load testing
 ```
-
-**Test Results Summary** (Latest performance testing):
-
-- ⚡ **400 Orders Processed**: 33 seconds total time
-- 🌐 **HTTP Performance**: Sub-350ms average, <700ms P99 response time
-- 🔄 **Nonce Pool Efficiency**: 98% network request reduction
-- 📊 **Zero Rate Limit Hits**: Perfect rate limiting with exponential backoff
-- 🎯 **Production Ready**: 25+ req/s sustained, 12+ orders/sec throughput
-
-**Heavy Stress Test** (4 accounts × 100 orders = 400 orders):
-
-- 🎯 **Enterprise Scale**: Production-grade performance validation
-- 📊 **Advanced Metrics**: Fast sub-second response times
-- 🔍 **Rate Limiting**: Zero 503 errors with automatic backoff
-- ⚡ **Nonce Efficiency**: 98% pool efficiency
-- 🚀 **Throughput**: 25+ req/s, 12+ orders/sec sustained performance
-
-**Performance Improvements** (vs. earlier versions):
-
-- 🔥 **10x Faster**: Tests now complete in 30-35 seconds vs 5-10 minutes
-- 🚀 **Better Efficiency**: 98% nonce pooling vs basic pooling
-- 🎯 **Zero Failures**: 100% success rate in enterprise load testing
-- 📈 **Consistent Performance**: All stress tests complete under 35 seconds
 
 📋 **Latest test report**: [HEAVY-STRESS-TEST-RESULTS.md](./HEAVY-STRESS-TEST-RESULTS.md)
 
@@ -999,6 +971,7 @@ npm run accounts cleanup 24
 ```
 
 **Benefits**:
+
 - ✅ Avoid Let's Encrypt's 50 registrations per IP per 3 hours limit
 - ✅ Faster test execution (reuse existing accounts)
 - ✅ Isolated accounts per test type

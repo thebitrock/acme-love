@@ -1,12 +1,12 @@
 import { describe, test, expect, beforeAll } from '@jest/globals';
-import { testAccountManager } from './utils/account-manager.js';
+import { testAccountManager } from '../utils/account-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
 // Heavy stress test: 4 accounts × 100 orders = 400 orders total
 describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
   const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
-  const ORDERS_PER_ACCOUNT = 100;
+  const ORDERS_PER_ACCOUNT = 200;
   const TOTAL_ACCOUNTS = 4;
   const TOTAL_ORDERS = TOTAL_ACCOUNTS * ORDERS_PER_ACCOUNT;
 
@@ -325,7 +325,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       console.log(`📦 Creating orders in batches of 10...`);
       const orderCreationStart = Date.now();
 
-      let completedOrders = 0;
+      let receivedChallenges = 0;
       const batchSize = 10;
       const reportingInterval = 50; // Report progress every 50 orders
 
@@ -350,13 +350,13 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 
               if (httpChallenge) {
                 const keyAuth = await acct.keyAuthorization(httpChallenge.token);
-                completedOrders++;
+                receivedChallenges++;
 
-                if (completedOrders % reportingInterval === 0) {
-                  const progress = Math.round((completedOrders / TOTAL_ORDERS) * 100);
+                if (receivedChallenges % reportingInterval === 0) {
+                  const progress = Math.round((receivedChallenges / TOTAL_ORDERS) * 100);
                   const elapsed = Date.now() - orderCreationStart;
-                  const rate = completedOrders / (elapsed / 1000);
-                  console.log(`     📊 ${completedOrders}/${TOTAL_ORDERS} orders (${progress}%) - ${Math.round(rate)} orders/sec`);
+                  const rate = receivedChallenges / (elapsed / 1000);
+                  console.log(`     📊 ${receivedChallenges}/${TOTAL_ORDERS} orders (${progress}%) - ${Math.round(rate)} orders/sec`);
                 }
 
                 return {
@@ -434,8 +434,8 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       console.log(`Account Creation: ${accountCreationTime}ms`);
       console.log(`Order Creation: ${orderCreationTime}ms`);
       console.log(`Target Orders: ${TOTAL_ORDERS}`);
-      console.log(`Completed Orders: ${completedOrders}`);
-      console.log(`Success Rate: ${Math.round((completedOrders / TOTAL_ORDERS) * 100)}%`);
+      console.log(`Received challenges: ${receivedChallenges}`);
+      console.log(`Success Rate: ${Math.round((receivedChallenges / TOTAL_ORDERS) * 100)}%`);
       console.log(`Total HTTP Requests: ${results.totalRequests}`);
       console.log(`New-Nonce Requests: ${results.newNonceRequests}`);
       console.log(`Error Count: ${results.errorCount}`);
@@ -494,8 +494,8 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 - **Accounts**: ${TOTAL_ACCOUNTS}
 - **Orders per Account**: ${ORDERS_PER_ACCOUNT}
 - **Total Target Orders**: ${TOTAL_ORDERS}
-- **Completed Orders**: ${completedOrders}
-- **Success Rate**: ${Math.round((completedOrders / TOTAL_ORDERS) * 100)}%
+- **Received challenges**: ${receivedChallenges}
+- **Success Rate**: ${Math.round((receivedChallenges / TOTAL_ORDERS) * 100)}%
 - **Target**: Let's Encrypt Staging
 - **Algorithm**: EC P-256
 
@@ -560,7 +560,7 @@ ${results.phases.map(phase =>
           ).join('\n\n')}
 
 ## Key Performance Indicators
-✅ Successfully processed ${completedOrders} orders out of ${TOTAL_ORDERS} (${Math.round((completedOrders / TOTAL_ORDERS) * 100)}% success rate)
+✅ Successfully processed ${receivedChallenges} orders out of ${TOTAL_ORDERS} (${Math.round((receivedChallenges / TOTAL_ORDERS) * 100)}% success rate)
 ✅ Maintained ${Math.round(results.averageResponseTime)}ms average response time under heavy load
 ✅ Achieved ${Math.round(results.requestsPerSecond)} requests/second sustained throughput
 ✅ Nonce pooling saved ${results.totalRequests - results.newNonceRequests} network requests (${results.newNonceRequests > 0 ? Math.round(((results.totalRequests - results.newNonceRequests) / results.totalRequests) * 100) : 0}% efficiency)
@@ -579,7 +579,7 @@ management with hundreds of concurrent orders while maintaining performance and 
       console.log(`\n📋 Comprehensive report saved to ${reportPath}`);
 
       // Performance assertions
-      expect(completedOrders).toBeGreaterThan(TOTAL_ORDERS * 0.8); // At least 80% success rate
+      expect(receivedChallenges).toBeGreaterThan(TOTAL_ORDERS * 0.8); // At least 80% success rate
       expect(results.totalRequests).toBeGreaterThan(TOTAL_ORDERS * 2); // At least 2 requests per order
       expect(results.newNonceRequests).toBeGreaterThan(0);
       expect(results.averageResponseTime).toBeLessThan(5000); // Under 5 seconds average

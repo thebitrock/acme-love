@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
-import { testAccountManager } from './utils/account-manager.js';
+import { testAccountManager } from '../utils/account-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
