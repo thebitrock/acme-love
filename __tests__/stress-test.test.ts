@@ -6,6 +6,44 @@ import type { CsrAlgo } from '../src/acme/csr.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Endpoint tracking for stress test
+const endpointStats = new Map<string, number>();
+
+function extractEndpoint(url: string): string {
+  try {
+    const parsedUrl = new URL(url);
+    const path = parsedUrl.pathname;
+    
+    // Let's Encrypt specific endpoints
+    if (path.includes('/acme/new-nonce')) return 'Let\'s Encrypt: new-nonce';
+    if (path.includes('/acme/new-acct')) return 'Let\'s Encrypt: new-account';
+    if (path.includes('/acme/new-order')) return 'Let\'s Encrypt: new-order';
+    if (path.includes('/acme/authz/')) return 'Let\'s Encrypt: authorization';
+    if (path.includes('/acme/order/')) return 'Let\'s Encrypt: order';
+    if (path.includes('/acme/chall/')) return 'Let\'s Encrypt: challenge';
+    if (path.includes('/acme/cert/')) return 'Let\'s Encrypt: certificate';
+    if (path.includes('/directory')) return 'Let\'s Encrypt: directory';
+    
+    // Fallback to generic path
+    return `Generic: ${path}`;
+  } catch (error) {
+    return `Invalid URL: ${url}`;
+  }
+}
+
+function trackEndpoint(url: string): void {
+  const endpoint = extractEndpoint(url);
+  endpointStats.set(endpoint, (endpointStats.get(endpoint) || 0) + 1);
+}
+
+// Monkey patch for tracking
+const originalFetch = global.fetch;
+global.fetch = async (input: any, init?: RequestInit) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  trackEndpoint(url);
+  return originalFetch(input, init);
+};
+
 // Performance metrics collection
 interface RequestMetrics {
   type: string;
@@ -158,6 +196,7 @@ class MetricsHttpClient {
 
   async get(url: string, headers: Record<string, string> = {}): Promise<any> {
     const start = Date.now();
+    trackEndpoint(url); // Track endpoint for detailed statistics
     try {
       const result = await this.originalClient.get(url, headers);
       const duration = Date.now() - start;
@@ -172,6 +211,7 @@ class MetricsHttpClient {
 
   async post(url: string, body: unknown, headers: Record<string, string> = {}): Promise<any> {
     const start = Date.now();
+    trackEndpoint(url); // Track endpoint for detailed statistics
     try {
       const result = await this.originalClient.post(url, body, headers);
       const duration = Date.now() - start;
@@ -186,6 +226,7 @@ class MetricsHttpClient {
 
   async head(url: string, headers: Record<string, string> = {}): Promise<any> {
     const start = Date.now();
+    trackEndpoint(url); // Track endpoint for detailed statistics
     try {
       const result = await this.originalClient.head(url, headers);
       const duration = Date.now() - start;
@@ -220,9 +261,10 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
     collector = new MetricsCollector();
 
     // Generate test domains
-    testDomains = Array.from({ length: TOTAL_ACCOUNTS * ORDERS_PER_ACCOUNT }, (_, i) =>
-      `stress-test-${i}-${Date.now()}.acme-love.com`
-    );
+    testDomains = Array.from({ length: TOTAL_ACCOUNTS * ORDERS_PER_ACCOUNT }, () => {
+      const randomString = Math.random().toString(36).substring(2, 10).toLowerCase();
+      return `${randomString}-acme-love.com`;
+    });
 
     console.log(`🚀 Starting ACME Stress Test`);
     console.log(`   Accounts: ${TOTAL_ACCOUNTS}`);
@@ -428,6 +470,31 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
       console.log(`Remaining in Pool: ${results.nonceMetrics.remainingInPool}`);
       console.log(`Pool Efficiency: ${results.nonceMetrics.totalGenerated > 0 ? Math.round((results.nonceMetrics.totalConsumed / results.nonceMetrics.totalGenerated) * 100) : 0}%`);
       console.log(`Network Savings: ${Math.max(0, results.nonceMetrics.totalConsumed - results.nonceMetrics.newNonceRequests)} requests`);
+
+      // Detailed endpoint statistics
+      console.log(`\n🌐 ENDPOINT STATISTICS`);
+      console.log(`=====================`);
+      const sortedStats = Array.from(endpointStats.entries()).sort((a, b) => b[1] - a[1]);
+      let totalRequests = 0;
+      for (const [endpoint, count] of sortedStats) {
+        console.log(`${endpoint}: ${count} requests`);
+        totalRequests += count;
+      }
+      console.log(`Total HTTP Requests: ${totalRequests}`);
+
+      // Let's Encrypt specific breakdown
+      console.log(`\n🔒 Let's Encrypt Staging API Breakdown`);
+      console.log(`======================================`);
+      const letsEncryptStats = sortedStats.filter(([endpoint]) => endpoint.startsWith('Let\'s Encrypt'));
+      let letsEncryptTotal = 0;
+      for (const [endpoint, count] of letsEncryptStats) {
+        console.log(`${endpoint}: ${count} requests`);
+        letsEncryptTotal += count;
+      }
+      console.log(`Let's Encrypt Total: ${letsEncryptTotal} requests (${((letsEncryptTotal / totalRequests) * 100).toFixed(1)}% of all requests)`);
+
+      // Cleanup
+      global.fetch = originalFetch;
 
       // Assertions
       expect(allOrders.length).toBe(TOTAL_ACCOUNTS * ORDERS_PER_ACCOUNT);

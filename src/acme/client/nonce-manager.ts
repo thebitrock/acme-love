@@ -68,8 +68,6 @@ export interface NonceManagerOptions {
   prefetchLowWater?: number;
   /** Target fill level for prefetch (must be >= lowWater). Optional. */
   prefetchHighWater?: number;
-  /** Optional logger function for diagnostics. */
-  log?: (msg: string, ...args: unknown[]) => void;
   /** Rate limiter for handling Let's Encrypt API limits. If not provided, creates default one. */
   rateLimiter?: RateLimiter;
 }
@@ -90,7 +88,6 @@ export class NonceManager {
   private readonly maxPool: number;
   private readonly prefetchLowWater: number;
   private readonly prefetchHighWater: number;
-  private readonly log: (msg: string, ...args: unknown[]) => void;
   private readonly rateLimiter: RateLimiter;
 
   private pools = new Map<Namespace, StampedNonce[]>();
@@ -102,15 +99,14 @@ export class NonceManager {
    */
   constructor(opts: NonceManagerOptions) {
     this.newNonceUrl = opts.newNonceUrl;
-    debugNonce('Initializing NonceManager: url=%s, maxPool=%d, prefetchLow=%d, prefetchHigh=%d', 
+    debugNonce('Initializing NonceManager: url=%s, maxPool=%d, prefetchLow=%d, prefetchHigh=%d',
       this.newNonceUrl, opts.maxPool ?? 32, opts.prefetchLowWater ?? 0, opts.prefetchHighWater ?? 0);
     this.fetch = opts.fetch;
     this.maxAgeMs = opts.maxAgeMs ?? 5 * 60_000;
     this.maxPool = opts.maxPool ?? 32;
     this.prefetchLowWater = Math.max(0, opts.prefetchLowWater ?? 0);
     this.prefetchHighWater = Math.max(this.prefetchLowWater, opts.prefetchHighWater ?? 0);
-    this.log = opts.log ?? (() => { });
-    this.rateLimiter = opts.rateLimiter ?? new RateLimiter({ log: this.log });
+    this.rateLimiter = opts.rateLimiter ?? new RateLimiter();
   }
 
   /**
@@ -143,7 +139,7 @@ export class NonceManager {
     debugNonce('No cached nonce available, queueing request: namespace=%s', namespace);
     return new Promise<string>((resolve, reject) => {
       const q = this.pending.get(namespace) ?? [];
-      
+
       // Add timeout to prevent infinite deadlock
       const timeoutMs = 30000; // 30 seconds timeout
       const timeoutId = setTimeout(() => {
@@ -160,19 +156,19 @@ export class NonceManager {
         }
         reject(new Error(`Nonce request timeout after ${timeoutMs}ms for namespace: ${namespace}`));
       }, timeoutMs);
-      
+
       // Wrap resolve to clear timeout
       const wrappedResolve = (value: string) => {
         clearTimeout(timeoutId);
         resolve(value);
       };
-      
-      // Wrap reject to clear timeout  
+
+      // Wrap reject to clear timeout
       const wrappedReject = (error: any) => {
         clearTimeout(timeoutId);
         reject(error);
       };
-      
+
       q.push({ resolve: wrappedResolve, reject: wrappedReject });
       this.pending.set(namespace, q);
       debugNonce('Queued nonce request: namespace=%s, queueLength=%d', namespace, q.length);
@@ -215,7 +211,7 @@ export class NonceManager {
 
       this.putFromResponse(namespace, res);
 
-      this.log(`Attempt ${attempt}: HTTP ${res.status} (pool size ${this.getPoolSize(namespace)})`);
+      debugNonce('Attempt %d: HTTP %d (pool size %d)', attempt, res.status, this.getPoolSize(namespace));
 
       if (res.status >= 200 && res.status < 400) {
         return res;
@@ -267,12 +263,12 @@ export class NonceManager {
   /** Perform network request for a fresh nonce and store it. */
   private async fetchNewNonce(namespace: Namespace): Promise<string> {
     debugNonce('Fetching new nonce: namespace=%s, url=%s', namespace, this.newNonceUrl);
-    
+
     return this.rateLimiter.executeWithRateLimit(async () => {
       const res = await this.fetch(this.newNonceUrl);
-      this.log(`Fetched new nonce from ${this.newNonceUrl}: HTTP ${res.status}`);
+      debugNonce('Fetched new nonce from %s: HTTP %d', this.newNonceUrl, res.status);
       debugNonce('Nonce fetch response: status=%d', res.status);
-      
+
       if (!res.status || res.status < 200 || res.status >= 400) {
         debugNonce('Bad HTTP status: %d', res.status);
         // For 503, include headers in error for rate limiter to parse
@@ -284,7 +280,7 @@ export class NonceManager {
         }
         throw new ServerInternalError(`newNonce failed: HTTP ${res.status}`);
       }
-      
+
       const nonce = this.nonceExtractor(res);
       this.add(namespace, nonce);
       debugNonce('Added nonce to pool: namespace=%s, poolSize=%d', namespace, this.getPoolSize(namespace));
@@ -341,16 +337,16 @@ export class NonceManager {
    */
   private async runRefill(namespace: Namespace): Promise<void> {
     debugNonce('Starting runRefill for namespace: %s', namespace);
-    
+
     // Direct refill without coalescing to avoid deadlock issues
     return this.doRefill(namespace);
   }
-  
+
   private async doRefill(namespace: Namespace): Promise<void> {
     debugNonce('Starting refill operation: namespace=%s', namespace);
     const HARD_CAP = Math.max(8, this.maxPool); // safety bound per run
     const refillTimeoutMs = 25000; // 25 seconds timeout for entire refill operation
-    
+
     const refillPromise = (async () => {
       debugNonce('Refill loop starting: namespace=%s, HARD_CAP=%d', namespace, HARD_CAP);
       for (let i = 0; i < HARD_CAP; i++) {
@@ -388,7 +384,7 @@ export class NonceManager {
           debugNonce('Successfully fetched and drained: namespace=%s', namespace);
         } catch (e) {
           debugNonce('Nonce fetch failed: namespace=%s, error=%s', namespace, e);
-          
+
           // If it's a RateLimitError, we've already retried as much as possible
           if (e instanceof RateLimitError) {
             debugNonce('Rate limit exceeded, rejecting waiters: namespace=%s', namespace);
@@ -399,7 +395,7 @@ export class NonceManager {
             }
             throw e;
           }
-          
+
           // On other failures, reject all waiters and stop
           const q = this.pending.get(namespace) ?? [];
           this.pending.delete(namespace);
@@ -409,11 +405,11 @@ export class NonceManager {
         }
       }
       debugNonce('Refill loop completed successfully: namespace=%s', namespace);
-      
+
       // Final drain to handle any waiters that might have been added while we were fetching
       this.drain(namespace);
     })();
-    
+
     // Add timeout wrapper around refill operation
     const timeoutPromise = new Promise<void>((_, reject) => {
       setTimeout(() => {
@@ -428,7 +424,7 @@ export class NonceManager {
         reject(new Error(`Nonce refill operation timed out after ${refillTimeoutMs}ms`));
       }, refillTimeoutMs);
     });
-    
+
     const result = await Promise.race([refillPromise, timeoutPromise]);
     debugNonce('Refill completed for namespace: %s', namespace);
     return result;

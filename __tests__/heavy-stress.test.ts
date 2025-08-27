@@ -177,6 +177,30 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
     private extractEndpoint(url: string): string {
       try {
         const urlObj = new URL(url);
+        
+        // For Let's Encrypt staging URLs, extract meaningful endpoint names
+        if (urlObj.hostname === 'acme-staging-v02.api.letsencrypt.org') {
+          const path = urlObj.pathname;
+          
+          // Common ACME endpoints
+          if (path.includes('/acme/new-nonce')) return 'new-nonce';
+          if (path.includes('/acme/new-acct')) return 'new-account';
+          if (path.includes('/acme/new-order')) return 'new-order';
+          if (path.includes('/acme/authz/')) return 'authorization';
+          if (path.includes('/acme/chall/')) return 'challenge';
+          if (path.includes('/acme/finalize/')) return 'finalize';
+          if (path.includes('/acme/cert/')) return 'certificate';
+          if (path.includes('/directory')) return 'directory';
+          
+          // Order status URLs (with order ID)
+          if (path.includes('/acme/order/')) return 'order-status';
+          
+          // Fallback to last path segment for other endpoints
+          const pathParts = path.split('/');
+          return pathParts[pathParts.length - 1] || 'unknown-acme';
+        }
+        
+        // For other URLs, use the last path segment
         const pathParts = urlObj.pathname.split('/');
         return pathParts[pathParts.length - 1] || 'directory';
       } catch {
@@ -331,7 +355,8 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 
           const orderPromise = (async () => {
             try {
-              const domain = `heavy-${accountIndex}-${orderIndex}-${Date.now()}.acme-love.com`;
+              const randomString = Math.random().toString(36).substring(2, 10).toLowerCase();
+              const domain = `${randomString}-acme-love.com`;
               const order = await acct.newOrder([domain]);
               const authz = await acct.fetch<any>(order.authorizations[0]);
               const httpChallenge = authz.challenges.find((c: any) => c.type === 'http-01');
@@ -452,6 +477,15 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
           console.log(`   ${endpoint}: ${count}`);
         });
 
+      console.log(`\n🏢 LET'S ENCRYPT STAGING API:`);
+      Object.entries(results.requestsByEndpoint)
+        .filter(([endpoint]) => ['new-nonce', 'new-account', 'new-order', 'authorization', 'challenge', 'finalize', 'certificate', 'directory', 'order-status'].includes(endpoint))
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .forEach(([endpoint, count]) => {
+          const percentage = Math.round(((count as number) / results.totalRequests) * 100);
+          console.log(`   ${endpoint}: ${count} (${percentage}%)`);
+        });
+
       console.log(`\n📊 PER-ACCOUNT STATS:`);
       Object.entries(results.requestsByAccount).forEach(([accountIndex, count]) => {
         console.log(`   Account ${parseInt(accountIndex) + 1}: ${count} requests`);
@@ -506,6 +540,16 @@ ${Object.entries(results.requestsByEndpoint)
   .sort(([,a], [,b]) => (b as number) - (a as number))
   .slice(0, 10)
   .map(([endpoint, count]) => `- **${endpoint}**: ${count} requests`)
+  .join('\n')}
+
+## Let's Encrypt Staging API Breakdown
+${Object.entries(results.requestsByEndpoint)
+  .filter(([endpoint]) => ['new-nonce', 'new-account', 'new-order', 'authorization', 'challenge', 'finalize', 'certificate', 'directory', 'order-status'].includes(endpoint))
+  .sort(([,a], [,b]) => (b as number) - (a as number))
+  .map(([endpoint, count]) => {
+    const percentage = Math.round(((count as number) / results.totalRequests) * 100);
+    return `- **${endpoint}**: ${count} requests (${percentage}%)`;
+  })
   .join('\n')}
 
 ## Per-Account Performance

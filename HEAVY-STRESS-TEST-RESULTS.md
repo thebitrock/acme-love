@@ -1,7 +1,7 @@
 # 🚀 ACME Love - Heavy Stress Test Results
 
 ## Test Configuration
-- **Date**: 2025-08-27T00:01:51.696Z
+- **Date**: 2025-08-27T00:30:38.924Z
 - **Test Type**: Heavy Load Stress Test
 - **Accounts**: 4
 - **Orders per Account**: 100
@@ -12,47 +12,49 @@
 - **Algorithm**: EC P-256
 
 ## Performance Summary
-- **Total Time**: 33s (32651ms)
-- **Account Creation**: 1815ms
-- **Order Processing**: 30832ms
-- **Total Requests**: 826
+- **Total Time**: 32s (31921ms)
+- **Account Creation**: 1801ms
+- **Order Processing**: 30115ms
+- **Total Requests**: 824
 - **Error Count**: 0 (0%)
 
 ## Throughput Metrics
-- **Requests per Second**: 25 req/s
-- **Orders per Second**: 12 orders/s
-- **Average Response Time**: 272ms
+- **Requests per Second**: 26 req/s
+- **Orders per Second**: 13 orders/s
+- **Average Response Time**: 270ms
 
 ## Response Time Analysis
-- **P50 (Median)**: 204ms
-- **P95**: 587ms
-- **P99**: 663ms
+- **P50 (Median)**: 208ms
+- **P95**: 414ms
+- **P99**: 642ms
 
 ## Request Distribution
-- **POST**: 804 (97%)
-- **HEAD**: 18 (2%)
+- **POST**: 804 (98%)
+- **HEAD**: 16 (2%)
 - **GET**: 4 (0%)
 
 ## Top Endpoints
 - **new-order**: 400 requests
-- **new-nonce**: 18 requests
+- **authorization**: 400 requests
+- **new-nonce**: 16 requests
 - **directory**: 4 requests
-- **new-acct**: 4 requests
-- **19095488754**: 1 requests
-- **19095488684**: 1 requests
-- **19095488694**: 1 requests
-- **19095488724**: 1 requests
-- **19095488714**: 1 requests
-- **19095488834**: 1 requests
+- **new-account**: 4 requests
+
+## Let's Encrypt Staging API Breakdown
+- **new-order**: 400 requests (49%)
+- **authorization**: 400 requests (49%)
+- **new-nonce**: 16 requests (2%)
+- **directory**: 4 requests (0%)
+- **new-account**: 4 requests (0%)
 
 ## Per-Account Performance
-- **Account 1**: 208 requests
-- **Account 2**: 208 requests
+- **Account 1**: 207 requests
+- **Account 2**: 207 requests
 - **Account 3**: 205 requests
 - **Account 4**: 205 requests
 
 ## Nonce Manager Performance
-- **Total New-Nonce Requests**: 18
+- **Total New-Nonce Requests**: 16
 - **Requests Saved by Pooling**: 808
 - **Pool Efficiency**: 98%
 - **Final Pool State**: 0 nonces remaining
@@ -62,13 +64,13 @@
 - **Duration**: 2s
 - **Requests**: 12
 - **Errors**: 0
-- **Avg Response**: 531ms
+- **Avg Response**: 522ms
 
 ### Order Creation
-- **Duration**: 31s
-- **Requests**: 814
+- **Duration**: 30s
+- **Requests**: 812
 - **Errors**: 0
-- **Avg Response**: 268ms
+- **Avg Response**: 266ms
 
 ### Nonce Analysis
 - **Duration**: 0s
@@ -78,8 +80,8 @@
 
 ## Key Performance Indicators
 ✅ Successfully processed 400 orders out of 400 (100% success rate)
-✅ Maintained 272ms average response time under heavy load
-✅ Achieved 25 requests/second sustained throughput
+✅ Maintained 270ms average response time under heavy load
+✅ Achieved 26 requests/second sustained throughput
 ✅ Nonce pooling saved 808 network requests (98% efficiency)
 ✅ Error rate kept under 0%
 

@@ -4,6 +4,44 @@ import { AcmeAccountSession } from '../src/acme/client/acme-account-session.js';
 import { generateKeyPair } from '../src/acme/csr.js';
 import type { CsrAlgo } from '../src/acme/csr.js';
 
+// Endpoint tracking for demo stress test
+const endpointStats = new Map<string, number>();
+
+function extractEndpoint(url: string): string {
+  try {
+    const parsedUrl = new URL(url);
+    const path = parsedUrl.pathname;
+    
+    // Let's Encrypt specific endpoints
+    if (path.includes('/acme/new-nonce')) return 'Let\'s Encrypt: new-nonce';
+    if (path.includes('/acme/new-acct')) return 'Let\'s Encrypt: new-account';
+    if (path.includes('/acme/new-order')) return 'Let\'s Encrypt: new-order';
+    if (path.includes('/acme/authz/')) return 'Let\'s Encrypt: authorization';
+    if (path.includes('/acme/order/')) return 'Let\'s Encrypt: order';
+    if (path.includes('/acme/chall/')) return 'Let\'s Encrypt: challenge';
+    if (path.includes('/acme/cert/')) return 'Let\'s Encrypt: certificate';
+    if (path.includes('/directory')) return 'Let\'s Encrypt: directory';
+    
+    // Fallback to generic path
+    return `Generic: ${path}`;
+  } catch (error) {
+    return `Invalid URL: ${url}`;
+  }
+}
+
+function trackEndpoint(url: string): void {
+  const endpoint = extractEndpoint(url);
+  endpointStats.set(endpoint, (endpointStats.get(endpoint) || 0) + 1);
+}
+
+// Monkey patch for tracking
+const originalFetch = global.fetch;
+global.fetch = async (input: any, init?: RequestInit) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  trackEndpoint(url);
+  return originalFetch(input, init);
+};
+
 // Mini stress test for demonstration (2 accounts × 5 orders each)
 describe('ACME Mini Stress Test - Demo', () => {
   const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
@@ -72,7 +110,8 @@ describe('ACME Mini Stress Test - Demo', () => {
 
       const allOrderPromises = accounts.flatMap(({ accountIndex, acct }) => {
         return Array.from({ length: ORDERS_PER_ACCOUNT }, async (_, orderIndex) => {
-          const domain = `demo-${accountIndex}-${orderIndex}-${Date.now()}.example.com`;
+          const randomString = Math.random().toString(36).substring(2, 10).toLowerCase();
+          const domain = `${randomString}-acme-love.com`;
 
           try {
             const order = await acct.newOrder([domain]);
@@ -112,6 +151,31 @@ describe('ACME Mini Stress Test - Demo', () => {
       console.log(`Orders Created: ${allOrders.length} in ${orderCreationTime}ms`);
       console.log(`Average Time per Account: ${Math.round(accountCreationTime / TOTAL_ACCOUNTS)}ms`);
       console.log(`Average Time per Order: ${Math.round(orderCreationTime / allOrders.length)}ms`);
+
+      // Endpoint statistics
+      console.log(`\n🌐 ENDPOINT STATISTICS`);
+      console.log(`=====================`);
+      const sortedStats = Array.from(endpointStats.entries()).sort((a, b) => b[1] - a[1]);
+      let totalRequests = 0;
+      for (const [endpoint, count] of sortedStats) {
+        console.log(`${endpoint}: ${count} requests`);
+        totalRequests += count;
+      }
+      console.log(`Total HTTP Requests: ${totalRequests}`);
+
+      // Let's Encrypt specific breakdown
+      console.log(`\n🔒 Let's Encrypt Staging API Breakdown`);
+      console.log(`======================================`);
+      const letsEncryptStats = sortedStats.filter(([endpoint]) => endpoint.startsWith('Let\'s Encrypt'));
+      let letsEncryptTotal = 0;
+      for (const [endpoint, count] of letsEncryptStats) {
+        console.log(`${endpoint}: ${count} requests`);
+        letsEncryptTotal += count;
+      }
+      console.log(`Let's Encrypt Total: ${letsEncryptTotal} requests (${((letsEncryptTotal / totalRequests) * 100).toFixed(1)}% of all requests)`);
+
+      // Cleanup
+      global.fetch = originalFetch;
 
       // Assertions
       expect(allOrders.length).toBe(TOTAL_ACCOUNTS * ORDERS_PER_ACCOUNT);

@@ -10,10 +10,7 @@ export * from './acme/csr.js';
 export * from './acme/errors/errors.js';
 
 // Debug utilities
-export { 
-  enableDebug, 
-  disableDebug, 
-  isDebugEnabled,
+export {
   debugNonce,
   debugHttp,
   debugChallenge,
