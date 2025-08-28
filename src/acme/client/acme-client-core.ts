@@ -1,5 +1,6 @@
 import { SimpleHttpClient } from '../http/http-client.js';
 import type { ACMEDirectory } from '../types/directory.js';
+import type { AcmeDirectoryEntry } from '../../directory.js';
 import { NonceManager, type NonceManagerOptions } from './nonce-manager.js';
 import { createErrorFromProblem } from '../errors/factory.js';
 
@@ -16,8 +17,41 @@ export class AcmeClientCore {
   private directory?: ACMEDirectory;
   private nonce?: NonceManager;
 
-  constructor(directoryUrl: string, opts: AcmeClientCoreOptions = {}) {
-    this.directoryUrl = directoryUrl;
+  /**
+   * Create a new ACME client core instance
+   *
+   * @param directoryUrl - ACME directory URL string
+   * @param opts - Client configuration options
+   *
+   * @example
+   * ```typescript
+   * // Using a string URL
+   * const client = new AcmeClientCore('https://acme-staging-v02.api.letsencrypt.org/directory');
+   * ```
+   */
+  constructor(directoryUrl: string, opts?: AcmeClientCoreOptions);
+
+  /**
+   * Create a new ACME client core instance
+   *
+   * @param directoryEntry - Pre-configured directory entry from the provider object
+   * @param opts - Client configuration options
+   *
+   * @example
+   * ```typescript
+   * import { AcmeClientCore, provider } from 'acme-love';
+   *
+   * // Using a pre-configured provider entry
+   * const client = new AcmeClientCore(provider.letsencrypt.staging);
+   * ```
+   */
+  constructor(directoryEntry: AcmeDirectoryEntry, opts?: AcmeClientCoreOptions);
+
+  constructor(directoryUrlOrEntry: string | AcmeDirectoryEntry, opts: AcmeClientCoreOptions = {}) {
+    this.directoryUrl =
+      typeof directoryUrlOrEntry === 'string'
+        ? directoryUrlOrEntry
+        : directoryUrlOrEntry.directoryUrl;
     this.opts = opts;
   }
 

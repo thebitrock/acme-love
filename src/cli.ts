@@ -5,7 +5,7 @@ import { select, input, confirm } from '@inquirer/prompts';
 import {
   AcmeClientCore,
   AcmeAccountSession,
-  directory,
+  provider,
   createAcmeCsr,
   generateKeyPair,
   resolveAndValidateAcmeTxtAuthoritative,
@@ -13,6 +13,8 @@ import {
   type CsrAlgo,
   type AccountKeys,
   type ACMEOrder,
+  type AcmeDirectoryEntry,
+  type AcmeProvider,
 } from './index.js';
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
@@ -158,24 +160,21 @@ function parseAlgorithm(algoStr: string): CsrAlgo {
 
 // Build directory choices from exported directory namespace (handles legacy namespace export shape)
 function buildDirectoryChoices() {
-  // The namespace export is: { directory: { provider: { env: {...} } }, letsencrypt: {...legacy...} }
-  const root: Record<string, unknown> = Object.assign(
-    {},
-    (directory as Record<string, unknown>).directory ?? (directory as Record<string, unknown>),
-  ); // Prefer nested 'directory' key if present
   const choices: { name: string; value: string }[] = [];
-  for (const [providerKey, providerData] of Object.entries(root)) {
-    if (!providerData || typeof providerData !== 'object') continue;
-    for (const [envKey, info] of Object.entries(providerData as Record<string, unknown>)) {
-      if (!info || typeof info !== 'object') continue;
-      const infoObj = info as Record<string, unknown>;
-      const url = infoObj.directoryUrl;
-      if (typeof url !== 'string') continue; // skip non-env entries
-      const displayName =
-        typeof infoObj.name === 'string' ? infoObj.name : `${providerKey} ${envKey}`;
-      choices.push({ name: `${displayName} (${providerKey}/${envKey})`, value: url });
+  
+  // Iterate through all providers in the provider configuration
+  for (const [providerKey, providerData] of Object.entries(provider)) {
+    // Iterate through environments (staging, production)
+    for (const [envKey, envData] of Object.entries(
+      providerData as Record<string, { name: string; directoryUrl: string }>,
+    )) {
+      choices.push({
+        name: `${envData.name} (${providerKey}/${envKey})`,
+        value: envData.directoryUrl,
+      });
     }
   }
+  
   choices.sort((a, b) => a.name.localeCompare(b.name));
   return choices;
 }
@@ -346,9 +345,9 @@ async function handleCertCommand(options: CliOptions) {
 
   let directoryUrl: string;
   if (options.staging) {
-    directoryUrl = directory.letsencrypt.staging.directoryUrl;
+    directoryUrl = provider.letsencrypt.staging.directoryUrl;
   } else if (options.production) {
-    directoryUrl = directory.letsencrypt.production.directoryUrl;
+    directoryUrl = provider.letsencrypt.production.directoryUrl;
   } else if (options.directory) {
     directoryUrl = options.directory;
   } else {
@@ -770,25 +769,18 @@ async function handleInteractiveMode(options: CliOptions = {}) {
   } else if (options.production) {
     console.log("🏭 Using Let's Encrypt Production Environment");
   } else if (options.directory) {
-    // Try to resolve a friendly name
+    // Try to resolve a friendly name using typed directory structure
     let friendlyName: string | undefined;
-    const root: Record<string, unknown> = Object.assign(
-      {},
-      (directory as Record<string, unknown>).directory ?? (directory as Record<string, unknown>),
-    );
-    outer: for (const providerData of Object.values(root)) {
-      if (typeof providerData !== 'object' || !providerData) continue;
-      for (const envData of Object.values(providerData as Record<string, unknown>)) {
-        if (
-          envData &&
-          typeof envData === 'object' &&
-          (envData as Record<string, unknown>).directoryUrl === options.directory
-        ) {
-          friendlyName = (envData as Record<string, unknown>).name as string | undefined;
+
+    outer: for (const [, providerData] of Object.entries(provider)) {
+      for (const [, envData] of Object.entries(providerData as AcmeProvider)) {
+        if ((envData as AcmeDirectoryEntry).directoryUrl === options.directory) {
+          friendlyName = (envData as AcmeDirectoryEntry).name;
           break outer;
         }
       }
     }
+
     if (friendlyName) {
       console.log(`🏦 Using Directory: ${friendlyName}`);
     } else {

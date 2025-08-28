@@ -219,6 +219,9 @@ acme-love cert \
   --directory https://acme.zerossl.com/v2/DV90 \
   --eab-kid "your-eab-key-id" \
   --eab-hmac-key "your-eab-hmac-key"
+
+# Note: For known CAs, you can also use predefined providers in the library:
+# AcmeClientCore(provider.zerossl.production) or AcmeClientCore(provider.google.production)
 ```
 
 ## 📚 Library Usage
@@ -237,15 +240,20 @@ npm install acme-love
 import {
   AcmeClientCore,
   AcmeAccountSession,
-  directory,
+  provider,
   createAcmeCsr,
   generateKeyPair,
 } from 'acme-love';
 
-// 1. Create client core with nonce pooling
-const core = new AcmeClientCore(directory.letsencrypt.staging.directoryUrl, {
+// 1. Create client core with nonce pooling - using provider preset (recommended)
+const core = new AcmeClientCore(provider.letsencrypt.staging, {
   nonce: { maxPool: 64 },
 });
+
+// Alternative: Create client core with string URL
+// const core = new AcmeClientCore(provider.letsencrypt.staging.directoryUrl, {
+//   nonce: { maxPool: 64 },
+// });
 
 // 2. Generate account keys (ES256 recommended)
 const algo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
@@ -296,8 +304,11 @@ For Certificate Authorities that require External Account Binding (like ZeroSSL,
 ```ts
 import { AcmeClientCore, AcmeAccountSession, generateKeyPair } from 'acme-love';
 
-// Create client for CA that requires EAB
-const core = new AcmeClientCore('https://acme.zerossl.com/v2/DV90');
+// Create client for CA that requires EAB - using provider preset (recommended) 
+const core = new AcmeClientCore(provider.zerossl.production);
+
+// Alternative: Create client with string URL
+// const core = new AcmeClientCore('https://acme.zerossl.com/v2/DV90');
 
 // Generate account keys
 const keyPair = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' });
@@ -825,7 +836,7 @@ ACME Love includes a sophisticated **NonceManager** that optimizes nonce handlin
 Set default nonce behavior for all accounts:
 
 ```ts
-const core = new AcmeClientCore(directory.letsencrypt.production.directoryUrl, {
+const core = new AcmeClientCore(provider.letsencrypt.production, {
   nonce: {
     maxPool: 64, // Cache up to 64 nonces
     prefetchLowWater: 12, // Start prefetch when < 12 remain
@@ -1095,22 +1106,22 @@ const keyPair = await generateKeyPair(ecAlgo);
 Built-in directory presets for major Certificate Authorities:
 
 ```ts
-import { directory } from 'acme-love';
+import { provider } from 'acme-love';
 
 // Let's Encrypt (No EAB required)
-directory.letsencrypt.staging.directoryUrl;
-directory.letsencrypt.production.directoryUrl;
+provider.letsencrypt.staging.directoryUrl;
+provider.letsencrypt.production.directoryUrl;
 
 // Buypass (EAB optional)
-directory.buypass.staging.directoryUrl;
-directory.buypass.production.directoryUrl;
+provider.buypass.staging.directoryUrl;
+provider.buypass.production.directoryUrl;
 
 // Google Trust Services (EAB required)
-directory.google.staging.directoryUrl;
-directory.google.production.directoryUrl;
+provider.google.staging.directoryUrl;
+provider.google.production.directoryUrl;
 
 // ZeroSSL (EAB required for new accounts)
-directory.zerossl.production.directoryUrl;
+provider.zerossl.production.directoryUrl;
 ```
 
 **EAB Requirements by Provider:**
@@ -1123,6 +1134,49 @@ directory.zerossl.production.directoryUrl;
 | ZeroSSL               | ✅ Required  | Free tier available, EAB mandatory      |
 
 Use `--eab-kid` and `--eab-hmac-key` CLI options or the `eab` parameter in `ensureRegistered()` for providers that require External Account Binding.
+
+## 🔧 Client Initialization
+
+ACME Love supports two convenient ways to initialize the `AcmeClientCore`:
+
+### Method 1: Using Provider Presets (Recommended)
+
+```ts
+import { AcmeClientCore, provider } from 'acme-love';
+
+// Using predefined provider entries (recommended)
+const client = new AcmeClientCore(provider.letsencrypt.staging);
+const client2 = new AcmeClientCore(provider.google.production);
+const client3 = new AcmeClientCore(provider.zerossl.production);
+
+// With configuration options
+const client4 = new AcmeClientCore(provider.letsencrypt.production, {
+  nonce: { maxPool: 64 },
+});
+```
+
+### Method 2: Using String URLs
+
+```ts
+import { AcmeClientCore } from 'acme-love';
+
+// Using string URLs directly
+const client = new AcmeClientCore('https://acme-staging-v02.api.letsencrypt.org/directory');
+const client2 = new AcmeClientCore('https://dv.acme-v02.api.pki.goog/directory');
+
+// Custom ACME directory
+const client3 = new AcmeClientCore('https://my-custom-ca.com/acme/directory');
+```
+
+### Benefits of Provider Presets
+
+✅ **Type Safety**: Full TypeScript support with autocomplete  
+✅ **Validation**: Pre-validated directory URLs  
+✅ **Convenience**: No need to remember complex URLs  
+✅ **Consistency**: Standardized configuration across projects  
+✅ **Updates**: Automatic URL updates with library updates  
+
+**Recommendation**: Use provider presets for standard CAs (Let's Encrypt, Google, etc.) and string URLs for custom or enterprise ACME directories.
 
 ## 🎨 CLI Features Showcase
 

@@ -1,4 +1,6 @@
 export * as directory from './directory.js';
+export { directory as directories, provider } from './directory.js';
+export type { AcmeDirectoryEntry, AcmeProvider, AcmeDirectoryConfig } from './directory.js';
 
 export { AcmeClientCore } from './acme/client/acme-client-core.js';
 export {

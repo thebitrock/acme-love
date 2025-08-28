@@ -259,9 +259,9 @@ npm install acme-love
 ```
 
 ```js
-import { ACMEClient, directory } from 'acme-love';
+import { ACMEClient, provider } from 'acme-love';
 
-const client = new ACMEClient(directory.letsencrypt.staging.directoryUrl);
+const client = new ACMEClient(provider.letsencrypt.staging.directoryUrl);
 // ... use API
 ```
 
