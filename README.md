@@ -1281,10 +1281,10 @@ ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple
 ### 🔢 Consolidated Metrics (Latest Run)
 
 | Test Tier | Accounts × Orders | Total Orders | Total Time | Avg Response | P50 / P95 / P99 | Requests | Req/s | Orders/s | Success Rate | New-Nonce | Nonce Efficiency | Requests Saved |
-| --------- | ----------------- | ----------: | ---------: | -----------: | --------------: | -------: | ----: | -------: | -----------: | --------: | ---------------: | -------------: |
-| Quick     | 2 × 20            |        40   |    7.17s   |        276ms | 206 / 615 / 630 |       86 |  12.0 |     5.58 |        100%  |         6 |              93% |             80 |
-| Standard  | 4 × 50            |       200   |   16.00s   |        274ms | 208 / 586 / 675 |      412 |  25.8 |    12.50 |        100%  |        12 |              97% |            400 |
-| Heavy     | 4 × 200           |       800   |   59.40s   |        263ms | 205 / 454 / 618 |     1612 |  27.1 |    13.47 |        100%  |        12 |              99% |           1600 |
+| --------- | ----------------- | -----------: | ---------: | -----------: | --------------: | -------: | ----: | -------: | -----------: | --------: | ---------------: | -------------: |
+| Quick     | 2 × 20            |           40 |      7.17s |        276ms | 206 / 615 / 630 |       86 |  12.0 |     5.58 |         100% |         6 |              93% |             80 |
+| Standard  | 4 × 50            |          200 |     16.00s |        274ms | 208 / 586 / 675 |      412 |  25.8 |    12.50 |         100% |        12 |              97% |            400 |
+| Heavy     | 4 × 200           |          800 |     59.40s |        263ms | 205 / 454 / 618 |     1612 |  27.1 |    13.47 |         100% |        12 |              99% |           1600 |
 
 All tiers achieved 100% success; Heavy maintains sub‑270ms average latency with strong tail behavior (p99 < 620ms).
 
@@ -1318,6 +1318,7 @@ const core = new AcmeClientCore(directoryUrl, {
 ```
 
 ### 📈 Detailed Reports
+
 Comprehensive performance & reliability artifacts (human‑readable Markdown + machine‑readable JSON):
 
 Primary stress tiers:
