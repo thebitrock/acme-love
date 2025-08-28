@@ -134,8 +134,8 @@ class MetricsCollector {
     });
     const responseTimes = this.metrics.map((m) => m.duration).sort((a, b) => a - b);
     const p50 = responseTimes[Math.floor(responseTimes.length * 0.5)] || 0;
-  const p75 = responseTimes[Math.floor(responseTimes.length * 0.75)] || 0;
-  const p90 = responseTimes[Math.floor(responseTimes.length * 0.9)] || 0;
+    const p75 = responseTimes[Math.floor(responseTimes.length * 0.75)] || 0;
+    const p90 = responseTimes[Math.floor(responseTimes.length * 0.9)] || 0;
     const p95 = responseTimes[Math.floor(responseTimes.length * 0.95)] || 0;
     const p99 = responseTimes[Math.floor(responseTimes.length * 0.99)] || 0;
     const averageResponseTime =
@@ -153,7 +153,7 @@ class MetricsCollector {
       newNonceRequests: this.nonceRequests,
       errorCount: this.errorCount,
       averageResponseTime,
-  responseTimePercentiles: { p50, p75, p90, p95, p99 },
+      responseTimePercentiles: { p50, p75, p90, p95, p99 },
       requestsPerSecond,
       ordersPerSecond,
       requestsByType,
@@ -393,8 +393,8 @@ export async function runStressTest(config: StressTestConfig) {
     const poolSaved = results.totalRequests - results.newNonceRequests; // heuristic
     const poolEfficiency = poolSaved / Math.max(results.totalRequests, 1);
     const p50 = results.responseTimePercentiles.p50;
-  const p75 = (results as any).responseTimePercentiles.p75 as number;
-  const p90 = (results as any).responseTimePercentiles.p90 as number;
+    const p75 = (results as any).responseTimePercentiles.p75 as number;
+    const p90 = (results as any).responseTimePercentiles.p90 as number;
     const p95 = results.responseTimePercentiles.p95;
     const p99 = results.responseTimePercentiles.p99;
 
@@ -493,7 +493,12 @@ export async function runStressTest(config: StressTestConfig) {
       const sampled: number[] = [];
       for (let i = 0; i < values.length; i += step) sampled.push(values[i]);
       return sampled
-        .map((v) => blocks[Math.min(blocks.length - 1, Math.floor(((v - min) / range) * (blocks.length - 1)))])
+        .map(
+          (v) =>
+            blocks[
+              Math.min(blocks.length - 1, Math.floor(((v - min) / range) * (blocks.length - 1)))
+            ],
+        )
         .join('');
     };
 
@@ -532,29 +537,31 @@ export async function runStressTest(config: StressTestConfig) {
     lines.push(`| Total Requests | ${fmt(results.totalRequests)} |`);
     lines.push(`| Orders / Sec | ${results.ordersPerSecond.toFixed(2)} |`);
     lines.push(`| Requests / Sec | ${results.requestsPerSecond.toFixed(2)} |`);
-  lines.push(`| Avg Response | ${Math.round(results.averageResponseTime)} ms |`);
-  lines.push(`| P50 | ${p50} ms |`);
-  lines.push(`| P75 | ${p75} ms |`);
-  lines.push(`| P90 | ${p90} ms |`);
-  lines.push(`| P95 | ${p95} ms |`);
-  lines.push(`| P99 | ${p99} ms |`);
+    lines.push(`| Avg Response | ${Math.round(results.averageResponseTime)} ms |`);
+    lines.push(`| P50 | ${p50} ms |`);
+    lines.push(`| P75 | ${p75} ms |`);
+    lines.push(`| P90 | ${p90} ms |`);
+    lines.push(`| P95 | ${p95} ms |`);
+    lines.push(`| P99 | ${p99} ms |`);
     lines.push(`| Error Count | ${results.errorCount} |`);
     lines.push(`| Error Rate | ${pct(errorRate, 2)} |`);
     lines.push('');
 
-  lines.push('### ⏱️ Latency Sparkline');
-  lines.push('```');
-  lines.push('Latency ms trend:');
-  lines.push(latencySpark || '(no data)');
-  lines.push('```');
-  lines.push('');
+    lines.push('### ⏱️ Latency Sparkline');
+    lines.push('```');
+    lines.push('Latency ms trend:');
+    lines.push(latencySpark || '(no data)');
+    lines.push('```');
+    lines.push('');
 
     lines.push('### ✅ Threshold Validation');
     lines.push('| Metric | Actual | Threshold | Status |');
     lines.push('|--------|--------|-----------|--------|');
     thresholdRows.forEach((r) => {
       const icon = r.pass ? '✅' : '❌';
-      lines.push(`| ${r.label} | ${r.actual} | ${r.target} | ${icon} ${r.pass ? 'Pass' : 'Fail'} |`);
+      lines.push(
+        `| ${r.label} | ${r.actual} | ${r.target} | ${icon} ${r.pass ? 'Pass' : 'Fail'} |`,
+      );
     });
     lines.push('');
 
@@ -642,7 +649,7 @@ export async function runStressTest(config: StressTestConfig) {
     );
     lines.push('');
 
-  lines.push('<details><summary>Raw Configuration & Thresholds</summary>');
+    lines.push('<details><summary>Raw Configuration & Thresholds</summary>');
     lines.push('');
     const rawConfigObj = {
       name,
