@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.5.2] - 2025-08-29
+
+### Changed
+
+- **Documentation**: Updated README Detailed Reports & Running the Tests sections to reflect new stress tier artifacts (Quick / Standard / Heavy) and include JSON links plus supporting operational reports.
+
+### Notes
+
+- Patch release with documentation refinements only; no code or API changes.
+
 ## [1.5.1] - 2025-08-29
 
 ### Added
@@ -91,6 +101,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Previous release (see git history for details).
 
 ---
-
+\
+[1.5.2]: https://github.com/thebitrock/acme-love/releases/tag/v1.5.2
+[1.5.1]: https://github.com/thebitrock/acme-love/releases/tag/v1.5.1
+[1.5.0]: https://github.com/thebitrock/acme-love/releases/tag/v1.5.0
 [1.4.0]: https://github.com/thebitrock/acme-love/releases/tag/v1.4.0
 [1.3.1]: https://github.com/thebitrock/acme-love/releases/tag/v1.3.1
