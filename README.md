@@ -13,6 +13,56 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 
 </div>
 
+## 📋 Table of Contents
+
+- [✨ Key Features](#-key-features)
+- [🚀 Quick Start](#-quick-start)
+  - [CLI Installation & Usage](#cli-installation--usage)
+  - [🎮 Interactive Mode (Easiest Way)](#-interactive-mode-easiest-way)
+  - [📋 Command Line Mode](#-command-line-mode)
+  - [🎯 Challenge Types](#-challenge-types)
+  - [🔐 Cryptographic Algorithms](#-cryptographic-algorithms)
+  - [🛠️ Development & Local Usage](#️-development--local-usage)
+  - [📖 CLI Commands Reference](#-cli-commands-reference)
+- [📚 Library Usage](#-library-usage)
+  - [Installation](#installation)
+  - [Modern ACME Client](#modern-acme-client)
+  - [External Account Binding (EAB) Support](#external-account-binding-eab-support)
+  - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms-1)
+  - [Working with Existing Accounts](#working-with-existing-accounts)
+  - [Advanced Features](#advanced-features)
+- [⚡ Nonce Management](#-nonce-management)
+  - [Global Configuration](#global-configuration)
+  - [Per-Account Overrides](#per-account-overrides)
+  - [Configuration Options](#configuration-options)
+  - [Performance Scenarios](#performance-scenarios)
+  - [Debug Logging](#debug-logging)
+  - [Custom Nonce Manager Logging](#custom-nonce-manager-logging)
+- [🔍 Advanced Validators & Utilities](#-advanced-validators--utilities)
+  - [DNS Validation Functions](#dns-validation-functions)
+  - [HTTP Validation Functions](#http-validation-functions)
+  - [CLI Configuration Details](#cli-configuration-details)
+- [🔧 CSR Generation](#-csr-generation)
+  - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms-2)
+- [🏢 Supported ACME Providers](#-supported-acme-providers)
+- [🎨 CLI Features Showcase](#-cli-features-showcase)
+  - [Beautiful Interactive Prompts](#beautiful-interactive-prompts)
+  - [Smart Error Handling](#smart-error-handling)
+  - [Automatic Validation](#automatic-validation)
+- [📖 Documentation](#-documentation)
+- [🔧 Troubleshooting](#-troubleshooting)
+  - [Common Issues](#common-issues)
+- [⚡ Requirements](#-requirements)
+- [🚀 Performance & Stress Testing](#-performance--stress-testing)
+  - [🔢 Consolidated Metrics (Latest Run)](#-consolidated-metrics-latest-run)
+  - [🧪 Interpretation](#-interpretation)
+  - [⚙️ Key Optimizations](#️-key-optimizations)
+  - [🔍 Example High-Load Configuration](#-example-high-load-configuration)
+- [🚨 ~~Known Issues~~ ✅ Resolved Issues](#-known-issues--resolved-issues)
+- [🧪 Test Coverage](#-test-coverage)
+- [📄 License](#-license)
+- [🤝 Contributing](#-contributing)
+
 ## ✨ Key Features
 
 | Feature                      | Description                                                   |
@@ -172,6 +222,8 @@ acme-love cert \
 ```
 
 ## 📚 Library Usage
+
+[🔝 Back to Top](#-table-of-contents)
 
 ### Installation
 
@@ -440,17 +492,257 @@ const order = await acct.newOrder(['acme-love.com']);
 
 ### Advanced Features
 
-**Error Handling with Maintenance Detection**
+**Comprehensive Error Handling**
+
+ACME Love provides detailed error types for precise error handling in your applications. All ACME-specific errors extend the base `AcmeError` class and follow RFC 8555 error specifications.
+
+#### ACME Protocol Errors
 
 ```ts
-import { ServerMaintenanceError } from 'acme-love';
+import {
+  AcmeError,
+  ServerMaintenanceError,
+  RateLimitedError,
+  BadNonceError,
+  AccountDoesNotExistError,
+  OrderNotReadyError,
+  ExternalAccountRequiredError,
+  RateLimitError, // From rate limiter
+} from 'acme-love';
 
 try {
   await acct.newOrder(['acme-love.com']);
 } catch (error) {
+  // Server maintenance detection
   if (error instanceof ServerMaintenanceError) {
     console.log('🔧 Service is under maintenance');
-    console.log('Check https://letsencrypt.status.io/');
+    console.log('📊 Check https://letsencrypt.status.io/');
+    console.log('⏳ Please try again later when the service is restored.');
+    return;
+  }
+
+  // Rate limiting with automatic retry information
+  if (error instanceof RateLimitedError) {
+    const retrySeconds = error.getRetryAfterSeconds();
+    console.log(`⏱️ Rate limited. Retry in ${retrySeconds} seconds`);
+    console.log(`📝 Details: ${error.detail}`);
+    
+    // Wait and retry automatically
+    if (retrySeconds && retrySeconds < 300) { // Max 5 minutes
+      await new Promise(resolve => setTimeout(resolve, retrySeconds * 1000));
+      // Retry the operation...
+    }
+    return;
+  }
+
+  // Nonce issues (automatically handled by nonce manager)
+  if (error instanceof BadNonceError) {
+    console.log('🔄 Invalid nonce - this should be handled automatically');
+    // The NonceManager typically retries these automatically
+  }
+
+  // Account-related errors
+  if (error instanceof AccountDoesNotExistError) {
+    console.log('👤 Account does not exist - need to register first');
+  }
+
+  // Order state errors
+  if (error instanceof OrderNotReadyError) {
+    console.log('📋 Order not ready for finalization - complete challenges first');
+  }
+
+  // EAB requirement
+  if (error instanceof ExternalAccountRequiredError) {
+    console.log('🔑 This CA requires External Account Binding (EAB)');
+    console.log('💡 Use --eab-kid and --eab-hmac-key options');
+  }
+
+  // Rate limiter errors (from internal rate limiting system)
+  if (error instanceof RateLimitError) {
+    console.log(`🚦 Internal rate limit: ${error.message}`);
+    console.log(`📊 Attempts: ${error.rateLimitInfo.attempts}`);
+    console.log(`⏳ Retry in ${error.rateLimitInfo.retryDelaySeconds}s`);
+  }
+
+  // Generic ACME error with details
+  if (error instanceof AcmeError) {
+    console.log(`❌ ACME Error: ${error.detail}`);
+    console.log(`🔍 Type: ${error.type}`);
+    console.log(`📊 Status: ${error.status}`);
+    
+    // Handle subproblems for compound errors
+    if (error.subproblems?.length) {
+      console.log('📋 Subproblems:');
+      error.subproblems.forEach((sub, i) => {
+        console.log(`  ${i + 1}. ${sub.detail} (${sub.type})`);
+      });
+    }
+  }
+}
+```
+
+#### Complete Error Types Reference
+
+**Account & Registration Errors:**
+- `AccountDoesNotExistError` - Account doesn't exist, need to register
+- `ExternalAccountRequiredError` - CA requires EAB for registration
+- `InvalidContactError` - Invalid contact information (email format, etc.)
+- `UnsupportedContactError` - Unsupported contact protocol scheme
+
+**Authentication & Authorization Errors:**
+- `BadNonceError` - Invalid anti-replay nonce (auto-retried by NonceManager)
+- `BadPublicKeyError` - Unsupported public key algorithm
+- `BadSignatureAlgorithmError` - Unsupported signature algorithm
+- `UnauthorizedError` - Insufficient authorization for requested action
+- `UserActionRequiredError` - Manual action required (visit instance URL)
+
+**Certificate & CSR Errors:**
+- `BadCSRError` - Invalid Certificate Signing Request
+- `BadRevocationReasonError` - Invalid revocation reason provided
+- `AlreadyRevokedError` - Certificate already revoked
+- `OrderNotReadyError` - Order not ready for finalization
+- `RejectedIdentifierError` - Server won't issue for this identifier
+
+**Validation Errors:**
+- `CAAError` - CAA DNS records forbid certificate issuance
+- `ConnectionError` - Can't connect to validation target
+- `DNSError` - DNS resolution problems during validation
+- `IncorrectResponseError` - Challenge response doesn't match requirements
+- `TLSError` - TLS issues during validation
+- `UnsupportedIdentifierError` - Unsupported identifier type
+
+**Server & Network Errors:**
+- `ServerInternalError` - Internal server error (500)
+- `ServerMaintenanceError` - Service under maintenance (503)
+- `RateLimitedError` - ACME rate limit exceeded with retry info
+- `MalformedError` - Malformed request message
+- `CompoundError` - Multiple errors (check subproblems array)
+
+**Rate Limiting Errors:**
+- `RateLimitError` - Internal rate limiter exceeded retry attempts
+
+#### Error Handling Patterns
+
+**Pattern 1: Graceful Degradation**
+```ts
+async function createCertificateWithFallback(domain: string) {
+  try {
+    return await createCertificate(domain);
+  } catch (error) {
+    if (error instanceof RateLimitedError) {
+      // Wait and retry once
+      const retrySeconds = error.getRetryAfterSeconds();
+      if (retrySeconds && retrySeconds < 3600) { // Max 1 hour
+        await new Promise(resolve => setTimeout(resolve, retrySeconds * 1000));
+        return await createCertificate(domain);
+      }
+    }
+    
+    if (error instanceof ServerMaintenanceError) {
+      // Try staging environment as fallback
+      return await createCertificateStaging(domain);
+    }
+    
+    throw error; // Re-throw unhandled errors
+  }
+}
+```
+
+**Pattern 2: Retry with Exponential Backoff**
+```ts
+async function robustCertificateCreation(domain: string, maxRetries = 3) {
+  let attempt = 0;
+  
+  while (attempt < maxRetries) {
+    try {
+      return await createCertificate(domain);
+    } catch (error) {
+      attempt++;
+      
+      if (error instanceof BadNonceError && attempt < maxRetries) {
+        // Exponential backoff for nonce errors
+        const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      if (error instanceof RateLimitedError) {
+        const retrySeconds = error.getRetryAfterSeconds();
+        if (retrySeconds && retrySeconds < 1800) { // Max 30 minutes
+          await new Promise(resolve => setTimeout(resolve, retrySeconds * 1000));
+          continue;
+        }
+      }
+      
+      // Don't retry these errors
+      if (error instanceof ExternalAccountRequiredError ||
+          error instanceof BadCSRError ||
+          error instanceof RejectedIdentifierError) {
+        throw error;
+      }
+      
+      if (attempt >= maxRetries) throw error;
+    }
+  }
+}
+```
+
+**Pattern 3: Error Categorization**
+```ts
+function categorizeError(error: unknown): 'retry' | 'reconfigure' | 'fatal' {
+  if (error instanceof RateLimitedError ||
+      error instanceof BadNonceError ||
+      error instanceof ServerMaintenanceError ||
+      error instanceof ConnectionError) {
+    return 'retry';
+  }
+  
+  if (error instanceof ExternalAccountRequiredError ||
+      error instanceof BadCSRError ||
+      error instanceof InvalidContactError ||
+      error instanceof UnsupportedContactError) {
+    return 'reconfigure';
+  }
+  
+  return 'fatal';
+}
+
+async function handleCertificateError(error: unknown) {
+  const category = categorizeError(error);
+  
+  switch (category) {
+    case 'retry':
+      console.log('⏳ Temporary issue - will retry automatically');
+      break;
+    case 'reconfigure':
+      console.log('⚙️ Configuration issue - please check your settings');
+      break;
+    case 'fatal':
+      console.log('❌ Fatal error - manual intervention required');
+      break;
+  }
+}
+```
+
+#### JSON Serialization
+
+All ACME errors support JSON serialization for logging and debugging:
+
+```ts
+try {
+  await acct.newOrder(['acme-love.com']);
+} catch (error) {
+  if (error instanceof AcmeError) {
+    // Structured error logging
+    const errorData = error.toJSON();
+    console.log('ACME Error Details:', JSON.stringify(errorData, null, 2));
+    
+    // Send to monitoring system
+    await sendToMonitoring({
+      event: 'acme_error',
+      error: errorData,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 ```
@@ -505,6 +797,8 @@ debugHttp('HTTP operation debug info');
 ```
 
 ## ⚡ Nonce Management
+
+[🔝 Back to Top](#-table-of-contents)
 
 ACME Love includes a sophisticated **NonceManager** that optimizes nonce handling for high-performance certificate operations. Nonces are automatically pooled, prefetched, and recycled to minimize network round-trips.
 
@@ -908,9 +1202,11 @@ chmod 755 ./certificates/
 
 ## 🚀 Performance & Stress Testing
 
+[🔝 Back to Top](#-table-of-contents)
+
 ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple load tiers. Below are the latest consolidated results pulled from the _RESULTS.md_ files (Quick / Light / Standard / Heavy). They demonstrate scalability, nonce‑pool efficiency, and stability as order volume increases.
 
-### 🔢 Сводные Метрики (Последний прогон)
+### 🔢 Consolidated Metrics (Latest Run)
 
 | Test Tier | Accounts × Orders | Total Orders | Total Time | Avg Response | P50 / P95 / P99 | Requests | Req/s | Orders/s | Success Rate | New-Nonce | Nonce Efficiency | Requests Saved |
 | --------- | ----------------- | ------------ | ---------: | -----------: | --------------: | -------: | ----: | -------: | -----------: | --------: | ---------------: | -------------: |
@@ -1005,6 +1301,8 @@ npm run test:heavy         # ~35 seconds, enterprise load testing
 
 ## 🧪 Test Coverage
 
+[🔝 Back to Top](#-table-of-contents)
+
 ACME Love maintains comprehensive test coverage to ensure reliability and quality:
 
 **Test Statistics**
@@ -1097,6 +1395,6 @@ Contributions are welcome! Please read our contributing guidelines and submit pu
 
 **Made with ❤️ for the Node.js community**
 
-[Report Issues](https://github.com/thebitrock/acme-love/issues) | [Request Features](https://github.com/thebitrock/acme-love/discussions)
+[🔝 Back to Top](#-table-of-contents) | [Report Issues](https://github.com/thebitrock/acme-love/issues) | [Request Features](https://github.com/thebitrock/acme-love/discussions)
 
 </div>
