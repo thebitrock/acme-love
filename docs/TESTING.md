@@ -24,17 +24,13 @@ Duration: 30 seconds - 10 minutes each
 Individual stress tests can be run with:
 
 ```bash
-# Quick tests (~30 seconds each)
-npm run test:quick      # 1 account × 2 orders
-npm run test:light      # 2 accounts × 3 orders
-npm run test:demo       # 2 accounts × 5 orders
 
-# Standard tests (~2 minutes each)
-npm run test:stress     # 6 accounts × 10 orders
+npm run test:quick      # 2 account × 20 orders
+npm run test:standard   # 4 accounts × 50 orders
+npm run test:heavy      # 4 accounts × 200 orders
+
 npm run test:metrics    # Performance metrics collection
 
-# Heavy tests (~10+ minutes)
-npm run test:heavy      # 4 accounts × 200 orders
 npm run test:deadlock   # Deadlock detection analysis
 ```
 

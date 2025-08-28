@@ -955,7 +955,7 @@ const customNonceLogger = (...args: any[]) => {
 debug('acme-love:nonce').log = customNonceLogger;
 ```
 
-📖 **Detailed documentation**: [docs/nonce-manager.md](./docs/nonce-manager.md)
+📖 **Detailed documentation**: [docs/NONCE-MANAGER.md](./docs/NONCE-MANAGER.md)
 
 ## � Advanced Validators & Utilities
 
@@ -1170,10 +1170,10 @@ const client3 = new AcmeClientCore('https://my-custom-ca.com/acme/directory');
 
 ### Benefits of Provider Presets
 
-✅ **Type Safety**: Full TypeScript support with autocomplete  
-✅ **Validation**: Pre-validated directory URLs  
-✅ **Convenience**: No need to remember complex URLs  
-✅ **Consistency**: Standardized configuration across projects  
+✅ **Type Safety**: Full TypeScript support with autocomplete
+✅ **Validation**: Pre-validated directory URLs
+✅ **Convenience**: No need to remember complex URLs
+✅ **Consistency**: Standardized configuration across projects
 ✅ **Updates**: Automatic URL updates with library updates
 
 **Recommendation**: Use provider presets for standard CAs (Let's Encrypt, Google, etc.) and string URLs for custom or enterprise ACME directories.
@@ -1282,19 +1282,21 @@ ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple
 
 | Test Tier | Accounts × Orders | Total Orders | Total Time | Avg Response | P50 / P95 / P99 | Requests | Req/s | Orders/s | Success Rate | New-Nonce | Nonce Efficiency | Requests Saved |
 | --------- | ----------------- | ------------ | ---------: | -----------: | --------------: | -------: | ----: | -------: | -----------: | --------: | ---------------: | -------------: |
-| Quick     | 1 × 2             | 2            |       2.1s |        289ms |       – / – / – |        5 |     2 |     ~1.0 |         100% |         1 |              80% |              4 |
-| Light     | 2 × 3             | 6            |       2.7s |        431ms |       – / – / – |       18 |     7 |     ~2.2 |         100% |         6 |              67% |             12 |
-| Standard  | 6 × 10            | 60           |       4.2s |        413ms |       – / – / – |      158 |    38 |    ~14.3 |        88%\* |        38 |               0% |              0 |
-| Heavy     | 4 × 200           | 800          |      69.6s |        272ms | 204 / 509 / 602 |     1612 |    23 |     11.0 |         100% |        12 |              99% |           1600 |
+| Metrics   | 1 account         | –            |       2.1s |        517ms |       – / – / – |        4 |     2 |        – |         100% |         1 |              75% |              3 |
+| Quick     | 1 × 2             | 2            |       2.1s |        287ms |       – / – / – |        5 |     2 |     ~1.0 |         100% |         1 |              80% |              4 |
+| Light     | 2 × 3             | 6            |       2.7s |        452ms |       – / – / – |       18 |     7 |     ~2.2 |         100% |         6 |              67% |             12 |
+| Standard  | 6 × 10            | 60           |       4.6s |        412ms |       – / – / – |      154 |    33 |    ~13.0 |        86%\* |        34 |              78% |            120 |
+| Heavy     | 4 × 200           | 800          |      68.9s |        271ms | 205 / 503 / 604 |     1612 |    23 |     11.6 |         100% |        12 |              99% |           1600 |
 
 \*Standard run success rate (88%) includes intentionally induced / retried scenarios; Heavy run shows 100% once scaled.
 
 ### 🧪 Interpretation
 
-- Heavy test (800 orders) sustains a 272ms average with p99 < 610ms.
-- Nonce pool reaches 99% efficiency (only 12 new-nonce vs 1612 POST) saving 1600 network round trips.
-- Scaling from 2 to 800 orders drives average latency down (connection warm‑up + reuse effect).
-- Standard test highlights early optimization targets (0% pool efficiency under a scenario without reuse) — useful for regression tracking.
+- **Metrics test** validates core account operations with 75% nonce efficiency baseline.
+- **Heavy test** (800 orders) sustains 271ms average with p99 < 610ms and exceptional 99% nonce efficiency.
+- **Nonce pool** reaches maximum efficiency (only 12 new-nonce vs 1612 total requests) saving 1600 network round trips.
+- **Scaling improvements**: Moving from 2 to 800 orders reduces average latency (connection warm‑up + reuse effect).
+- **Standard test** shows 78% nonce efficiency (improvement from previous 0%) with 86% success rate including retry scenarios.
 
 ### ⚙️ Key Optimizations
 

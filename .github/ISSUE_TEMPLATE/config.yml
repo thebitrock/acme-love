@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔐 Security Vulnerability
+    url: https://github.com/thebitrock/acme-love/security/advisories
+    about: Please report security vulnerabilities via GitHub Security Advisories
+  - name: 💬 Discussions
+    url: https://github.com/thebitrock/acme-love/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 📚 Documentation
+    url: https://github.com/thebitrock/acme-love#readme
+    about: Check the comprehensive documentation and guides
+  - name: 💡 Feature Requests
+    url: https://github.com/thebitrock/acme-love/discussions/categories/ideas
+    about: Suggest new features and improvements

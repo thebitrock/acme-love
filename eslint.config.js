@@ -3,10 +3,10 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import globals from 'globals';
 import prettierRecommended from 'eslint-plugin-prettier/recommended';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
   js.configs.recommended,
-  // TypeScript files configuration
   {
     files: ['**/*.ts'],
     languageOptions: {
@@ -35,27 +35,18 @@ export default [
         btoa: 'readonly',
       },
     },
-    plugins: {
-      '@typescript-eslint': tseslint,
-    },
+    plugins: { '@typescript-eslint': tseslint },
     rules: {
-      // Base ESLint rules
       eqeqeq: 'error',
       'no-undef': 'error',
-      'no-unused-vars': 'off', // Turn off for TypeScript
+      'no-unused-vars': 'off',
       'no-useless-catch': 'error',
       'no-case-declarations': 'error',
       'prefer-const': 'error',
       'no-console': 'off',
-
-      // TypeScript ESLint rules
       '@typescript-eslint/no-unused-vars': [
         'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          ignoreRestSiblings: true,
-        },
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
@@ -64,24 +55,14 @@ export default [
       '@typescript-eslint/ban-ts-comment': ['warn', { 'ts-ignore': 'allow-with-description' }],
     },
   },
-  // Test files configuration
   {
     files: ['__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
     languageOptions: {
       parser: tsParser,
-      parserOptions: {
-        ecmaVersion: 2022,
-        sourceType: 'module',
-        project: './tsconfig.json',
-      },
-      globals: {
-        ...globals.jest,
-        ...globals.node,
-      },
+      parserOptions: { ecmaVersion: 2022, sourceType: 'module', project: './tsconfig.json' },
+      globals: { ...globals.jest, ...globals.node },
     },
-    plugins: {
-      '@typescript-eslint': tseslint,
-    },
+    plugins: { '@typescript-eslint': tseslint },
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
@@ -89,16 +70,12 @@ export default [
       'no-console': 'off',
     },
   },
-  // JavaScript files configuration (no TypeScript parser)
   {
     files: ['**/*.js', '**/*.mjs'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
-      globals: {
-        ...globals.node,
-        ...globals.jest, // Add Jest globals for mock files
-      },
+      globals: { ...globals.node, ...globals.jest },
     },
     rules: {
       'no-console': 'off',
@@ -108,12 +85,14 @@ export default [
       'no-case-declarations': 'error',
     },
   },
+  eslintConfigPrettier,
   prettierRecommended,
   {
     ignores: [
       'dist/',
       'node_modules/',
       'coverage/',
+      'coverage/**/*',
       '*.map',
       '.vscode/',
       '.idea/',

@@ -1,0 +1,82 @@
+{
+  "name": "acme-love",
+  "displayName": "ACME Love - Modern ACME Client",
+  "description": "🔐 Modern TypeScript ACME client & CLI for Let's Encrypt certificates. Supports DNS-01/HTTP-01 validation, wildcard domains, EAB (ZeroSSL/Google), nonce pooling. RFC 8555 compliant. Node.js 20+",
+  "tags": [
+    "acme",
+    "letsencrypt",
+    "ssl",
+    "tls",
+    "certificate",
+    "cli",
+    "typescript",
+    "dns-01",
+    "http-01",
+    "wildcard",
+    "zerossl",
+    "automation",
+    "security",
+    "rfc8555",
+    "acme-client",
+    "certificate-authority",
+    "nodejs",
+    "esm"
+  ],
+  "categories": [
+    "CLI Tools",
+    "Security",
+    "Automation",
+    "TypeScript Libraries",
+    "Certificate Management"
+  ],
+  "maintainers": [
+    {
+      "name": "Roman Pohorilchuk",
+      "email": "roman@pohorilchuk.com",
+      "github": "thebitrock"
+    }
+  ],
+  "badges": [
+    {
+      "url": "https://img.shields.io/npm/v/acme-love.svg",
+      "href": "https://www.npmjs.com/package/acme-love",
+      "description": "NPM Version"
+    },
+    {
+      "url": "https://img.shields.io/npm/dm/acme-love.svg",
+      "href": "https://www.npmjs.com/package/acme-love",
+      "description": "NPM Downloads"
+    },
+    {
+      "url": "https://img.shields.io/github/stars/thebitrock/acme-love.svg",
+      "href": "https://github.com/thebitrock/acme-love",
+      "description": "GitHub Stars"
+    }
+  ],
+  "links": {
+    "documentation": "https://github.com/thebitrock/acme-love#readme",
+    "repository": "https://github.com/thebitrock/acme-love",
+    "issues": "https://github.com/thebitrock/acme-love/issues",
+    "discussions": "https://github.com/thebitrock/acme-love/discussions",
+    "changelog": "https://github.com/thebitrock/acme-love/blob/main/CHANGELOG.md",
+    "security": "https://github.com/thebitrock/acme-love/blob/main/SECURITY.md",
+    "contributing": "https://github.com/thebitrock/acme-love/blob/main/CONTRIBUTING.md"
+  },
+  "features": [
+    "Interactive CLI with beautiful prompts",
+    "Support for multiple ACME providers via provider presets",
+    "DNS-01 and HTTP-01 challenge validation with solveDns01() and solveHttp01()",
+    "Wildcard certificate generation",
+    "External Account Binding (EAB) support",
+    "Modern cryptographic algorithms (ECDSA P-256/384/521, RSA 2048/3072/4096)",
+    "TypeScript with full type safety and strict typing",
+    "Cross-platform compatibility (Linux, macOS, Windows)",
+    "Advanced nonce pooling and performance optimizations",
+    "Comprehensive testing with unit, integration, and stress tests"
+  ],
+  "compatibility": {
+    "node": ">=20.18.1",
+    "platforms": ["linux", "darwin", "win32"],
+    "architectures": ["x64", "arm64"]
+  }
+}

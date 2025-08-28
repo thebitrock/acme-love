@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "generatedAt": "2025-08-28T23:13:22.111Z",
+    "testType": "Heavy Load Stress Test",
+    "gitCommit": "unknown",
+    "packageVersion": "1.5.0",
+    "nodeVersion": "v22.18.0"
+  },
+  "config": {
+    "name": "Heavy Stress Test",
+    "TOTAL_ACCOUNTS": 4,
+    "ORDERS_PER_ACCOUNT": 200,
+    "TOTAL_ORDERS": 800,
+    "batchSize": 10,
+    "thresholds": {
+      "minSuccessRate": 0.8,
+      "maxAvgResponseTimeMs": 5000,
+      "maxErrorRate": 0.1,
+      "minRequestsPerSecond": 1
+    }
+  },
+  "metrics": {
+    "totals": {
+      "totalTimeMs": 59399,
+      "accountCreationTimeMs": 680,
+      "orderProcessingTimeMs": 58707,
+      "totalRequests": 1612,
+      "ordersPerSecond": 13.46869370506928,
+      "requestsPerSecond": 27.139417815714598,
+      "successRate": 1,
+      "errorRate": 0
+    },
+    "latency": {
+      "averageMs": 263.0074441687345,
+      "p50": 205,
+      "p75": 308,
+      "p90": 403,
+      "p95": 454,
+      "p99": 618
+    },
+    "distribution": {
+      "byMethod": {
+        "HEAD": 12,
+        "POST": 1600
+      },
+      "byEndpoint": {
+        "new-nonce": 12,
+        "new-order": 800,
+        "authorization": 800
+      },
+      "byAccount": {
+        "0": 403,
+        "1": 403,
+        "2": 403,
+        "3": 403
+      }
+    },
+    "nonce": {
+      "newNonceRequests": 12,
+      "savedRequestsEstimate": 1600,
+      "efficiency": 0.9925558312655087
+    },
+    "phases": [
+      {
+        "phase": "Account Creation",
+        "durationMs": 681,
+        "requests": 0,
+        "errors": 0,
+        "avgResponseMs": 0
+      },
+      {
+        "phase": "Order Creation",
+        "durationMs": 58708,
+        "requests": 1612,
+        "errors": 0,
+        "avgResponseMs": 263.0074441687345
+      },
+      {
+        "phase": "Nonce Analysis",
+        "durationMs": 1,
+        "requests": 0,
+        "errors": 0,
+        "avgResponseMs": 0
+      }
+    ]
+  },
+  "thresholds": [
+    {
+      "metric": "Success Rate",
+      "actual": "100.0%",
+      "target": ">= 80.0%",
+      "pass": true
+    },
+    {
+      "metric": "Avg Response Time",
+      "actual": "263 ms",
+      "target": "<= 5000 ms",
+      "pass": true
+    },
+    {
+      "metric": "Error Rate",
+      "actual": "0.00%",
+      "target": "<= 10.00%",
+      "pass": true
+    },
+    {
+      "metric": "Requests / Sec",
+      "actual": "27.14",
+      "target": ">= 1",
+      "pass": true
+    }
+  ]
+}

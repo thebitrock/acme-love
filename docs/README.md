@@ -14,7 +14,7 @@ This directory contains comprehensive documentation for the ACME Love library.
 ## 🔧 API Documentation
 
 - **[EAB.md](EAB.md)** - External Account Binding documentation
-- **[nonce-manager.md](nonce-manager.md)** - Nonce management system
+- **[NONCE-MANAGER.md](NONCE-MANAGER.md)** - Nonce management system
 - **[CLI.md](CLI.md)** - CLI command reference (Russian)
 - **[CLI-EN.md](CLI-EN.md)** - CLI command reference (English)
 
@@ -22,12 +22,9 @@ This directory contains comprehensive documentation for the ACME Love library.
 
 The **[reports/](reports/)** directory contains auto-generated test reports and analysis:
 
-- **ACME-METRICS-TEST-RESULTS.md** - Performance metrics and HTTP analysis
-- **STRESS-TEST-RESULTS.md** - Load testing results
 - **QUICK-STRESS-TEST-RESULTS.md** - Quick stress test results
-- **LIGHT-STRESS-TEST-RESULTS.md** - Light load test results
+- **STANDARD-STRESS-TEST-RESULTS.md** - Standard load test results
 - **HEAVY-STRESS-TEST-RESULTS.md** - Heavy load test results
-- **DEADLOCK-ANALYSIS-REPORT.md** - Concurrency analysis
 - **RATE-LIMITING-SUMMARY.md** - Rate limiting analysis
 - **TEST-SUITE-REPORT.md** - Comprehensive test suite report
 - **TEST-ACCOUNT-MANAGEMENT.md** - Account management documentation

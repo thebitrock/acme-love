@@ -1,7 +1,7 @@
 {
   "name": "acme-love",
   "version": "1.5.0",
-  "description": "Lightweight strongly-typed ACME (RFC 8555) client & toolkit for Node.js 20+ (nonce pooling, CSR helpers, directory presets)",
+  "description": "🔐 Modern TypeScript ACME client & CLI for Let's Encrypt certificates. Supports DNS-01/HTTP-01 validation, wildcard domains, EAB (ZeroSSL/Google), nonce pooling. RFC 8555 compliant. Node.js 20+",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
@@ -24,7 +24,11 @@
     "dist/directory.js",
     "dist/directory.d.ts",
     "README.md",
-    "LICENSE"
+    "NPM-README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc && chmod +x dist/src/cli.js",
@@ -37,13 +41,12 @@
     "test:all": "NODE_OPTIONS='--experimental-vm-modules' jest",
     "test:e2e": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/e2e/**/*.test.ts",
     "test:e2e:ci": "ACME_E2E_ENABLED=1 NODE_OPTIONS='--experimental-vm-modules' jest __tests__/e2e/**/*.test.ts",
-    "test:stress": "ACME_STRESS_TEST_ENABLED=1 NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/stress-test.test.ts --testTimeout=120000",
-    "test:heavy": "ACME_HEAVY_STRESS_ENABLED=1 NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/heavy-stress.test.ts --testTimeout=600000",
     "test:nonce-manager": "NODE_OPTIONS='--experimental-vm-modules' jest --runInBand __tests__/nonce-manager.test.ts",
     "test:deadlock": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/deadlock-detection.test.ts --testTimeout=120000 --forceExit",
+    "test:quick": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/quick-stress.test.ts --testTimeout=30000",
+    "test:standard": "ACME_LIGHT_STRESS_ENABLED=1 NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/standard-stress.test.ts --testTimeout=45000",
+    "test:heavy": "ACME_HEAVY_STRESS_ENABLED=1 NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/heavy-stress.test.ts --testTimeout=60000",
     "test:rate-limiting": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/rate-limiting.test.ts --testTimeout=60000",
-    "test:light": "ACME_LIGHT_STRESS_ENABLED=1 NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/light-stress.test.ts --testTimeout=90000",
-    "test:quick": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/quick-stress.test.ts --testTimeout=45000",
     "test:metrics": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/metrics.test.ts --testTimeout=45000",
     "test:demo": "ACME_DEMO_STRESS_ENABLED=1 NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/demo-stress.test.ts --testTimeout=120000",
     "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/**/*.test.ts --testPathIgnorePatterns='e2e|stress'",
@@ -73,6 +76,8 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
+    "seo:check": "node scripts/check-seo.mjs",
+    "package:analyze": "npm run seo:check && npm run publish:dry",
     "cli": "npm run build && node dist/src/cli.js",
     "cli:help": "npm run build && node dist/src/cli.js --help",
     "cli:interactive": "npm run build && node dist/src/cli.js interactive",
@@ -82,32 +87,78 @@
   },
   "keywords": [
     "acme",
-    "client",
-    "acmev2",
-    "boulder",
-    "love",
+    "acme-client",
     "letsencrypt",
-    "certificate",
-    "rfc8555",
+    "ssl",
     "tls",
+    "certificate",
     "x509",
+    "cli",
     "typescript",
     "esm",
-    "node"
+    "node",
+    "rfc8555",
+    "acmev2",
+    "boulder",
+    "zerossl",
+    "google-trust",
+    "buypass",
+    "dns-01",
+    "http-01",
+    "wildcard",
+    "eab",
+    "external-account-binding",
+    "nonce-pooling",
+    "csr",
+    "certificate-authority",
+    "tls-certificate",
+    "ssl-certificate",
+    "automated-certificate",
+    "certificate-management",
+    "crypto",
+    "webcrypto",
+    "ecdsa",
+    "rsa",
+    "p256",
+    "security",
+    "encryption",
+    "devops",
+    "automation",
+    "infrastructure",
+    "jose",
+    "jwk",
+    "jws",
+    "undici"
   ],
-  "author": "Roman Pohorilchuk",
+  "author": {
+    "name": "Roman Pohorilchuk",
+    "email": "roman@pohorilchuk.com",
+    "url": "https://github.com/thebitrock"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thebitrock/acme-love.git"
+    "url": "git+https://github.com/thebitrock/acme-love.git",
+    "directory": "."
   },
   "bugs": {
-    "url": "https://github.com/thebitrock/acme-love/issues"
+    "url": "https://github.com/thebitrock/acme-love/issues",
+    "email": "roman@pohorilchuk.com"
   },
   "homepage": "https://github.com/thebitrock/acme-love#readme",
   "engines": {
-    "node": ">=20.18.1"
+    "node": ">=20.18.1",
+    "npm": ">=10.0.0"
   },
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
   "dependencies": {
     "@inquirer/prompts": "^7.8.4",
     "@peculiar/asn1-schema": "^2.4.0",
@@ -145,6 +196,16 @@
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "directories": {
+    "doc": "./docs",
+    "test": "./__tests__",
+    "lib": "./dist"
+  },
+  "preferGlobal": false,
+  "config": {
+    "unsafe-perm": true
   }
 }

@@ -1,102 +1,126 @@
 # 🚀 ACME Love - Heavy Stress Test Results
 
-## Test Configuration
+> High-level performance & reliability snapshot for ACME protocol operations under configured load.
 
-- **Date**: 2025-08-27T22:59:37.601Z
-- **Test Type**: Heavy Load Stress Test
-- **Accounts**: 4
-- **Orders per Account**: 200
-- **Total Target Orders**: 800
-- **Received challenges**: 800
-- **Success Rate**: 100%
-- **Target**: Let's Encrypt Staging
-- **Algorithm**: EC P-256
+## 🧪 Test Configuration
+| Field | Value |
+|-------|-------|
+| Date | 2025-08-28T23:13:22.103Z |
+| Test Type | Heavy Load Stress Test |
+| Accounts | 4 |
+| Orders / Account | 200 |
+| Total Target Orders | 800 |
+| Received Challenges | 800 |
+| Success Rate | 100.00% |
+| Target | Let's Encrypt Staging |
+| Algorithm | EC P-256 |
+| Node Version | v22.18.0 |
+| Package Version | v1.5.0 |
+| Git Commit | unknown |
 
-## Performance Summary
+## ⚙️ Performance Summary
+| Metric | Value |
+|--------|-------|
+| Total Time | 59s (59399 ms) |
+| Account Creation | 680 ms |
+| Order Processing | 58707 ms |
+| Total Requests | 1,612 |
+| Orders / Sec | 13.47 |
+| Requests / Sec | 27.14 |
+| Avg Response | 263 ms |
+| P50 | 205 ms |
+| P75 | 308 ms |
+| P90 | 403 ms |
+| P95 | 454 ms |
+| P99 | 618 ms |
+| Error Count | 0 |
+| Error Rate | 0.00% |
 
-- **Total Time**: 70s (69638ms)
-- **Account Creation**: 716ms
-- **Order Processing**: 68917ms
-- **Total Requests**: 1612
-- **Error Count**: 0 (0%)
+### ⏱️ Latency Sparkline
+```
+Latency ms trend:
+▁▁▁▁▁▃▃▁▃▁▁▃▁▁▃▁▁▁▁▁▁▁▃▁▃▁▁▃▁▁▁▁▃▃▁▁▁▁▁▃▁
+```
 
-## Throughput Metrics
+### ✅ Threshold Validation
+| Metric | Actual | Threshold | Status |
+|--------|--------|-----------|--------|
+| Success Rate | 100.0% | >= 80.0% | ✅ Pass |
+| Avg Response Time | 263 ms | <= 5000 ms | ✅ Pass |
+| Error Rate | 0.00% | <= 10.00% | ✅ Pass |
+| Requests / Sec | 27.14 | >= 1 | ✅ Pass |
 
-- **Requests per Second**: 23 req/s
-- **Orders per Second**: 11 orders/s
-- **Average Response Time**: 272ms
+### 📊 Request Distribution
+| Method | Count | Percent |
+|--------|-------|---------|
+| POST | 1600 | 99.3% |
+| HEAD | 12 | 0.7% |
 
-## Response Time Analysis
+### 🔝 Top Endpoints
+| Endpoint | Requests | Percent |
+|----------|----------|---------|
+| new-order | 800 | 49.6% |
+| authorization | 800 | 49.6% |
+| new-nonce | 12 | 0.7% |
 
-- **P50 (Median)**: 204ms
-- **P95**: 509ms
-- **P99**: 602ms
+### 🧩 Endpoint Breakdown (Let's Encrypt Staging)
+| Endpoint | Requests | Percent |
+|----------|----------|---------|
+| new-order | 800 | 49.6% |
+| authorization | 800 | 49.6% |
+| new-nonce | 12 | 0.7% |
 
-## Request Distribution
+### 👥 Per-Account Performance
+| Account | Requests | Percent of Total |
+|---------|----------|------------------|
+| 1 | 403 | 25.0% |
+| 2 | 403 | 25.0% |
+| 3 | 403 | 25.0% |
+| 4 | 403 | 25.0% |
 
-- **POST**: 1600 (99%)
-- **HEAD**: 12 (1%)
+### 🔐 Nonce Manager Performance
+| Metric | Value |
+|--------|-------|
+| Total New-Nonce Requests | 12 |
+| Requests Saved (Heuristic) | 1600 |
+| Pool Efficiency | 99% |
+| Final Pool State | 0 nonces |
 
-## Top Endpoints
+### ⏱️ Phase Breakdown
+| Phase | Duration (s) | Requests | Errors | Avg Resp (ms) |
+|-------|--------------|----------|--------|---------------|
+| Account Creation | 1 | 0 | 0 | 0 |
+| Order Creation | 59 | 1612 | 0 | 263 |
+| Nonce Analysis | 0 | 0 | 0 | 0 |
 
-- **new-order**: 800 requests
-- **authorization**: 800 requests
-- **new-nonce**: 12 requests
+### ⭐ Key Performance Indicators
+- ✅ Processed **800/800** orders (100.00%)
+- ✅ Sustained **27.14 req/s** & **13.47 orders/s**
+- ✅ Maintained **263 ms** avg response (P95 454 ms, P99 618 ms)
+- ✅ Nonce pooling avoided **1600** extra requests (99% efficiency)
+- ✅ Zero errors observed
 
-## Let's Encrypt Staging API Breakdown
+### 🧾 Stress Test Validation
+This heavy load stress test demonstrates that ACME Love handled **4 accounts** issuing **800 orders** while meeting defined SLA thresholds.
 
-- **new-order**: 800 requests (50%)
-- **authorization**: 800 requests (50%)
-- **new-nonce**: 12 requests (1%)
+<details><summary>Raw Configuration & Thresholds</summary>
 
-## Per-Account Performance
+```json
+{
+  "name": "Heavy Stress Test",
+  "TOTAL_ACCOUNTS": 4,
+  "ORDERS_PER_ACCOUNT": 200,
+  "TOTAL_ORDERS": 800,
+  "batchSize": 10,
+  "thresholds": {
+    "minSuccessRate": 0.8,
+    "maxAvgResponseTimeMs": 5000,
+    "maxErrorRate": 0.1,
+    "minRequestsPerSecond": 1
+  }
+}
+```
 
-- **Account 1**: 403 requests
-- **Account 2**: 403 requests
-- **Account 3**: 403 requests
-- **Account 4**: 403 requests
+</details>
 
-## Nonce Manager Performance
-
-- **Total New-Nonce Requests**: 12
-- **Requests Saved by Pooling**: 1600
-- **Pool Efficiency**: 99%
-- **Final Pool State**: 0 nonces remaining
-
-## Phase Breakdown
-
-### Account Creation
-
-- **Duration**: 1s
-- **Requests**: 0
-- **Errors**: 0
-- **Avg Response**: 0ms
-
-### Order Creation
-
-- **Duration**: 69s
-- **Requests**: 1612
-- **Errors**: 0
-- **Avg Response**: 272ms
-
-### Nonce Analysis
-
-- **Duration**: 0s
-- **Requests**: 0
-- **Errors**: 0
-- **Avg Response**: 0ms
-
-## Key Performance Indicators
-
-✅ Successfully processed 800 orders out of 800 (100% success rate)
-✅ Maintained 272ms average response time under heavy load
-✅ Achieved 23 requests/second sustained throughput
-✅ Nonce pooling saved 1600 network requests (99% efficiency)
-✅ Error rate kept under 0%
-
-## Stress Test Validation
-
-This heavy stress test validates that ACME Love can handle enterprise-scale certificate
-management with hundreds of concurrent orders while maintaining performance and reliability.
-
-_Generated by ACME Love v1.2.1 heavy stress test_
+_Generated by ACME Love v1.5.0 (unknown) heavy stress test stress test_
