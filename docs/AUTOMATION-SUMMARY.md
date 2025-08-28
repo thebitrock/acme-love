@@ -103,15 +103,14 @@ Quick overview:
 ```
 docs/
 ├── README.md                    # Main documentation
-├── PUBLISHING.md               # Publishing guide (automated + manual)
+├── PUBLISHING.md                # Publishing guide (automated + manual)
 ├── AUTOMATION-SUMMARY.md        # This file - technical overview
 ├── CHANGELOG.md                 # Change history
 ├── CLI.md                       # CLI documentation
 ├── TESTING.md                   # Testing
-├── RATE-LIMIT-GUIDE.md         # Rate limits handling
+├── RATE-LIMIT-GUIDE.md          # Rate limits handling
 └── reports/                     # Auto-generated reports
-    ├── ACME-METRICS-TEST-RESULTS.md
-    ├── STRESS-TEST-RESULTS.md
+    ├── HEAVY-STRESS-TEST-RESULTS.md
     └── ...
 ```
 
