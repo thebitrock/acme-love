@@ -1276,7 +1276,7 @@ chmod 755 ./certificates/
 
 [🔝 Back to Top](#-table-of-contents)
 
-ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple load tiers. Below are the latest consolidated results pulled from the _RESULTS.md_ files (Quick / Light / Standard / Heavy). They demonstrate scalability, nonce‑pool efficiency, and stability as order volume increases.
+ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple load tiers. Below are the latest consolidated results pulled from the stress report artifacts (Quick / Standard / Heavy). They demonstrate scalability, nonce‑pool efficiency, and stability as order volume increases.
 
 ### 🔢 Consolidated Metrics (Latest Run)
 
@@ -1338,26 +1338,27 @@ Each stress test report includes: latency distribution (P50/P75/P90/P95/P99), th
 
 ### 🏃 Running the Tests
 
-We've created a comprehensive suite of performance tests to validate different scenarios:
+Current test scripts (see `package.json`):
 
 ```bash
-# Quick metrics test (1 account creation + HTTP metrics)
-npm run test:metrics        # ~3 seconds, validates core performance
+# Core (fast) test suites
+npm test                    # Unit + integration (excludes stress & rate-limiting)
+npm run test:unit           # Unit tests only (skips e2e & stress)
+npm run test:e2e            # End-to-end tests (Let's Encrypt staging)
+npm run test:e2e:ci         # E2E for CI (requires ACME_E2E_ENABLED=1)
 
-# Quick stress test (1 account × 2 orders)
-npm run test:quick         # ~30 seconds, basic validation testing
+# Focused component tests
+npm run test:nonce-manager  # Nonce manager focused tests (in-band)
+npm run test:rate-limiting  # Rate limiting behavior & backoff
+npm run test:deadlock       # Deadlock detection / concurrency safety
 
-# Light stress test (2 accounts × 3 orders each)
-npm run test:light         # ~30 seconds, basic load testing
+# Stress tiers (instrumented performance runs)
+npm run test:quick          # Quick tier (2 × 20 orders) ~7s
+npm run test:standard       # Standard tier (4 × 50 orders) ~16s
+npm run test:heavy          # Heavy tier (4 × 200 orders) ~60s
 
-# Demo test (2 accounts × 5 orders each)
-npm run test:demo          # ~30 seconds, demonstration scenario
-
-# Standard stress test (6 accounts × 10 orders each)
-npm run test:stress        # ~30 seconds, production scenario testing
-
-# Heavy stress test (4 accounts × 100 orders each) 🔥
-npm run test:heavy         # ~35 seconds, enterprise load testing
+# Full suite
+npm run test:all            # EVERYTHING (includes stress) – slower
 ```
 
 📋 **Latest test report**: [HEAVY-STRESS-TEST-RESULTS.md](./docs/reports/HEAVY-STRESS-TEST-RESULTS.md)
@@ -1423,16 +1424,11 @@ npm run test:unit       # Unit tests only
 npm run test:e2e        # Integration tests with Let's Encrypt staging
 
 # Stress test commands (run individually, requires staging access)
-npm run test:quick      # Quick stress test (30s)
-npm run test:light      # Light stress test (30s)
-npm run test:demo       # Demo stress test (30s)
-npm run test:stress     # Standard stress test (2 min)
-npm run test:heavy      # Heavy stress test (10 min)
-npm run test:deadlock   # Deadlock detection test (2 min)
-
-# Stress test groups
-npm run test:stress:fast  # Run quick + light + demo tests
-npm run test:stress:all   # Run all stress tests (takes ~15 minutes)
+npm run test:quick        # Quick tier
+npm run test:standard     # Standard tier
+npm run test:heavy        # Heavy tier
+npm run test:deadlock     # Deadlock detection
+npm run test:rate-limiting # Rate limiting behavior
 ```
 
 **Note**: Stress tests are excluded from the default `npm test` command to keep CI/CD pipelines fast. They should be run manually or in dedicated test environments.
