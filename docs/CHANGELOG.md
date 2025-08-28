@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.5.0] - 2025-08-28
+
+### Added
+
+- **Provider Presets**: New semantic `provider` export for cleaner client initialization (`AcmeClientCore(provider.letsencrypt.staging)`)
+- **Enhanced Type Safety**: Provider presets offer full TypeScript support with autocomplete and validation
+- **Dual Export Strategy**: Both namespace (`directory`) and semantic (`provider`) exports for maximum compatibility
+- **Client Initialization Documentation**: Comprehensive guide showing both provider presets and string URL methods
+
+### Changed
+
+- **Improved Documentation**: All examples updated to showcase provider presets as the recommended approach
+- **Constructor Overloads**: Enhanced `AcmeClientCore` constructor to accept both string URLs and typed directory entries
+- **HttpResponse Migration**: Replaced custom HttpResponse with undici's ParsedResponseData for better consistency
+
+### Backwards Compatibility
+
+- **Full Compatibility**: All existing code using string URLs or `directory`/`directories` exports continues to work
+- **Legacy Support**: Namespace exports (`directory`) maintained for existing projects
+
 ## [1.4.0] - 2025-08-28
 
 ### Added
