@@ -1,0 +1,23 @@
+{
+  "privateKey": {
+    "key_ops": [
+      "sign"
+    ],
+    "ext": true,
+    "kty": "EC",
+    "x": "u_WBSYd7GP1P4Luajn08f2Dxmoq0sRzFmNW7ySC4-V4",
+    "y": "k926MYU6XHcRFybE18o6xRTlaRKL6gS4oV0hfqzIipc",
+    "crv": "P-256",
+    "d": "GvHzLbqPgvAZQQ6nTkNwgfXN5RGZt_lg13KppVLsBMU"
+  },
+  "publicKey": {
+    "key_ops": [
+      "verify"
+    ],
+    "ext": true,
+    "kty": "EC",
+    "x": "u_WBSYd7GP1P4Luajn08f2Dxmoq0sRzFmNW7ySC4-V4",
+    "y": "k926MYU6XHcRFybE18o6xRTlaRKL6gS4oV0hfqzIipc",
+    "crv": "P-256"
+  }
+}

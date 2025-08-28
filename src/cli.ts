@@ -101,6 +101,25 @@ function parseAlgorithm(algoStr: string): CsrAlgo {
   }
 }
 
+// Build directory choices from exported directory namespace (handles legacy namespace export shape)
+function buildDirectoryChoices() {
+  // The namespace export is: { directory: { provider: { env: {...} } }, letsencrypt: {...legacy...} }
+  const root: any = (directory as any).directory ?? directory; // Prefer nested 'directory' key if present
+  const choices: { name: string; value: string }[] = [];
+  for (const [providerKey, providerData] of Object.entries(root)) {
+    if (!providerData || typeof providerData !== 'object') continue;
+    for (const [envKey, info] of Object.entries(providerData as any)) {
+      if (!info || typeof info !== 'object') continue;
+      const url = (info as any).directoryUrl;
+      if (!url) continue; // skip non-env entries
+      const displayName = (info as any).name || `${providerKey} ${envKey}`;
+      choices.push({ name: `${displayName} (${providerKey}/${envKey})`, value: url });
+    }
+  }
+  choices.sort((a, b) => a.name.localeCompare(b.name));
+  return choices;
+}
+
 // Load package.json version - go up 2 levels from dist/src/
 const packageJson = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
 
@@ -156,6 +175,8 @@ program
   .option('--challenge <type>', 'Challenge type: dns-01 or http-01', 'dns-01')
   .option('--account-algo <algo>', 'Account key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096', 'ec-p256')
   .option('--cert-algo <algo>', 'Certificate key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096', 'ec-p256')
+  .option('--eab-kid <kid>', 'External Account Binding key identifier')
+  .option('--eab-hmac-key <key>', 'External Account Binding HMAC key (base64url)')
   .action(async (options: any) => {
     try {
       await handleCertCommand(options);
@@ -257,21 +278,20 @@ async function handleCertCommand(options: any) {
   } else if (options.directory) {
     directoryUrl = options.directory;
   } else {
+    // Build dynamic choices from directory object
+  const directoryChoices = buildDirectoryChoices();
     const envChoice = await select({
-      message: 'Select ACME environment:',
+      message: 'Select ACME directory:',
       choices: [
-        { name: '🧪 Let\'s Encrypt Staging (recommended for testing)', value: 'staging' },
-        { name: '🏭 Let\'s Encrypt Production (for real certificates)', value: 'production' },
+        ...directoryChoices,
         { name: '🔧 Custom ACME Directory URL', value: 'custom' }
       ]
     });
 
-    if (envChoice === 'staging') {
-      directoryUrl = directory.letsencrypt.staging.directoryUrl;
-    } else if (envChoice === 'production') {
-      directoryUrl = directory.letsencrypt.production.directoryUrl;
-    } else {
+    if (envChoice === 'custom') {
       directoryUrl = await input({ message: 'Enter custom ACME directory URL:' });
+    } else {
+      directoryUrl = envChoice; // selected is the URL
     }
   }
 
@@ -363,11 +383,18 @@ async function handleCertCommand(options: any) {
 
   const acct = new AcmeAccountSession(core, accountKeys, sessionOptions);
 
+  // Prepare EAB if provided
+  let eab: any = undefined;
+  if (options.eabKid && options.eabHmacKey) {
+    eab = { kid: options.eabKid, hmacKey: options.eabHmacKey };
+    console.log('🔐 Using External Account Binding');
+  }
+
   // Register account if needed
   const registeredKid = await acct.ensureRegistered({
     contact: [`mailto:${email}`],
     termsOfServiceAgreed: true
-  });
+  }, eab);
 
   console.log('✅ Account ready');
 
@@ -610,21 +637,19 @@ async function handleInteractiveMode(options: any = {}) {
 
   // If no environment is specified, ask user to choose
   if (!options.staging && !options.production && !options.directory) {
+  const directoryChoices = buildDirectoryChoices();
     const envChoice = await select({
-      message: 'Select ACME environment:',
+      message: 'Select ACME directory:',
       choices: [
-        { name: '🧪 Let\'s Encrypt Staging (recommended for testing)', value: 'staging' },
-        { name: '🏭 Let\'s Encrypt Production (for real certificates)', value: 'production' },
+        ...directoryChoices,
         { name: '🔧 Custom ACME Directory URL', value: 'custom' }
       ]
     });
 
-    if (envChoice === 'staging') {
-      options.staging = true;
-    } else if (envChoice === 'production') {
-      options.production = true;
-    } else if (envChoice === 'custom') {
+    if (envChoice === 'custom') {
       options.directory = await input({ message: 'Enter custom ACME directory URL:' });
+    } else {
+      options.directory = envChoice; // store selected URL directly
     }
   }
 
@@ -634,7 +659,19 @@ async function handleInteractiveMode(options: any = {}) {
   } else if (options.production) {
     console.log('🏭 Using Let\'s Encrypt Production Environment');
   } else if (options.directory) {
-    console.log(`🔧 Using Custom Directory: ${options.directory}`);
+    // Try to resolve a friendly name
+    let friendlyName: string | undefined;
+    const root: any = (directory as any).directory ?? directory;
+    outer: for (const providerData of Object.values(root) as any[]) {
+      for (const envData of Object.values(providerData) as any[]) {
+        if (envData && typeof envData === 'object' && envData.directoryUrl === options.directory) { friendlyName = envData.name; break outer; }
+      }
+    }
+    if (friendlyName) {
+      console.log(`🏦 Using Directory: ${friendlyName}`);
+    } else {
+      console.log(`🔧 Using Custom Directory: ${options.directory}`);
+    }
   }
 
   const action = await select({

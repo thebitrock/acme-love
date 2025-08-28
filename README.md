@@ -15,16 +15,17 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 
 ## ✨ Key Features
 
-| Feature                      | Description                                                 |
-| ---------------------------- | ----------------------------------------------------------- |
-| 🖥️ **Powerful CLI**          | Interactive & command-line modes with beautiful prompts     |
-| 🌐 **Multi-Environment**     | Staging, Production, and Custom ACME directories            |
-| 🔒 **Challenge Support**     | DNS-01 and HTTP-01 with automatic validation                |
-| � **Crypto Algorithms**      | ECDSA (P-256/P-384/P-521) and RSA (2048/3072/4096) support  |
-| �🛠️ **Smart Error Handling** | Maintenance detection, user-friendly error messages         |
-| ⚡ **Modern Architecture**   | ESM + TypeScript 5, WebCrypto, nonce pooling                |
-| 🏢 **Multiple CAs**          | Let's Encrypt, Buypass, Google, ZeroSSL presets             |
-| 🔧 **Developer Friendly**    | Multiple CLI access methods, auto-build, comprehensive docs |
+| Feature                      | Description                                                   |
+| ---------------------------- | ------------------------------------------------------------- |
+| 🖥️ **Powerful CLI**          | Interactive & command-line modes with beautiful prompts       |
+| 🌐 **Multi-Environment**     | Staging, Production, and Custom ACME directories              |
+| 🔒 **Challenge Support**     | DNS-01 and HTTP-01 with automatic validation                  |
+| � **Crypto Algorithms**      | ECDSA (P-256/P-384/P-521) and RSA (2048/3072/4096) support    |
+| 🔑 **EAB Support**           | External Account Binding for commercial CAs (ZeroSSL, Google) |
+| �🛠️ **Smart Error Handling** | Maintenance detection, user-friendly error messages           |
+| ⚡ **Modern Architecture**   | ESM + TypeScript 5, WebCrypto, nonce pooling                  |
+| 🏢 **Multiple CAs**          | Let's Encrypt, Buypass, Google, ZeroSSL with EAB support      |
+| 🔧 **Developer Friendly**    | Multiple CLI access methods, auto-build, comprehensive docs   |
 
 ## 🚀 Quick Start
 
@@ -73,6 +74,14 @@ acme-love cert \
 acme-love create-account-key \
   --algo ec-p384 \
   --output ./my-account-key.json
+
+# Use External Account Binding for commercial CAs
+acme-love cert \
+  --domain acme-love.com \
+  --email admin@acme-love.com \
+  --directory https://acme.zerossl.com/v2/DV90 \
+  --eab-kid "your-key-identifier" \
+  --eab-hmac-key "your-base64url-hmac-key"
 ```
 
 ### 🎯 Challenge Types
@@ -131,14 +140,16 @@ See [CLI-USAGE.md](./CLI-USAGE.md) for detailed development setup.
 
 ### 📖 CLI Commands Reference
 
-| Command              | Purpose                        | Algorithm Options                    |
-| -------------------- | ------------------------------ | ------------------------------------ |
-| `cert`               | Obtain SSL certificate         | `--account-algo`, `--cert-algo`      |
-| `create-account-key` | Generate ACME account key      | `--algo`                             |
-| `status`             | Check certificate status       | -                                    |
-| `interactive`        | Interactive certificate wizard | Full interactive algorithm selection |
+| Command              | Purpose                        | Algorithm Options                    | EAB Options                                |
+| -------------------- | ------------------------------ | ------------------------------------ | ------------------------------------------ |
+| `cert`               | Obtain SSL certificate         | `--account-algo`, `--cert-algo`      | `--eab-kid`, `--eab-hmac-key`              |
+| `create-account-key` | Generate ACME account key      | `--algo`                             | -                                          |
+| `status`             | Check certificate status       | -                                    | -                                          |
+| `interactive`        | Interactive certificate wizard | Full interactive algorithm selection | Prompts for EAB when custom directory used |
 
 **Algorithm Values**: `ec-p256` (default), `ec-p384`, `ec-p521`, `rsa-2048`, `rsa-3072`, `rsa-4096`
+
+**EAB Options**: `--eab-kid <identifier>`, `--eab-hmac-key <base64url-key>` for commercial CAs
 
 **Examples**:
 
@@ -151,6 +162,13 @@ acme-love cert --account-algo ec-p256 --cert-algo rsa-4096 --domain acme-love.co
 
 # Interactive mode with full algorithm selection
 acme-love interactive --staging
+
+# Commercial CA with External Account Binding
+acme-love cert \
+  --domain acme-love.com \
+  --directory https://acme.zerossl.com/v2/DV90 \
+  --eab-kid "your-eab-key-id" \
+  --eab-hmac-key "your-eab-hmac-key"
 ```
 
 ## 📚 Library Usage
@@ -218,6 +236,81 @@ const certificate = await acct.downloadCertificate(valid);
 
 console.log('Certificate obtained!', certificate);
 ```
+
+### External Account Binding (EAB) Support
+
+For Certificate Authorities that require External Account Binding (like ZeroSSL, Google Trust Services), provide EAB credentials during account registration:
+
+```ts
+import { AcmeClientCore, AcmeAccountSession, generateKeyPair } from 'acme-love';
+
+// Create client for CA that requires EAB
+const core = new AcmeClientCore('https://acme.zerossl.com/v2/DV90');
+
+// Generate account keys
+const keyPair = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' });
+const accountKeys = {
+  privateKey: keyPair.privateKey!,
+  publicKey: keyPair.publicKey!,
+};
+
+// Create account session
+const acct = new AcmeAccountSession(core, accountKeys);
+
+// Register account with EAB
+const eab = {
+  kid: 'your-key-identifier-from-ca', // Provided by your CA
+  hmacKey: 'your-base64url-hmac-key-from-ca', // Provided by your CA
+};
+
+const kid = await acct.ensureRegistered(
+  {
+    contact: ['mailto:admin@acme-love.com'],
+    termsOfServiceAgreed: true,
+  },
+  eab,
+);
+
+// Continue with normal certificate issuance...
+const order = await acct.newOrder(['acme-love.com']);
+// ... rest of the flow
+```
+
+**EAB-enabled Certificate Authorities:**
+
+- **ZeroSSL**: Requires EAB for new account registration
+- **Google Trust Services**: Requires EAB for all accounts
+- **Buypass**: Optional EAB for enhanced validation
+- **Custom/Enterprise CAs**: Many require EAB for access control
+
+**Getting EAB Credentials:**
+
+1. Register with your chosen CA's website
+2. Navigate to ACME/API settings in your account dashboard
+3. Generate or retrieve your EAB Key ID and HMAC Key
+4. Use these credentials in your ACME client configuration
+
+**CLI Usage with EAB:**
+
+```bash
+# ZeroSSL example
+acme-love cert \
+  --domain acme-love.com \
+  --email admin@acme-love.com \
+  --directory https://acme.zerossl.com/v2/DV90 \
+  --eab-kid "your-zerossl-key-id" \
+  --eab-hmac-key "your-zerossl-hmac-key"
+
+# Google Trust Services example
+acme-love cert \
+  --domain acme-love.com \
+  --email admin@acme-love.com \
+  --directory https://dv.acme-v02.api.pki.goog/directory \
+  --eab-kid "your-google-key-id" \
+  --eab-hmac-key "your-google-hmac-key"
+```
+
+📖 **Detailed EAB documentation**: [docs/EAB.md](./docs/EAB.md)
 
 ### Supported Cryptographic Algorithms
 
@@ -692,21 +785,32 @@ Built-in directory presets for major Certificate Authorities:
 ```ts
 import { directory } from 'acme-love';
 
-// Let's Encrypt
+// Let's Encrypt (No EAB required)
 directory.letsencrypt.staging.directoryUrl;
 directory.letsencrypt.production.directoryUrl;
 
-// Buypass
+// Buypass (EAB optional)
 directory.buypass.staging.directoryUrl;
 directory.buypass.production.directoryUrl;
 
-// Google Trust Services
+// Google Trust Services (EAB required)
 directory.google.staging.directoryUrl;
 directory.google.production.directoryUrl;
 
-// ZeroSSL
+// ZeroSSL (EAB required for new accounts)
 directory.zerossl.production.directoryUrl;
 ```
+
+**EAB Requirements by Provider:**
+
+| Provider              | EAB Required | Notes                                   |
+| --------------------- | ------------ | --------------------------------------- |
+| Let's Encrypt         | ❌ No        | Free, automatic registration            |
+| Buypass               | ⚠️ Optional  | Enhanced validation with EAB            |
+| Google Trust Services | ✅ Required  | Commercial service, register for access |
+| ZeroSSL               | ✅ Required  | Free tier available, EAB mandatory      |
+
+Use `--eab-kid` and `--eab-hmac-key` CLI options or the `eab` parameter in `ensureRegistered()` for providers that require External Account Binding.
 
 ## 🎨 CLI Features Showcase
 
@@ -804,18 +908,18 @@ chmod 755 ./certificates/
 
 ## 🚀 Performance & Stress Testing
 
-ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple load tiers. Below are the latest consolidated results pulled from the *RESULTS.md* files (Quick / Light / Standard / Heavy). They demonstrate scalability, nonce‑pool efficiency, and stability as order volume increases.
+ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple load tiers. Below are the latest consolidated results pulled from the _RESULTS.md_ files (Quick / Light / Standard / Heavy). They demonstrate scalability, nonce‑pool efficiency, and stability as order volume increases.
 
 ### 🔢 Сводные Метрики (Последний прогон)
 
 | Test Tier | Accounts × Orders | Total Orders | Total Time | Avg Response | P50 / P95 / P99 | Requests | Req/s | Orders/s | Success Rate | New-Nonce | Nonce Efficiency | Requests Saved |
-|-----------|-------------------|--------------|-----------:|-------------:|----------------:|---------:|------:|---------:|-------------:|----------:|-----------------:|---------------:|
-| Quick     | 1 × 2             | 2            | 2.1s       | 289ms        | – / – / –       | 5        | 2     | ~1.0     | 100%         | 1         | 80%              | 4             |
-| Light     | 2 × 3             | 6            | 2.7s       | 431ms        | – / – / –       | 18       | 7     | ~2.2     | 100%         | 6         | 67%              | 12            |
-| Standard  | 6 × 10            | 60           | 4.2s       | 413ms        | – / – / –       | 158      | 38    | ~14.3    | 88%*         | 38        | 0%               | 0             |
-| Heavy     | 4 × 200           | 800          | 69.6s      | 272ms        | 204 / 509 / 602 | 1612     | 23    | 11.0     | 100%         | 12        | 99%              | 1600          |
+| --------- | ----------------- | ------------ | ---------: | -----------: | --------------: | -------: | ----: | -------: | -----------: | --------: | ---------------: | -------------: |
+| Quick     | 1 × 2             | 2            |       2.1s |        289ms |       – / – / – |        5 |     2 |     ~1.0 |         100% |         1 |              80% |              4 |
+| Light     | 2 × 3             | 6            |       2.7s |        431ms |       – / – / – |       18 |     7 |     ~2.2 |         100% |         6 |              67% |             12 |
+| Standard  | 6 × 10            | 60           |       4.2s |        413ms |       – / – / – |      158 |    38 |    ~14.3 |        88%\* |        38 |               0% |              0 |
+| Heavy     | 4 × 200           | 800          |      69.6s |        272ms | 204 / 509 / 602 |     1612 |    23 |     11.0 |         100% |        12 |              99% |           1600 |
 
-*Standard run success rate (88%) includes intentionally induced / retried scenarios; Heavy run shows 100% once scaled.
+\*Standard run success rate (88%) includes intentionally induced / retried scenarios; Heavy run shows 100% once scaled.
 
 ### 🧪 Interpretation
 

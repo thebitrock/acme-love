@@ -16,6 +16,14 @@ export interface AccountKeys {
   publicKey: webcrypto.CryptoKey;
 }
 
+/** External Account Binding parameters for CA pre-authorization */
+export interface ExternalAccountBinding {
+  /** Key identifier provided by the CA */
+  kid: string;
+  /** HMAC key (base64url encoded) provided by the CA */
+  hmacKey: string;
+}
+
 export interface AcmeAccountSessionOptions {
   /** Pre-existing account kid (if account already registered) */
   kid?: string;
@@ -101,7 +109,10 @@ export class AcmeAccountSession {
   }
 
   /** Ensure account is registered; sets this.kid on success (idempotent & coalesced) */
-  public async ensureRegistered(payload = { contact: [] as string[], termsOfServiceAgreed: true }): Promise<string> {
+  public async ensureRegistered(
+    payload = { contact: [] as string[], termsOfServiceAgreed: true },
+    eab?: ExternalAccountBinding
+  ): Promise<string> {
     await this.ensureInit();
     if (this.kid) return this.kid;
 
@@ -114,8 +125,15 @@ export class AcmeAccountSession {
       const nm = this.nonce!;
       const ns = await this.nonceNamespace();
 
+      // Include EAB in payload if provided
+      let finalPayload: any = payload;
+      if (eab) {
+        const externalAccountBinding = await this.createExternalAccountBinding(eab);
+        finalPayload = { ...payload, externalAccountBinding };
+      }
+
       const res = await nm.withNonceRetry(ns, async (nonce) => {
-        const jws = await this.signJws(payload, dir.newAccount, nonce, /*forceJwk*/ true);
+        const jws = await this.signJws(finalPayload, dir.newAccount, nonce, /*forceJwk*/ true);
         return this.client.getHttp().post(dir.newAccount, jws, {
           'Content-Type': 'application/jose+json',
           Accept: 'application/json',
@@ -315,6 +333,33 @@ export class AcmeAccountSession {
     const jwk = await jose.exportJWK(this.keys.publicKey);
     const thumb = await jose.calculateJwkThumbprint(jwk, 'sha256');
     return `${token}.${thumb}`;
+  }
+
+  /** Create External Account Binding JWS per RFC 8555 Section 7.3.4 */
+  private async createExternalAccountBinding(eab: ExternalAccountBinding): Promise<jose.FlattenedJWS> {
+    const jwk = await jose.exportJWK(this.keys.publicKey);
+    
+    // Decode HMAC key from base64url
+    const hmacKeyBytes = jose.base64url.decode(eab.hmacKey);
+    
+    // Import HMAC key for signing
+    const hmacKey = await crypto.subtle.importKey(
+      'raw',
+      hmacKeyBytes,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    const protectedHeader: jose.JWSHeaderParameters = {
+      alg: 'HS256',
+      kid: eab.kid,
+      url: this.directory!.newAccount,
+    };
+
+    return await new jose.FlattenedSign(encodePayload(jwk))
+      .setProtectedHeader(protectedHeader)
+      .sign(hmacKey);
   }
 
   /** Sign flattened JWS with kid or embedded JWK */

@@ -1,5 +1,8 @@
 import { request } from 'undici';
 import { debugHttp } from '../debug.js';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
 export interface HttpResponse<T = unknown> {
   status: number;
@@ -8,7 +11,37 @@ export interface HttpResponse<T = unknown> {
 }
 
 export class SimpleHttpClient {
+  private static userAgent = SimpleHttpClient.initUserAgent();
+
+  private static initUserAgent(): string {
+    try {
+      // dist layout: dist/acme/http/http-client.js -> go up 3 to reach dist/, then package.json is two levels up? Actually source at runtime: dist/src/acme/http/http-client.js => adjust relative
+      // Use URL resolution relative to this file, then walk up to package.json
+      const __filename = fileURLToPath(import.meta.url);
+      const pkgPath = findPackageJson(dirname(__filename));
+      if (pkgPath) {
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { name?: string; version?: string; homepage?: string };
+        const name = pkg.name || 'acme-love';
+        const version = pkg.version || '0.0.0-dev';
+        const homepage = pkg.homepage || 'https://github.com/thebitrock/acme-love';
+        return `${name}/${version} (+${homepage}; Node/${process.version.replace(/^v/, '')})`;
+      }
+    } catch (e) {
+      debugHttp('User-Agent init error: %s', (e as Error).message);
+    }
+    return 'acme-love (version-unknown)';
+  }
+
+  private ensureUserAgent(headers: Record<string, string>): Record<string, string> {
+    const hasUA = Object.keys(headers).some(k => k.toLowerCase() === 'user-agent');
+    if (!hasUA) {
+      headers['User-Agent'] = SimpleHttpClient.userAgent;
+    }
+    return headers;
+  }
+
   async get<T>(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<T>> {
+    headers = this.ensureUserAgent({ ...headers });
     debugHttp('GET %s init headers=%j', url, headers);
     let res;
     let data: unknown;
@@ -40,6 +73,7 @@ export class SimpleHttpClient {
     body: unknown,
     headers: Record<string, string> = {},
   ): Promise<HttpResponse<T>> {
+  headers = this.ensureUserAgent({ ...headers });
     let serializedBody: string | Uint8Array | Buffer | null;
 
     if (typeof body === 'undefined') {
@@ -102,6 +136,7 @@ export class SimpleHttpClient {
   }
 
   async head(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<void>> {
+  headers = this.ensureUserAgent({ ...headers });
     debugHttp('HEAD %s init headers=%j', url, headers);
     const start = Date.now();
     let res;
@@ -148,4 +183,20 @@ export class SimpleHttpClient {
     }
     return { type: typeof body };
   }
+}
+
+// Helper to locate nearest package.json walking up dirs (limited depth)
+function findPackageJson(startDir: string): string | null {
+  let dir = startDir;
+  for (let i = 0; i < 6; i++) { // limit to prevent infinite loop
+    const candidate = join(dir, 'package.json');
+    try {
+      readFileSync(candidate);
+      return candidate;
+    } catch { /* continue up */ }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
 }
