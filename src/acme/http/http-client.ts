@@ -1,13 +1,10 @@
-import { request } from 'undici';
+import { request, type Dispatcher } from 'undici';
 import { debugHttp } from '../debug.js';
 import { readFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
 
-export interface HttpResponse<T = unknown> {
-  status: number;
-  headers: Record<string, string | string[]>;
-  data: T;
+// Extend ResponseData with parsed body
+export interface ParsedResponseData extends Omit<Dispatcher.ResponseData, 'body'> {
+  body: unknown;
 }
 
 export class SimpleHttpClient {
@@ -15,10 +12,8 @@ export class SimpleHttpClient {
 
   private static initUserAgent(): string {
     try {
-      // dist layout: dist/acme/http/http-client.js -> go up 3 to reach dist/, then package.json is two levels up? Actually source at runtime: dist/src/acme/http/http-client.js => adjust relative
-      // Use URL resolution relative to this file, then walk up to package.json
-      const __filename = fileURLToPath(import.meta.url);
-      const pkgPath = findPackageJson(dirname(__filename));
+      // Use require.resolve to find package.json from any module context
+      const pkgPath = require.resolve('../../package.json');
       if (pkgPath) {
         const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as {
           name?: string;
@@ -44,14 +39,13 @@ export class SimpleHttpClient {
     return headers;
   }
 
-  async get<T>(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<T>> {
+  async get(url: string, headers: Record<string, string> = {}): Promise<ParsedResponseData> {
     headers = this.ensureUserAgent({ ...headers });
     debugHttp('GET %s init headers=%j', url, headers);
-    let res;
-    let data: unknown;
     const start = Date.now();
+
     try {
-      res = await request(url, { method: 'GET', headers });
+      const res = await request(url, { method: 'GET', headers });
       debugHttp(
         'GET %s response status=%d durationMs=%d content-type=%s',
         url,
@@ -59,6 +53,8 @@ export class SimpleHttpClient {
         Date.now() - start,
         res.headers['content-type'],
       );
+
+      let data: unknown;
       try {
         data = await res.body.json();
         debugHttp('GET %s parsed json ok', url);
@@ -66,23 +62,23 @@ export class SimpleHttpClient {
         debugHttp('GET %s json parse failed: %s', url, (e as Error).message);
         throw e;
       }
+
+      // Return undici response format but with parsed body
+      return {
+        ...res,
+        body: data,
+      };
     } catch (err) {
       debugHttp('GET %s error: %s', url, (err as Error).message);
       throw err;
     }
-
-    return {
-      status: res.statusCode,
-      headers: this.normalizeHeaders(res.headers),
-      data: data as T,
-    };
   }
 
   async post<T>(
     url: string,
     body: unknown,
     headers: Record<string, string> = {},
-  ): Promise<HttpResponse<T>> {
+  ): Promise<Omit<Dispatcher.ResponseData, 'body'> & { body: T }> {
     headers = this.ensureUserAgent({ ...headers });
     let serializedBody: string | Uint8Array | Buffer | null;
 
@@ -104,9 +100,9 @@ export class SimpleHttpClient {
     const bodyDesc = this.describeBodyForDebug(serializedBody);
     debugHttp('POST %s init headers=%j body=%j', url, headers, bodyDesc);
     const start = Date.now();
-    let res;
+
     try {
-      res = await request(url, {
+      const res = await request(url, {
         method: 'POST',
         headers,
         body: serializedBody,
@@ -118,78 +114,65 @@ export class SimpleHttpClient {
         Date.now() - start,
         res.headers['content-type'],
       );
+
+      const rawCt = res.headers['content-type'];
+      const ct = (Array.isArray(rawCt) ? rawCt[0] : rawCt)?.toLowerCase() ?? '';
+
+      let data: unknown;
+      try {
+        if (ct.includes('application/json') || ct.includes('application/problem+json')) {
+          data = await res.body.json();
+          debugHttp('POST %s parsed json', url);
+        } else if (ct.startsWith('text/') || ct.includes('application/pem-certificate-chain')) {
+          data = await res.body.text();
+          debugHttp('POST %s read text len=%d', url, typeof data === 'string' ? data.length : 0);
+        } else {
+          const buf = await res.body.arrayBuffer();
+          data = Buffer.from(buf);
+          debugHttp('POST %s read binary len=%d', url, (data as Buffer).length);
+        }
+      } catch (e) {
+        debugHttp('POST %s body parse error: %s', url, (e as Error).message);
+        throw e;
+      }
+
+      // Return undici response format but with parsed body
+      return {
+        ...res,
+        body: data as T,
+      };
     } catch (err) {
       debugHttp('POST %s network error: %s', url, (err as Error).message);
       throw err;
     }
-
-    const rawCt = res.headers['content-type'];
-    const ct = (Array.isArray(rawCt) ? rawCt[0] : rawCt)?.toLowerCase() ?? '';
-
-    let data: unknown;
-    try {
-      if (ct.includes('application/json') || ct.includes('application/problem+json')) {
-        data = await res.body.json();
-        debugHttp('POST %s parsed json', url);
-      } else if (ct.startsWith('text/') || ct.includes('application/pem-certificate-chain')) {
-        data = await res.body.text();
-        debugHttp('POST %s read text len=%d', url, typeof data === 'string' ? data.length : 0);
-      } else {
-        const buf = await res.body.arrayBuffer();
-        data = Buffer.from(buf);
-        debugHttp('POST %s read binary len=%d', url, (data as Buffer).length);
-      }
-    } catch (e) {
-      debugHttp('POST %s body parse error: %s', url, (e as Error).message);
-      throw e;
-    }
-
-    return {
-      status: res.statusCode,
-      headers: this.normalizeHeaders(res.headers),
-      data: data as T,
-    };
   }
 
-  async head(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<void>> {
+  async head(
+    url: string,
+    headers: Record<string, string> = {},
+  ): Promise<Omit<Dispatcher.ResponseData, 'body'> & { body: void }> {
     headers = this.ensureUserAgent({ ...headers });
     debugHttp('HEAD %s init headers=%j', url, headers);
     const start = Date.now();
-    let res;
+
     try {
-      res = await request(url, { method: 'HEAD', headers });
+      const res = await request(url, { method: 'HEAD', headers });
       debugHttp(
         'HEAD %s response status=%d durationMs=%d',
         url,
         res.statusCode,
         Date.now() - start,
       );
+
+      // Return undici response format but with undefined body for HEAD
+      return {
+        ...res,
+        body: undefined,
+      };
     } catch (err) {
       debugHttp('HEAD %s error: %s', url, (err as Error).message);
       throw err;
     }
-
-    return {
-      status: res.statusCode,
-      headers: this.normalizeHeaders(res.headers),
-      data: undefined,
-    };
-  }
-
-  private normalizeHeaders(
-    headers: Record<string, string | string[] | undefined>,
-  ): Record<string, string | string[]> {
-    const result: Record<string, string | string[]> = {};
-
-    for (const [key, value] of Object.entries(headers)) {
-      if (typeof value === 'undefined') {
-        continue;
-      }
-
-      result[key] = value;
-    }
-
-    return result;
   }
 
   private describeBodyForDebug(body: string | Uint8Array | Buffer | null): unknown {
@@ -208,23 +191,4 @@ export class SimpleHttpClient {
     }
     return { type: typeof body };
   }
-}
-
-// Helper to locate nearest package.json walking up dirs (limited depth)
-function findPackageJson(startDir: string): string | null {
-  let dir = startDir;
-  for (let i = 0; i < 6; i++) {
-    // limit to prevent infinite loop
-    const candidate = join(dir, 'package.json');
-    try {
-      readFileSync(candidate);
-      return candidate;
-    } catch {
-      /* continue up */
-    }
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return null;
 }

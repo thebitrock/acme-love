@@ -12,12 +12,55 @@ import {
   ServerMaintenanceError,
   type CsrAlgo,
   type AccountKeys,
+  type ACMEOrder,
 } from './index.js';
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Interface for CLI command options
+interface CliOptions {
+  domain?: string;
+  output?: string;
+  accountKey?: string;
+  accountAlgo?: string;
+  certAlgo?: string;
+  eabKid?: string;
+  eabHmacKey?: string;
+  directory?: string;
+  email?: string;
+  interactive?: boolean;
+  file?: string;
+  json?: boolean;
+  dryRun?: boolean;
+  challenge?: string;
+  staging?: boolean;
+  production?: boolean;
+  cert?: string;
+  algo?: string;
+}
+
+interface CreateAccountOptions {
+  accountAlgo?: string;
+  output?: string;
+  directory?: string;
+  email?: string;
+  eabKid?: string;
+  eabHmacKey?: string;
+  algo?: string;
+}
+
+interface StatusOptions {
+  accountKey?: string;
+  directory?: string;
+  json?: boolean;
+  cert?: string;
+  domain?: string;
+  staging?: boolean;
+  production?: boolean;
+}
 
 // Helper functions for algorithm selection
 async function selectAlgorithm(purpose: 'account' | 'certificate'): Promise<CsrAlgo> {
@@ -116,15 +159,20 @@ function parseAlgorithm(algoStr: string): CsrAlgo {
 // Build directory choices from exported directory namespace (handles legacy namespace export shape)
 function buildDirectoryChoices() {
   // The namespace export is: { directory: { provider: { env: {...} } }, letsencrypt: {...legacy...} }
-  const root: any = (directory as any).directory ?? directory; // Prefer nested 'directory' key if present
+  const root: Record<string, unknown> = Object.assign(
+    {},
+    (directory as Record<string, unknown>).directory ?? (directory as Record<string, unknown>),
+  ); // Prefer nested 'directory' key if present
   const choices: { name: string; value: string }[] = [];
   for (const [providerKey, providerData] of Object.entries(root)) {
     if (!providerData || typeof providerData !== 'object') continue;
-    for (const [envKey, info] of Object.entries(providerData as any)) {
+    for (const [envKey, info] of Object.entries(providerData as Record<string, unknown>)) {
       if (!info || typeof info !== 'object') continue;
-      const url = (info as any).directoryUrl;
-      if (!url) continue; // skip non-env entries
-      const displayName = (info as any).name || `${providerKey} ${envKey}`;
+      const infoObj = info as Record<string, unknown>;
+      const url = infoObj.directoryUrl;
+      if (typeof url !== 'string') continue; // skip non-env entries
+      const displayName =
+        typeof infoObj.name === 'string' ? infoObj.name : `${providerKey} ${envKey}`;
       choices.push({ name: `${displayName} (${providerKey}/${envKey})`, value: url });
     }
   }
@@ -199,7 +247,7 @@ program
   )
   .option('--eab-kid <kid>', 'External Account Binding key identifier')
   .option('--eab-hmac-key <key>', 'External Account Binding HMAC key (base64url)')
-  .action(async (options: any) => {
+  .action(async (options: CliOptions) => {
     try {
       await handleCertCommand(options);
     } catch (error) {
@@ -218,7 +266,7 @@ program
     'Key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096',
     'ec-p256',
   )
-  .action(async (options: any) => {
+  .action(async (options: CreateAccountOptions) => {
     try {
       await handleCreateAccountKey(options);
     } catch (error) {
@@ -233,7 +281,7 @@ program
   .description('Check certificate status')
   .option('-d, --domain <domain>', 'Domain to check')
   .option('-c, --cert <path>', 'Path to certificate file')
-  .action(async (options: any) => {
+  .action(async (options: StatusOptions) => {
     try {
       await handleStatusCommand(options);
     } catch (error) {
@@ -250,7 +298,7 @@ program
   .option('--staging', "Use Let's Encrypt staging environment")
   .option('--production', "Use Let's Encrypt production environment")
   .option('--directory <url>', 'Custom ACME directory URL')
-  .action(async (options: any) => {
+  .action(async (options: CliOptions) => {
     try {
       await handleInteractiveMode(options);
     } catch (error) {
@@ -259,7 +307,7 @@ program
     }
   });
 
-async function handleCertCommand(options: any) {
+async function handleCertCommand(options: CliOptions) {
   console.log('🔐 ACME-Love Certificate Manager\n');
 
   // Get parameters
@@ -413,7 +461,7 @@ async function handleCertCommand(options: any) {
   const acct = new AcmeAccountSession(core, accountKeys, sessionOptions);
 
   // Prepare EAB if provided
-  let eab: any = undefined;
+  let eab: { kid: string; hmacKey: string } | undefined = undefined;
   if (options.eabKid && options.eabHmacKey) {
     eab = { kid: options.eabKid, hmacKey: options.eabHmacKey };
     console.log('🔐 Using External Account Binding');
@@ -434,7 +482,7 @@ async function handleCertCommand(options: any) {
   console.log('📝 Creating certificate order...');
   const order = await acct.newOrder([domain]);
 
-  let ready: any;
+  let ready: ACMEOrder;
 
   if (challengeType === 'dns-01') {
     console.log('🔍 Solving DNS-01 challenge...');
@@ -595,11 +643,19 @@ async function handleCertCommand(options: any) {
   const certificate = await acct.downloadCertificate(valid);
 
   // Export certificate private key to PEM format
-  const privateKeyPem = await crypto.subtle.exportKey('pkcs8', csrKeys.privateKey!);
-  const privateKeyPemString = `-----BEGIN PRIVATE KEY-----\n${Buffer.from(privateKeyPem)
+  if (!csrKeys.privateKey) {
+    throw new Error('Private key is missing from CSR keys');
+  }
+  const privateKeyPem = await crypto.subtle.exportKey('pkcs8', csrKeys.privateKey);
+
+  const base64Parts = Buffer.from(privateKeyPem)
     .toString('base64')
-    .match(/.{1,64}/g)!
-    .join('\n')}\n-----END PRIVATE KEY-----`;
+    .match(/.{1,64}/g);
+  if (!base64Parts) {
+    throw new Error('Failed to format private key');
+  }
+
+  const privateKeyPemString = `-----BEGIN PRIVATE KEY-----\n${base64Parts.join('\n')}\n-----END PRIVATE KEY-----`;
 
   // Save kid if we got one during registration
   if (registeredKid && !kid) {
@@ -620,7 +676,7 @@ async function handleCertCommand(options: any) {
   console.log(`   Private Key: ${keyPath}`);
 }
 
-async function handleCreateAccountKey(options: any) {
+async function handleCreateAccountKey(options: CreateAccountOptions) {
   console.log('🔑 Creating ACME account key...\n');
 
   const outputPath = options.output || './account-key.json';
@@ -670,7 +726,7 @@ async function handleCreateAccountKey(options: any) {
   console.log(`✅ Account key created: ${outputPath}`);
 }
 
-async function handleStatusCommand(options: any) {
+async function handleStatusCommand(options: StatusOptions) {
   console.log('📊 Certificate Status Check\n');
 
   if (options.cert) {
@@ -690,7 +746,7 @@ async function handleStatusCommand(options: any) {
   }
 }
 
-async function handleInteractiveMode(options: any = {}) {
+async function handleInteractiveMode(options: CliOptions = {}) {
   console.log('🎮 ACME-Love Interactive Mode\n');
 
   // If no environment is specified, ask user to choose
@@ -716,11 +772,19 @@ async function handleInteractiveMode(options: any = {}) {
   } else if (options.directory) {
     // Try to resolve a friendly name
     let friendlyName: string | undefined;
-    const root: any = (directory as any).directory ?? directory;
-    outer: for (const providerData of Object.values(root) as any[]) {
-      for (const envData of Object.values(providerData) as any[]) {
-        if (envData && typeof envData === 'object' && envData.directoryUrl === options.directory) {
-          friendlyName = envData.name;
+    const root: Record<string, unknown> = Object.assign(
+      {},
+      (directory as Record<string, unknown>).directory ?? (directory as Record<string, unknown>),
+    );
+    outer: for (const providerData of Object.values(root)) {
+      if (typeof providerData !== 'object' || !providerData) continue;
+      for (const envData of Object.values(providerData as Record<string, unknown>)) {
+        if (
+          envData &&
+          typeof envData === 'object' &&
+          (envData as Record<string, unknown>).directoryUrl === options.directory
+        ) {
+          friendlyName = (envData as Record<string, unknown>).name as string | undefined;
           break outer;
         }
       }

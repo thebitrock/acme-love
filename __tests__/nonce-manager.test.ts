@@ -1,15 +1,25 @@
 import { NonceManager, type NonceManagerOptions } from '../src/acme/client/nonce-manager.js';
 import { RateLimiter } from '../src/acme/client/rate-limiter.js';
-import type { HttpResponse } from '../src/acme/http/http-client.js';
+import type { ParsedResponseData } from '../src/acme/http/http-client.js';
 
-// type MockResponse = {
-//   status: number;
-//   headers: Record<string, any>;
-//   data?: any;
-// };
+// Helper to create complete ParsedResponseData mock objects
+function createMockResponse(partial: {
+  statusCode: number;
+  headers: Record<string, string>;
+  body?: unknown;
+}): ParsedResponseData {
+  return {
+    statusCode: partial.statusCode,
+    headers: partial.headers,
+    body: partial.body,
+    trailers: {},
+    opaque: null,
+    context: {},
+  };
+}
 
 // Returns a fetch that consumes the provided responses and then throws.
-function makeFetchOnce(responses: HttpResponse<any>[]) {
+function makeFetchOnce(responses: ParsedResponseData[]) {
   let i = 0;
   return async () => {
     if (i >= responses.length) {
@@ -20,7 +30,7 @@ function makeFetchOnce(responses: HttpResponse<any>[]) {
 }
 
 // Returns a fetch that consumes the provided responses and then repeats the last one forever.
-function makeFetchRepeatLast(responses: HttpResponse<any>[]) {
+function makeFetchRepeatLast(responses: ParsedResponseData[]) {
   let i = 0;
   return async () => {
     if (responses.length === 0) {
@@ -60,11 +70,11 @@ describe('NonceManager', () => {
     const nm = new NonceManager(
       makeOptions(
         makeFetchOnce([
-          {
-            status: 200,
+          createMockResponse({
+            statusCode: 200,
             headers: { 'replay-nonce': 'nonceA' },
-            data: undefined,
-          },
+            body: undefined,
+          }),
         ]),
       ),
     );
@@ -78,11 +88,11 @@ describe('NonceManager', () => {
     const nm = new NonceManager(
       makeOptions(
         makeFetchOnce([
-          {
-            status: 200,
+          createMockResponse({
+            statusCode: 200,
             headers: { 'replay-nonce': 'nonce1' },
-            data: undefined,
-          },
+            body: undefined,
+          }),
         ]),
       ),
     );
@@ -93,9 +103,9 @@ describe('NonceManager', () => {
 
     // Simulate ACME response providing a new nonce
     (nm as any).putFromResponse(ns, {
-      status: 200,
+      statusCode: 200,
       headers: { 'replay-nonce': 'nonce2' },
-      data: {},
+      body: {},
     });
 
     // Second take should use the cached "nonce2"
@@ -107,44 +117,41 @@ describe('NonceManager', () => {
     const nm = new NonceManager(
       makeOptions(
         makeFetchRepeatLast([
-          {
-            status: 200,
+          createMockResponse({
+            statusCode: 200,
             headers: { 'replay-nonce': 'nonceX' },
-            data: undefined,
-          },
+            body: undefined,
+          }),
         ]),
       ),
     );
 
     let attempt = 0;
-    const res = await nm.withNonceRetry<{ type?: string; detail?: string; ok?: boolean }>(
-      ns,
-      async (_nonce) => {
-        attempt++;
-        if (attempt === 1) {
-          // simulate ACME problem+json badNonce
-          return {
-            status: 400,
-            headers: {
-              'content-type': 'application/problem+json',
-              'replay-nonce': 'nonceY', // server refreshes nonce in error response
-            },
-            data: {
-              type: 'urn:ietf:params:acme:error:badNonce',
-              detail: 'bad nonce',
-            },
-          };
-        }
-        return { status: 200, headers: {}, data: { ok: true } };
-      },
-    );
+    const res = await nm.withNonceRetry(ns, async (_nonce) => {
+      attempt++;
+      if (attempt === 1) {
+        // simulate ACME problem+json badNonce
+        return createMockResponse({
+          statusCode: 400,
+          headers: {
+            'content-type': 'application/problem+json',
+            'replay-nonce': 'nonceY', // server refreshes nonce in error response
+          },
+          body: {
+            type: 'urn:ietf:params:acme:error:badNonce',
+            detail: 'bad nonce',
+          },
+        });
+      }
+      return createMockResponse({ statusCode: 200, headers: {}, body: { ok: true } });
+    });
 
     expect(attempt).toBe(2);
-    expect(res.status).toBe(200);
-    if (typeof res.data === 'object' && res.data !== null && 'ok' in res.data) {
-      expect((res.data as { ok: boolean }).ok).toBe(true);
+    expect(res.statusCode).toBe(200);
+    if (typeof res.body === 'object' && res.body !== null && 'ok' in res.body) {
+      expect((res.body as { ok: boolean }).ok).toBe(true);
     } else {
-      throw new Error('Response data missing ok property');
+      throw new Error('Response body missing ok property');
     }
   });
 
@@ -152,36 +159,36 @@ describe('NonceManager', () => {
     const nm = new NonceManager(
       makeOptions(
         makeFetchRepeatLast([
-          {
-            status: 200,
+          createMockResponse({
+            statusCode: 200,
             headers: { 'replay-nonce': 'nonceZ' },
-            data: undefined,
-          },
+            body: undefined,
+          }),
         ]),
       ),
     );
 
     const res = await nm.withNonceRetry(ns, async () => {
-      return {
-        status: 400,
+      return createMockResponse({
+        statusCode: 400,
         headers: { 'content-type': 'application/problem+json' },
-        data: { type: 'urn:ietf:params:acme:error:other', detail: 'some other error' },
-      };
+        body: { type: 'urn:ietf:params:acme:error:other', detail: 'some other error' },
+      });
     });
 
-    expect(res.status).toBe(400);
-    expect(res.data.type).toBe('urn:ietf:params:acme:error:other');
+    expect(res.statusCode).toBe(400);
+    expect((res.body as { type: string }).type).toBe('urn:ietf:params:acme:error:other');
   });
 
   it('gc removes expired nonces (without triggering network)', async () => {
     const nm = new NonceManager(
       makeOptions(
         makeFetchRepeatLast([
-          {
-            status: 200,
+          createMockResponse({
+            statusCode: 200,
             headers: { 'replay-nonce': 'fresh' },
-            data: undefined,
-          },
+            body: undefined,
+          }),
         ]),
         {
           maxAgeMs: 1,
@@ -205,11 +212,11 @@ describe('NonceManager', () => {
     const nm = new NonceManager(
       makeOptions(
         makeFetchRepeatLast([
-          {
-            status: 200,
+          createMockResponse({
+            statusCode: 200,
             headers: { 'replay-nonce': 'nonceA' },
-            data: undefined,
-          },
+            body: undefined,
+          }),
         ]),
         {
           maxPool: 10,
@@ -257,16 +264,16 @@ describe('NonceManager', () => {
     const nm = new NonceManager(
       makeOptions(
         makeFetchOnce([
-          {
-            status: 503,
+          createMockResponse({
+            statusCode: 503,
             headers: {},
-            data: undefined,
-          },
-          {
-            status: 503,
+            body: undefined,
+          }),
+          createMockResponse({
+            statusCode: 503,
             headers: {},
-            data: undefined,
-          },
+            body: undefined,
+          }),
         ]),
         { rateLimiter },
       ),

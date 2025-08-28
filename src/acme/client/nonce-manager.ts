@@ -1,15 +1,15 @@
 import { BadNonceError, ServerInternalError } from '../errors/errors.js';
 import { createErrorFromProblem } from '../errors/factory.js';
-import type { HttpResponse } from '../http/http-client.js';
+import type { ParsedResponseData } from '../http/http-client.js';
 import { safeReadBody } from '../utils.js';
 import { debugNonce } from '../debug.js';
 import { RateLimiter, RateLimitError } from './rate-limiter.js';
 
 /**
- * Minimal fetch-like function signature returning an HttpResponse
+ * Minimal fetch-like function signature returning a ParsedResponseData
  * (your implementation can wrap undici / node fetch / custom HTTP client).
  */
-export type FetchLike = (url: string) => Promise<HttpResponse<unknown>>;
+export type FetchLike = (url: string) => Promise<ParsedResponseData>;
 
 export interface NonceManagerOptions {
   /** Full URL of the ACME newNonce endpoint (absolute). */
@@ -155,7 +155,7 @@ export class NonceManager {
   /**
    * Harvest nonce(s) from an ACME response (Replay-Nonce header). Supports folded / multi headers.
    */
-  private putFromResponse(namespace: Namespace, res: HttpResponse<unknown>): void {
+  private putFromResponse(namespace: Namespace, res: ParsedResponseData): void {
     const raw = res.headers['replay-nonce'] || res.headers['Replay-Nonce'];
     if (!raw) return;
 
@@ -172,11 +172,11 @@ export class NonceManager {
    * Execute an ACME request with automatic retry on `badNonce`.
    * The last response (even if badNonce) is returned if retries are exhausted.
    */
-  public async withNonceRetry<T>(
+  public async withNonceRetry(
     namespace: Namespace,
-    fn: (nonce: string) => Promise<HttpResponse<T>>,
+    fn: (nonce: string) => Promise<ParsedResponseData>,
     maxAttempts = 3,
-  ): Promise<HttpResponse<T>> {
+  ): Promise<ParsedResponseData> {
     let lastErr: unknown = null;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -188,12 +188,12 @@ export class NonceManager {
       debugNonce(
         'Attempt %d: HTTP %d (pool size %d)',
         attempt,
-        res.status,
+        res.statusCode,
         this.getPoolSize(namespace),
       );
 
       // Success (2xx/3xx)
-      if (res.status >= 200 && res.status < 400) {
+      if (res.statusCode >= 200 && res.statusCode < 400) {
         return res;
       }
 
@@ -231,7 +231,7 @@ export class NonceManager {
   }
 
   /** Extract a single Replay-Nonce header (accept arrays and pick the last). */
-  private nonceExtractor(res: HttpResponse<unknown>): string {
+  private nonceExtractor(res: ParsedResponseData): string {
     const raw = res.headers['replay-nonce'] || res.headers['Replay-Nonce'];
     if (!raw) {
       throw new ServerInternalError('newNonce: missing Replay-Nonce header');
@@ -250,18 +250,18 @@ export class NonceManager {
 
     return this.rateLimiter.executeWithRateLimit(async () => {
       const res = await this.fetch(this.newNonceUrl);
-      debugNonce('Fetched new nonce from %s: HTTP %d', this.newNonceUrl, res.status);
+      debugNonce('Fetched new nonce from %s: HTTP %d', this.newNonceUrl, res.statusCode);
 
-      if (!res.status || res.status < 200 || res.status >= 400) {
+      if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 400) {
         // Bubble up 503/429 details so RateLimiter can parse headers
-        if (res.status === 503 || res.status === 429) {
-          const error = new ServerInternalError(`newNonce failed: HTTP ${res.status}`);
-          const err = error as Error & { status?: number; headers?: unknown };
-          err.status = res.status;
+        if (res.statusCode === 503 || res.statusCode === 429) {
+          const error = new ServerInternalError(`newNonce failed: HTTP ${res.statusCode}`);
+          const err = error as Error & { status?: number; headers?: Record<string, unknown> };
+          err.status = res.statusCode;
           err.headers = res.headers;
           throw error;
         }
-        throw new ServerInternalError(`newNonce failed: HTTP ${res.status}`);
+        throw new ServerInternalError(`newNonce failed: HTTP ${res.statusCode}`);
       }
 
       const nonce = this.nonceExtractor(res);

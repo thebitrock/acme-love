@@ -19,9 +19,12 @@ async function realFetch(url: string) {
   const response = await fetch(url, { method: 'HEAD' });
 
   return {
-    status: response.status,
+    statusCode: response.status,
     headers: Object.fromEntries(response.headers.entries()),
-    data: null,
+    body: null,
+    trailers: {},
+    opaque: null,
+    context: {},
   };
 }
 

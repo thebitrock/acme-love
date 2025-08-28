@@ -1,4 +1,4 @@
-import type { HttpResponse } from '../http/http-client.js';
+import type { ParsedResponseData } from '../http/http-client.js';
 import { SimpleHttpClient } from '../http/http-client.js';
 import { NonceManager, type NonceManagerOptions } from './nonce-manager.js';
 import type { AcmeSigner } from './acme-signer.js';
@@ -51,7 +51,7 @@ export class AcmeTransport {
   }
 
   /** ACME signed POST (with JSON body or empty). */
-  async post<T = unknown>(url: string, payload?: unknown): Promise<HttpResponse<T>> {
+  async post(url: string, payload?: unknown): Promise<ParsedResponseData> {
     const namespace = this.getNamespace();
 
     return this.nonceManager.withNonceRetry(namespace, async (nonce) => {
@@ -66,7 +66,7 @@ export class AcmeTransport {
 
       const jws = await this.signer.signJws(data, header);
 
-      const result = await this.http.post<T>(url, jws, {
+      const result = await this.http.post(url, jws, {
         'Content-Type': 'application/jose+json',
         Accept: '*/*',
       });
@@ -75,7 +75,7 @@ export class AcmeTransport {
     });
   }
 
-  async postAsGet<T = unknown>(url: string): Promise<HttpResponse<T>> {
-    return this.post<T>(url, '');
+  async postAsGet(url: string): Promise<ParsedResponseData> {
+    return this.post(url, '');
   }
 }

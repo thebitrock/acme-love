@@ -18,12 +18,12 @@ export class AcmeDirectory {
     return coalesceAsync(`acme:dir:${this.directoryUrl}`, async () => {
       if (this.cached) return this.cached;
 
-      const res = await this.http.get<ACMEDirectory>(this.directoryUrl);
-      if (res.status !== 200) {
-        throw new ServerInternalError(`Failed to get directory: ${res.status}`);
+      const res = await this.http.get(this.directoryUrl);
+      if (res.statusCode !== 200) {
+        throw new ServerInternalError(`Failed to get directory: ${res.statusCode}`);
       }
-      this.cached = res.data;
+      this.cached = res.body as ACMEDirectory;
       return this.cached;
-    });
+    }) as Promise<ACMEDirectory>;
   }
 }

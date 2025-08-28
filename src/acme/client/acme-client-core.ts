@@ -25,21 +25,21 @@ export class AcmeClientCore {
   public async getDirectory(): Promise<ACMEDirectory> {
     if (this.directory) return this.directory;
 
-    const res = await this.http.get<ACMEDirectory>(this.directoryUrl);
-    if (res.status !== 200) {
-      throw createErrorFromProblem(res.data);
+    const res = await this.http.get(this.directoryUrl);
+    if (res.statusCode !== 200) {
+      throw createErrorFromProblem(res.body);
     }
 
-    this.directory = res.data;
+    this.directory = res.body as ACMEDirectory;
 
     // default NonceManager instance (can be overridden per-account)
     this.nonce = new NonceManager({
-      newNonceUrl: this.directory.newNonce,
+      newNonceUrl: this.directory!.newNonce,
       fetch: (url) => this.http.head(url),
       ...this.opts.nonce,
     });
 
-    return this.directory!;
+    return this.directory;
   }
 
   /** Raw HTTP client (POST/GET/HEAD wrappers) */

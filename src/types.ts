@@ -6,12 +6,6 @@ export type JsonObject = Record<string, unknown>;
 export type JsonArray = unknown[];
 export type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
 
-export type HttpResponse<T = JsonValue> = {
-  status: number;
-  data: T;
-  headers?: Record<string, string>;
-};
-
 export type ErrorResponse = {
   type: string;
   detail: string;

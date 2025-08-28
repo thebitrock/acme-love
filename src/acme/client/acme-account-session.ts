@@ -8,7 +8,7 @@ import { NonceManager, type NonceManagerOptions } from './nonce-manager.js';
 import type { ACMEOrder, ACMEChallenge, ACMEAuthorization } from '../types/order.js';
 import { createErrorFromProblem } from '../errors/factory.js';
 import type { ACMEDirectory } from '../types/directory.js';
-import type { HttpResponse } from '../http/http-client.js';
+import type { ParsedResponseData } from '../http/http-client.js';
 
 /** Keys bound to a single ACME account session */
 export interface AccountKeys {
@@ -144,11 +144,11 @@ export class AcmeAccountSession {
         });
       });
 
-      if (res.status >= 400) throw createErrorFromProblem(res.data);
+      if (res.statusCode >= 400) throw createErrorFromProblem(res.body);
 
       const location = res.headers?.location || res.headers?.Location;
 
-      const resourceUrl = ((res.data as any)?.url ||
+      const resourceUrl = ((res.body as Record<string, unknown>)?.url ||
         (location && (Array.isArray(location) ? location[0] : location))) as string;
 
       if (!resourceUrl) throw new Error('newAccount: missing account location (kid)');
@@ -157,21 +157,24 @@ export class AcmeAccountSession {
     });
   }
 
-  private prefillUrl(response: HttpResponse<any>): HttpResponse<any> {
+  private prefillUrl(response: ParsedResponseData): ParsedResponseData {
     const ct = response.headers['content-type'];
     if (typeof ct === 'string' && ct.includes('application/json')) {
       const location = response.headers?.location || response.headers?.Location;
 
-      const resourceUrl = ((response.data as any)?.url ||
+      const resourceUrl = ((response.body as Record<string, unknown>)?.url ||
         (location && (Array.isArray(location) ? location[0] : location))) as string;
 
       return {
-        status: response.status,
+        statusCode: response.statusCode,
         headers: response.headers,
-        data: {
-          ...response.data,
+        body: {
+          ...(typeof response.body === 'object' && response.body !== null ? response.body : {}),
           ...(resourceUrl && { url: resourceUrl }),
         },
+        trailers: response.trailers,
+        opaque: response.opaque,
+        context: response.context,
       };
     }
 
@@ -197,8 +200,8 @@ export class AcmeAccountSession {
       return this.prefillUrl(await response);
     });
 
-    if (res.status >= 400) throw createErrorFromProblem(res.data);
-    return res.data as ACMEOrder;
+    if (res.statusCode >= 400) throw createErrorFromProblem(res.body);
+    return res.body as ACMEOrder;
   }
 
   /** Generic challenge solver that handles the common flow */
@@ -212,7 +215,7 @@ export class AcmeAccountSession {
 
     for (const authorization of authorizations) {
       const challenge: ACMEChallenge | undefined = authorization.challenges?.find(
-        (c: any) => c.type === handler.challengeType,
+        (c: ACMEChallenge) => c.type === handler.challengeType,
       );
       if (!challenge) throw new Error(`No ${handler.challengeType} challenge`);
 
@@ -292,7 +295,7 @@ export class AcmeAccountSession {
         Accept: 'application/json',
       });
     });
-    if (res.status >= 400) throw createErrorFromProblem(res.data);
+    if (res.statusCode >= 400) throw createErrorFromProblem(res.body);
   }
 
   /** Wait until order status becomes one of target (or 'invalid') */
@@ -318,8 +321,8 @@ export class AcmeAccountSession {
 
       return this.prefillUrl(await response);
     });
-    if (res.status >= 400) throw createErrorFromProblem(res.data);
-    return res.data as ACMEOrder;
+    if (res.statusCode >= 400) throw createErrorFromProblem(res.body);
+    return res.body as ACMEOrder;
   }
 
   /** Download certificate (PEM chain) for a valid order */
@@ -335,8 +338,8 @@ export class AcmeAccountSession {
         Accept: 'application/pem-certificate-chain',
       });
     });
-    if (res.status !== 200) throw createErrorFromProblem(res.data);
-    return String(res.data);
+    if (res.statusCode !== 200) throw createErrorFromProblem(res.body);
+    return String(res.body);
   }
 
   /** Helper: POST-as-GET (authenticated resource fetch) */
@@ -354,8 +357,8 @@ export class AcmeAccountSession {
       return this.prefillUrl(await response);
     });
 
-    if (res.status >= 400) throw createErrorFromProblem(res.data);
-    return res.data;
+    if (res.statusCode >= 400) throw createErrorFromProblem(res.body);
+    return res.body as T;
   }
 
   /** ACME keyAuthorization for token */
