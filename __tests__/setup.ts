@@ -9,7 +9,7 @@ beforeAll(async () => {
       Object.defineProperty(globalThis, 'crypto', {
         value: webcrypto,
         writable: false,
-        configurable: true
+        configurable: true,
       });
     } catch (error) {
       console.warn('WebCrypto not available in test environment:', error);

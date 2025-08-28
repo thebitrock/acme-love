@@ -39,7 +39,7 @@ describe('ACME Metrics Test - Account Operations Only', () => {
         method,
         timestamp: Date.now() - this.startTime,
         duration,
-        status
+        status,
       });
 
       if (url.includes('new-nonce')) {
@@ -55,7 +55,7 @@ describe('ACME Metrics Test - Account Operations Only', () => {
       let accountsCreated = 0;
       let directoryRequests = 0;
 
-      this.metrics.forEach(metric => {
+      this.metrics.forEach((metric) => {
         requestsByType[metric.type] = (requestsByType[metric.type] || 0) + 1;
 
         const endpoint = this.extractEndpoint(metric.url);
@@ -65,9 +65,10 @@ describe('ACME Metrics Test - Account Operations Only', () => {
         if (metric.url.includes('directory') && metric.method === 'GET') directoryRequests++;
       });
 
-      const averageResponseTime = this.metrics.length > 0
-        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
-        : 0;
+      const averageResponseTime =
+        this.metrics.length > 0
+          ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
+          : 0;
 
       return {
         totalTime,
@@ -78,7 +79,7 @@ describe('ACME Metrics Test - Account Operations Only', () => {
         averageResponseTime,
         requestsByType,
         requestsByEndpoint,
-        allRequestDetails: this.metrics
+        allRequestDetails: this.metrics,
       };
     }
 
@@ -170,11 +171,11 @@ describe('ACME Metrics Test - Account Operations Only', () => {
         const keyPair = await generateKeyPair(accountAlgo);
         const accountKeys = {
           privateKey: keyPair.privateKey!,
-          publicKey: keyPair.publicKey
+          publicKey: keyPair.publicKey,
         };
 
         const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
-          nonce: { maxPool: 12 }
+          nonce: { maxPool: 12 },
         });
 
         // Add metrics wrapper
@@ -186,7 +187,7 @@ describe('ACME Metrics Test - Account Operations Only', () => {
 
         await acct.ensureRegistered({
           contact: [`mailto:metrics-test-${accountIndex}-${Date.now()}@acme-love.com`],
-          termsOfServiceAgreed: true
+          termsOfServiceAgreed: true,
         });
 
         console.log(`   ✅ Account ${accountIndex + 1}/${TOTAL_ACCOUNTS} created`);
@@ -247,7 +248,9 @@ describe('ACME Metrics Test - Account Operations Only', () => {
 
       console.log(`\n📈 REQUEST TYPE BREAKDOWN:`);
       Object.entries(results.requestsByType).forEach(([type, count]) => {
-        console.log(`   ${type}: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`);
+        console.log(
+          `   ${type}: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`,
+        );
       });
 
       console.log(`\n🔗 ENDPOINT BREAKDOWN:`);
@@ -260,8 +263,12 @@ describe('ACME Metrics Test - Account Operations Only', () => {
       console.log(`\n⚡ NONCE POOL EFFICIENCY:`);
       console.log(`   Total Requests: ${results.totalRequests}`);
       console.log(`   New-Nonce Requests: ${results.newNonceRequests}`);
-      console.log(`   Requests Saved by Pooling: ${results.totalRequests - results.newNonceRequests}`);
-      console.log(`   Pool Efficiency: ${results.newNonceRequests > 0 ? Math.round(((results.totalRequests - results.newNonceRequests) / results.totalRequests) * 100) : 0}%`);
+      console.log(
+        `   Requests Saved by Pooling: ${results.totalRequests - results.newNonceRequests}`,
+      );
+      console.log(
+        `   Pool Efficiency: ${results.newNonceRequests > 0 ? Math.round(((results.totalRequests - results.newNonceRequests) / results.totalRequests) * 100) : 0}%`,
+      );
 
       // Generate detailed report
       const report = `# 🚀 ACME Love - Metrics Test Results
@@ -282,15 +289,18 @@ describe('ACME Metrics Test - Account Operations Only', () => {
 - **Throughput**: ${Math.round(results.totalRequests / (totalTime / 1000))} req/s
 
 ## HTTP Request Analysis
-${Object.entries(results.requestsByType).map(([type, count]) =>
-        `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`
-      ).join('\n')}
+${Object.entries(results.requestsByType)
+  .map(
+    ([type, count]) =>
+      `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`,
+  )
+  .join('\n')}
 
 ## Endpoint Performance
 ${Object.entries(results.requestsByEndpoint)
-          .sort(([, a], [, b]) => (b as number) - (a as number))
-          .map(([endpoint, count]) => `- **${endpoint}**: ${count} requests`)
-          .join('\n')}
+  .sort(([, a], [, b]) => (b as number) - (a as number))
+  .map(([endpoint, count]) => `- **${endpoint}**: ${count} requests`)
+  .join('\n')}
 
 ## Nonce Manager Performance
 - **Total New-Nonce Requests**: ${results.newNonceRequests}
@@ -299,7 +309,7 @@ ${Object.entries(results.requestsByEndpoint)
 - **Nonces Remaining in Pools**: ${totalNoncesRemaining}
 
 ## Per-Account Nonce Statistics
-${nonceStats.map(stat => `- **Account ${stat.accountIndex + 1}**: ${stat.noncesRemaining} nonces remaining`).join('\n')}
+${nonceStats.map((stat) => `- **Account ${stat.accountIndex + 1}**: ${stat.noncesRemaining} nonces remaining`).join('\n')}
 
 ## Request Timeline Analysis
 - **Account Creation Phase**: ${accountCreationTime}ms for ${TOTAL_ACCOUNTS} accounts
@@ -313,9 +323,13 @@ ${nonceStats.map(stat => `- **Account ${stat.accountIndex + 1}**: ${stat.noncesR
 ✅ Overall throughput: ${Math.round(results.totalRequests / (totalTime / 1000))} requests/second
 
 ## Detailed Request Log
-${results.allRequestDetails.slice(0, 10).map(req =>
-            `${req.timestamp}ms: ${req.method} ${req.type} (${req.duration}ms, status ${req.status})`
-          ).join('\n')}
+${results.allRequestDetails
+  .slice(0, 10)
+  .map(
+    (req) =>
+      `${req.timestamp}ms: ${req.method} ${req.type} (${req.duration}ms, status ${req.status})`,
+  )
+  .join('\n')}
 ${results.allRequestDetails.length > 10 ? `... and ${results.allRequestDetails.length - 10} more requests` : ''}
 
 ## Conclusion
@@ -327,7 +341,7 @@ network overhead by ${results.totalRequests - results.newNonceRequests} requests
 `;
 
       // Save report
-      const reportPath = path.join(process.cwd(), 'ACME-METRICS-TEST-RESULTS.md');
+      const reportPath = path.join(process.cwd(), 'docs/reports/ACME-METRICS-TEST-RESULTS.md');
       fs.writeFileSync(reportPath, report);
       console.log(`\n📋 Detailed metrics report saved to ${reportPath}`);
 
@@ -337,7 +351,6 @@ network overhead by ${results.totalRequests - results.newNonceRequests} requests
       expect(results.newNonceRequests).toBeGreaterThan(0);
       expect(results.averageResponseTime).toBeLessThan(4000);
       expect(results.accountsCreated).toBe(TOTAL_ACCOUNTS);
-
     } catch (error) {
       console.error(`💥 Metrics test failed:`, error);
       throw error;

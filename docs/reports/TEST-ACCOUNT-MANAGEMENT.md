@@ -7,11 +7,13 @@ This system provides persistent test account management for ACME Love stress tes
 ## Features
 
 ✅ **Persistent Account Storage**
+
 - Account keys saved to `stress-test-accounts/` directory
 - Automatic .gitignore protection (accounts never committed)
 - JSON format with metadata (email, creation date)
 
 ✅ **CLI Management Tool**
+
 ```bash
 npm run accounts list                    # List all accounts
 npm run accounts create <account-id>     # Create/load account
@@ -21,6 +23,7 @@ npm run accounts prepare-stress         # Prepare all stress test accounts
 ```
 
 ✅ **Integration with Stress Tests**
+
 - Light stress: 2 accounts (`light-stress-1`, `light-stress-2`)
 - Quick stress: 1 account (`quick-stress-1`)
 - Demo stress: 3 accounts (`demo-stress-1,2,3`)
@@ -64,11 +67,13 @@ stress-test-accounts/          # Git ignored
 ## Usage Examples
 
 ### Setup Accounts for All Tests
+
 ```bash
 npm run accounts prepare-stress
 ```
 
 ### Manual Account Management
+
 ```bash
 # Create a new test account
 npm run accounts create my-test-account
@@ -84,6 +89,7 @@ npm run accounts delete my-test-account
 ```
 
 ### In Test Code
+
 ```typescript
 import { testAccountManager } from './utils/account-manager.js';
 
@@ -98,16 +104,19 @@ const session = new AcmeAccountSession(core, accountKeys);
 ## Benefits
 
 ### Rate Limit Avoidance
+
 - **Problem**: Let's Encrypt limits 50 new registrations per IP per 3 hours
 - **Solution**: Reuse existing account keys, only register once per account
 - **Result**: Can run stress tests repeatedly without hitting registration limits
 
 ### Performance Improvement
+
 - **Before**: Generate new keys + register account for every test run
 - **After**: Load existing keys, skip registration if account exists
 - **Speedup**: ~2-3 seconds saved per account per test run
 
 ### Test Isolation
+
 - Each stress test type has dedicated accounts
 - No cross-contamination between test types
 - Predictable account behavior
@@ -115,7 +124,9 @@ const session = new AcmeAccountSession(core, accountKeys);
 ## Security Notes
 
 ### Git Ignore Protection
+
 The `stress-test-accounts/` directory is automatically added to `.gitignore`:
+
 ```gitignore
 # Test accounts and keys (should not be committed)
 test-accounts/
@@ -123,6 +134,7 @@ stress-test-accounts/
 ```
 
 ### Account Cleanup
+
 - Accounts are for testing only on Let's Encrypt staging
 - Automatic cleanup available: `npm run accounts cleanup [hours]`
 - Default cleanup: 7 days (168 hours)
@@ -130,6 +142,7 @@ stress-test-accounts/
 ## Implementation Details
 
 ### TestAccountManager Class
+
 Located in `__tests__/utils/account-manager.ts`:
 
 - `getOrCreateAccountKeys(id)` - Main method for getting account keys
@@ -141,6 +154,7 @@ Located in `__tests__/utils/account-manager.ts`:
 - `getMultipleAccountKeys(baseId, count)` - Bulk account creation
 
 ### CLI Tool
+
 Located in `__tests__/utils/account-manager-cli.ts`:
 
 Simple command-line interface for account management, compiled to JavaScript and executed via npm script.
@@ -158,17 +172,20 @@ If you hit rate limits despite using persistent accounts:
 ## Current Status
 
 ✅ **Implemented and Working**
+
 - Account persistence system
 - CLI management tool
 - Integration with light-stress and quick-stress tests
 - Git ignore protection
 
 ⏳ **Pending Integration**
+
 - Update remaining stress tests (demo, heavy, deadlock-detection)
 - Add account validation and health checks
 - Implement account sharing between developers
 
 🎯 **Future Enhancements**
+
 - Account health monitoring
 - Automatic rate limit detection and backoff
 - Account pool rotation
@@ -177,12 +194,14 @@ If you hit rate limits despite using persistent accounts:
 ## Troubleshooting
 
 ### "Account keys not found"
+
 ```bash
 # Create the account first
 npm run accounts create <account-id>
 ```
 
 ### "Rate limited" errors
+
 ```bash
 # Clean up old accounts and wait
 npm run accounts cleanup 1
@@ -190,12 +209,14 @@ npm run accounts cleanup 1
 ```
 
 ### "Permission denied" errors
+
 ```bash
 # Ensure directory permissions
 chmod -R 755 stress-test-accounts/
 ```
 
 ### "Module not found" errors
+
 ```bash
 # Rebuild the project
 npm run build

@@ -18,7 +18,6 @@ export class AcmeTransport {
     private readonly signer: AcmeSigner,
     private readonly nonceOverrides?: Partial<NonceManagerOptions>,
   ) {
-
     const baseConfig = {
       newNonceUrl,
       fetch: (url: string) => this.http.head(url),
@@ -59,11 +58,11 @@ export class AcmeTransport {
       const header = await this.buildHeader(url, nonce);
 
       const data =
-        payload == null
+        payload === null || payload === undefined
           ? new Uint8Array(0)
           : new TextEncoder().encode(
-            typeof payload === 'string' ? payload : JSON.stringify(payload),
-          );
+              typeof payload === 'string' ? payload : JSON.stringify(payload),
+            );
 
       const jws = await this.signer.signJws(data, header);
 

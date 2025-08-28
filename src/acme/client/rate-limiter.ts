@@ -85,7 +85,13 @@ export class RateLimiter {
 
           if (attempt <= this.maxRetries) {
             const delayMs = this.calculateRetryDelay(info, attempt);
-            debugRateLimit('Waiting %dms before retry on %s (attempt %d/%d)', delayMs, endpoint, attempt, this.maxRetries + 1);
+            debugRateLimit(
+              'Waiting %dms before retry on %s (attempt %d/%d)',
+              delayMs,
+              endpoint,
+              attempt,
+              this.maxRetries + 1,
+            );
             await this.delay(delayMs);
             continue;
           } else {

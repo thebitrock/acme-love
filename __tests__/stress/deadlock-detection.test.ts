@@ -45,7 +45,7 @@ describe('ACME Deadlock Detection Test', () => {
         startTime: Date.now(),
         status: 'pending',
         operation,
-        accountIndex
+        accountIndex,
       });
     }
 
@@ -63,7 +63,7 @@ describe('ACME Deadlock Detection Test', () => {
       let deadlockDetected = false;
 
       for (const [, op] of this.operations.entries()) {
-        if (op.status === 'pending' && (now - op.startTime) > this.timeoutThreshold) {
+        if (op.status === 'pending' && now - op.startTime > this.timeoutThreshold) {
           console.warn(`🚨 POTENTIAL DEADLOCK DETECTED:`);
           console.warn(`   Operation: ${op.operation}`);
           console.warn(`   Operation ID: ${op.operationId}`);
@@ -98,7 +98,7 @@ describe('ACME Deadlock Detection Test', () => {
         timeout: 0,
         error: 0,
         longestDuration: 0,
-        averageDuration: 0
+        averageDuration: 0,
       };
 
       let totalDuration = 0;
@@ -185,7 +185,7 @@ describe('ACME Deadlock Detection Test', () => {
   }
 
   let detector: DeadlockDetector;
-  let testResources: { core: AcmeClientCore, nonceManager: NonceManager }[] = [];
+  let testResources: { core: AcmeClientCore; nonceManager: NonceManager }[] = [];
 
   beforeAll(async () => {
     detector = new DeadlockDetector();
@@ -218,7 +218,7 @@ describe('ACME Deadlock Detection Test', () => {
     await cleanupTestResources();
 
     // Give some time for cleanup to complete
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     console.log(`✅ Deadlock detection test cleanup complete`);
   });
@@ -232,41 +232,48 @@ describe('ACME Deadlock Detection Test', () => {
       console.log(`\n🧪 Test 1: Concurrent Account Creation`);
       const concurrentAccounts = 3;
 
-      const accountPromises = Array.from({ length: concurrentAccounts }, async (_, accountIndex) => {
-        const operationId = `account-creation-${accountIndex}`;
-        detector.trackOperation(operationId, 'Account Creation', accountIndex);
+      const accountPromises = Array.from(
+        { length: concurrentAccounts },
+        async (_, accountIndex) => {
+          const operationId = `account-creation-${accountIndex}`;
+          detector.trackOperation(operationId, 'Account Creation', accountIndex);
 
-        try {
-          // Get or create persistent account session (with registration)
-          const acct = await testAccountManager.getOrCreateAccountSession(
-            `deadlock-detection-${accountIndex + 1}`,
-            STAGING_DIRECTORY_URL,
-            `deadlock-test-${accountIndex}-${Date.now()}@acme-love.com`,
-            { nonce: { maxPool: 3 } } // Smaller pool to increase contention but reduce timeout issues
-          );
+          try {
+            // Get or create persistent account session (with registration)
+            const acct = await testAccountManager.getOrCreateAccountSession(
+              `deadlock-detection-${accountIndex + 1}`,
+              STAGING_DIRECTORY_URL,
+              `deadlock-test-${accountIndex}-${Date.now()}@acme-love.com`,
+              { nonce: { maxPool: 3 } }, // Smaller pool to increase contention but reduce timeout issues
+            );
 
-          // Get the core client for tracking
-          const core = (acct as any).client;
+            // Get the core client for tracking
+            const core = (acct as any).client;
 
-          // Add deadlock tracking
-          const originalHttp = core.getHttp();
-          const trackingHttp = new DeadlockTrackingHttpClient(detector, originalHttp, accountIndex);
-          (core as any).http = trackingHttp;
+            // Add deadlock tracking
+            const originalHttp = core.getHttp();
+            const trackingHttp = new DeadlockTrackingHttpClient(
+              detector,
+              originalHttp,
+              accountIndex,
+            );
+            (core as any).http = trackingHttp;
 
-          // Track resources for cleanup
-          const nonceManager = core.getDefaultNonce();
-          testResources.push({ core, nonceManager });
+            // Track resources for cleanup
+            const nonceManager = core.getDefaultNonce();
+            testResources.push({ core, nonceManager });
 
-          detector.completeOperation(operationId, 'completed');
-          console.log(`   ✅ Account ${accountIndex + 1} created successfully`);
+            detector.completeOperation(operationId, 'completed');
+            console.log(`   ✅ Account ${accountIndex + 1} created successfully`);
 
-          return { accountIndex, acct, core, trackingHttp };
-        } catch (error) {
-          detector.completeOperation(operationId, 'error');
-          console.error(`   ❌ Account ${accountIndex + 1} failed: ${error}`);
-          throw error;
-        }
-      });
+            return { accountIndex, acct, core, trackingHttp };
+          } catch (error) {
+            detector.completeOperation(operationId, 'error');
+            console.error(`   ❌ Account ${accountIndex + 1} failed: ${error}`);
+            throw error;
+          }
+        },
+      );
 
       const accounts = await Promise.all(accountPromises);
       console.log(`   🎯 All ${concurrentAccounts} accounts created without deadlock`);
@@ -341,7 +348,7 @@ describe('ACME Deadlock Detection Test', () => {
               detector.completeOperation(operationId, 'error');
               throw error;
             }
-          })
+          }),
         ];
       });
 
@@ -349,7 +356,7 @@ describe('ACME Deadlock Detection Test', () => {
       console.log(`   🎯 All mixed operations completed without deadlock`);
 
       // Wait a bit more to catch any delayed deadlocks
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const stats = detector.getStats();
       detector.stop();
@@ -388,7 +395,6 @@ describe('ACME Deadlock Detection Test', () => {
       expect(stats.completed).toBeGreaterThan(0); // Some operations completed
       expect(stats.averageDuration).toBeLessThan(10000); // Average under 10 seconds
       expect(stats.longestDuration).toBeLessThan(30000); // No operation over 30 seconds
-
     } catch (error) {
       console.error(`💥 Deadlock detection test failed:`, error);
 
@@ -411,7 +417,7 @@ describe('ACME Deadlock Detection Test', () => {
 
     try {
       const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
-        nonce: { maxPool: 2 } // Very small pool to force contention
+        nonce: { maxPool: 2 }, // Very small pool to force contention
       });
 
       // Initialize directory first (required for NonceManager)
@@ -438,7 +444,7 @@ describe('ACME Deadlock Detection Test', () => {
           const nonce = await nonceManager.take(namespace);
 
           // Simulate some work
-          await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 100));
 
           detector.completeOperation(operationId, 'completed');
           return nonce;
@@ -461,9 +467,6 @@ describe('ACME Deadlock Detection Test', () => {
 
       expect(stats.timeout).toBe(0);
       expect(nonces.length).toBe(20);
-
-    } catch (error) {
-      throw error;
     } finally {
       // Ensure detector is always stopped
       detector.stop();

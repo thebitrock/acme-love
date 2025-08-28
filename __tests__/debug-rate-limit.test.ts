@@ -9,7 +9,7 @@ describe('Debug Rate Limiter', () => {
   test('should handle simple rate limit case', async () => {
     const rateLimiter = new RateLimiter({
       maxRetries: 1, // Just 1 retry
-      baseDelayMs: 10 // Fast for testing
+      baseDelayMs: 10, // Fast for testing
     });
 
     let callCount = 0;

@@ -154,7 +154,7 @@ describe.skip('ACME Library Async Behavior Tests', () => {
     expect(uniqueNonces.size).toBe(numberOfRequests);
 
     // Verify all nonces are valid strings
-    nonces.forEach(nonce => {
+    nonces.forEach((nonce) => {
       expect(typeof nonce).toBe('string');
       expect(nonce.length).toBeGreaterThan(10);
     });
@@ -191,7 +191,12 @@ describe.skip('ACME Library Async Behavior Tests', () => {
       // CSR creation (after key generation)
       (async () => {
         const keyPair = await generateKeyPair(algo);
-        return createAcmeCsr(['mixed-test.acme-love.com'], algo, 'mixed-test.acme-love.com', keyPair);
+        return createAcmeCsr(
+          ['mixed-test.acme-love.com'],
+          algo,
+          'mixed-test.acme-love.com',
+          keyPair,
+        );
       })(),
     ];
 
@@ -201,15 +206,7 @@ describe.skip('ACME Library Async Behavior Tests', () => {
     console.log(`Mixed async operations completed in ${duration}ms`);
 
     // Verify all operations completed successfully
-    const [
-      dirResult,
-      ecKey,
-      rsaKey,
-      nonce1,
-      nonce2,
-      nonce3,
-      csrResult,
-    ] = results as [
+    const [dirResult, ecKey, rsaKey, nonce1, nonce2, nonce3, csrResult] = results as [
       any, // ACMEDirectory
       any, // CryptoKeyPair
       any, // CryptoKeyPair
@@ -261,7 +258,12 @@ describe.skip('ACME Library Async Behavior Tests', () => {
 
       // Each iteration: generate key, create CSR, get nonce
       const keyPair = await generateKeyPair(algo);
-      const csr = await createAcmeCsr([`seq-test-${i}.acme-love.com`], algo, `seq-test-${i}.acme-love.com`, keyPair);
+      const csr = await createAcmeCsr(
+        [`seq-test-${i}.acme-love.com`],
+        algo,
+        `seq-test-${i}.acme-love.com`,
+        keyPair,
+      );
       const nonce = await nonceManager.take(namespace);
 
       const batchDuration = Date.now() - batchStart;
@@ -273,7 +275,9 @@ describe.skip('ACME Library Async Behavior Tests', () => {
 
       if (i % 3 === 0) {
         const currentMemory = process.memoryUsage();
-        console.log(`Batch ${i + 1}/10 completed in ${batchDuration}ms, Memory: ${(currentMemory.heapUsed / 1024 / 1024).toFixed(2)} MB`);
+        console.log(
+          `Batch ${i + 1}/10 completed in ${batchDuration}ms, Memory: ${(currentMemory.heapUsed / 1024 / 1024).toFixed(2)} MB`,
+        );
       }
     }
 
@@ -315,8 +319,8 @@ describe.skip('ACME Library Async Behavior Tests', () => {
     const results = await Promise.allSettled(mixedOperations);
 
     // Count successful and failed operations
-    const successful = results.filter(r => r.status === 'fulfilled');
-    const failed = results.filter(r => r.status === 'rejected');
+    const successful = results.filter((r) => r.status === 'fulfilled');
+    const failed = results.filter((r) => r.status === 'rejected');
 
     console.log(`Operations completed: ${successful.length} successful, ${failed.length} failed`);
 

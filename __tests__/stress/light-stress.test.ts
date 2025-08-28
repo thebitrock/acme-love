@@ -12,14 +12,14 @@ function extractEndpoint(url: string): string {
     const path = parsedUrl.pathname;
 
     // Let's Encrypt specific endpoints
-    if (path.includes('/acme/new-nonce')) return 'Let\'s Encrypt: new-nonce';
-    if (path.includes('/acme/new-acct')) return 'Let\'s Encrypt: new-account';
-    if (path.includes('/acme/new-order')) return 'Let\'s Encrypt: new-order';
-    if (path.includes('/acme/authz/')) return 'Let\'s Encrypt: authorization';
-    if (path.includes('/acme/order/')) return 'Let\'s Encrypt: order';
-    if (path.includes('/acme/chall/')) return 'Let\'s Encrypt: challenge';
-    if (path.includes('/acme/cert/')) return 'Let\'s Encrypt: certificate';
-    if (path.includes('/directory')) return 'Let\'s Encrypt: directory';
+    if (path.includes('/acme/new-nonce')) return "Let's Encrypt: new-nonce";
+    if (path.includes('/acme/new-acct')) return "Let's Encrypt: new-account";
+    if (path.includes('/acme/new-order')) return "Let's Encrypt: new-order";
+    if (path.includes('/acme/authz/')) return "Let's Encrypt: authorization";
+    if (path.includes('/acme/order/')) return "Let's Encrypt: order";
+    if (path.includes('/acme/chall/')) return "Let's Encrypt: challenge";
+    if (path.includes('/acme/cert/')) return "Let's Encrypt: certificate";
+    if (path.includes('/directory')) return "Let's Encrypt: directory";
 
     // Fallback to generic path
     return `Generic: ${path}`;
@@ -36,7 +36,8 @@ function trackEndpoint(url: string): void {
 // Monkey patch for tracking
 const originalFetch = global.fetch;
 global.fetch = async (input: any, init?: RequestInit) => {
-  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  const url =
+    typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
   trackEndpoint(url);
   return originalFetch(input, init);
 };
@@ -57,8 +58,6 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
     status: number;
   }
 
-
-
   class LightMetricsCollector {
     private metrics: RequestMetrics[] = [];
     private startTime: number = 0;
@@ -77,7 +76,7 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
         method,
         timestamp: Date.now() - this.startTime,
         duration,
-        status
+        status,
       });
 
       if (url.includes('new-nonce')) {
@@ -93,7 +92,7 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
       let accountsCreated = 0;
       let ordersCreated = 0;
 
-      this.metrics.forEach(metric => {
+      this.metrics.forEach((metric) => {
         requestsByType[metric.type] = (requestsByType[metric.type] || 0) + 1;
 
         const endpoint = this.extractEndpoint(metric.url);
@@ -103,9 +102,10 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
         if (metric.url.includes('new-order') && metric.method === 'POST') ordersCreated++;
       });
 
-      const averageResponseTime = this.metrics.length > 0
-        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
-        : 0;
+      const averageResponseTime =
+        this.metrics.length > 0
+          ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
+          : 0;
 
       return {
         totalTime,
@@ -116,7 +116,7 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
         averageResponseTime,
         requestsByType,
         requestsByEndpoint,
-        metrics: this.metrics
+        metrics: this.metrics,
       };
     }
 
@@ -222,7 +222,7 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
           `light-stress-${accountIndex + 1}`,
           STAGING_DIRECTORY_URL,
           `light-test-${accountIndex}-${Date.now()}@acme-love.com`,
-          { nonce: { maxPool: 16 } }
+          { nonce: { maxPool: 16 } },
         );
 
         // Add metrics wrapper to the existing core
@@ -255,7 +255,9 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
 
             if (httpChallenge) {
               const keyAuth = await acct.keyAuthorization(httpChallenge.token);
-              console.log(`     📊 Account ${accountIndex + 1}, Order ${orderIndex + 1}: ${domain}`);
+              console.log(
+                `     📊 Account ${accountIndex + 1}, Order ${orderIndex + 1}: ${domain}`,
+              );
 
               return {
                 accountIndex,
@@ -263,13 +265,15 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
                 domain,
                 order,
                 challenge: httpChallenge,
-                keyAuth
+                keyAuth,
               };
             }
 
             throw new Error('No HTTP-01 challenge found');
           } catch (error) {
-            console.error(`     ❌ Failed order ${orderIndex + 1} for account ${accountIndex + 1}: ${error}`);
+            console.error(
+              `     ❌ Failed order ${orderIndex + 1} for account ${accountIndex + 1}: ${error}`,
+            );
             throw error;
           }
         });
@@ -310,7 +314,9 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
 
       console.log(`\n📈 REQUEST BREAKDOWN:`);
       Object.entries(results.requestsByType).forEach(([type, count]) => {
-        console.log(`   ${type}: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`);
+        console.log(
+          `   ${type}: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`,
+        );
       });
 
       console.log(`\n🔗 ENDPOINT BREAKDOWN:`);
@@ -332,13 +338,17 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
       // Let's Encrypt specific breakdown
       console.log(`\n🔒 Let's Encrypt Staging API Breakdown`);
       console.log(`======================================`);
-      const letsEncryptStats = sortedStats.filter(([endpoint]) => endpoint.startsWith('Let\'s Encrypt'));
+      const letsEncryptStats = sortedStats.filter(([endpoint]) =>
+        endpoint.startsWith("Let's Encrypt"),
+      );
       let letsEncryptTotal = 0;
       for (const [endpoint, count] of letsEncryptStats) {
         console.log(`${endpoint}: ${count} requests`);
         letsEncryptTotal += count;
       }
-      console.log(`Let's Encrypt Total: ${letsEncryptTotal} requests (${((letsEncryptTotal / totalRequests) * 100).toFixed(1)}% of all requests)`);
+      console.log(
+        `Let's Encrypt Total: ${letsEncryptTotal} requests (${((letsEncryptTotal / totalRequests) * 100).toFixed(1)}% of all requests)`,
+      );
 
       // Cleanup
       global.fetch = originalFetch;
@@ -368,9 +378,12 @@ describe('ACME Lightweight Stress Test - 2 Accounts × 3 Orders', () => {
 - **Pool Efficiency**: ${results.newNonceRequests > 0 ? Math.round(((results.totalRequests - results.newNonceRequests) / results.totalRequests) * 100) : 0}%
 
 ## Request Distribution
-${Object.entries(results.requestsByType).map(([type, count]) =>
-        `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`
-      ).join('\n')}
+${Object.entries(results.requestsByType)
+  .map(
+    ([type, count]) =>
+      `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`,
+  )
+  .join('\n')}
 
 ## Conclusion
 ✅ Successfully processed ${allOrders.length} orders across ${TOTAL_ACCOUNTS} accounts
@@ -382,7 +395,7 @@ ${Object.entries(results.requestsByType).map(([type, count]) =>
 `;
 
       // Save report
-      const reportPath = path.join(process.cwd(), 'LIGHT-STRESS-TEST-RESULTS.md');
+      const reportPath = path.join(process.cwd(), 'docs/reports/LIGHT-STRESS-TEST-RESULTS.md');
       fs.writeFileSync(reportPath, report);
       console.log(`\n📋 Report saved to ${reportPath}`);
 
@@ -391,7 +404,6 @@ ${Object.entries(results.requestsByType).map(([type, count]) =>
       expect(results.totalRequests).toBeGreaterThan(0);
       expect(results.newNonceRequests).toBeGreaterThan(0);
       expect(results.averageResponseTime).toBeLessThan(3000);
-
     } catch (error) {
       console.error(`💥 Light stress test failed:`, error);
       throw error;

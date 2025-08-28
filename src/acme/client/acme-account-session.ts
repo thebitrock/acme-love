@@ -33,7 +33,7 @@ export interface AcmeAccountSessionOptions {
 
 /** Stateless helpers to generate JWS payload/headers with kid or embedded JWK */
 function encodePayload(payload: unknown): Uint8Array {
-  if (payload == null) return new Uint8Array(0);
+  if (payload === null || payload === undefined) return new Uint8Array(0);
   return new TextEncoder().encode(typeof payload === 'string' ? payload : JSON.stringify(payload));
 }
 
@@ -46,7 +46,11 @@ interface ChallengePreparation {
 /** Generic challenge handler interface */
 interface ChallengeHandler {
   challengeType: string;
-  prepareChallenge: (authorization: ACMEAuthorization, keyAuth: string, challenge: ACMEChallenge) => Promise<ChallengePreparation>;
+  prepareChallenge: (
+    authorization: ACMEAuthorization,
+    keyAuth: string,
+    challenge: ACMEChallenge,
+  ) => Promise<ChallengePreparation>;
   setChallenge: (challenge: ChallengePreparation) => Promise<void>;
   waitFor: (challenge: ChallengePreparation) => Promise<void>;
 }
@@ -111,7 +115,7 @@ export class AcmeAccountSession {
   /** Ensure account is registered; sets this.kid on success (idempotent & coalesced) */
   public async ensureRegistered(
     payload = { contact: [] as string[], termsOfServiceAgreed: true },
-    eab?: ExternalAccountBinding
+    eab?: ExternalAccountBinding,
   ): Promise<string> {
     await this.ensureInit();
     if (this.kid) return this.kid;
@@ -171,7 +175,7 @@ export class AcmeAccountSession {
       };
     }
 
-    return response
+    return response;
   }
 
   /** Create a new order for given DNS identifiers */
@@ -202,14 +206,22 @@ export class AcmeAccountSession {
     const authzUrl = order.authorizations[0];
     if (!authzUrl) throw new Error('No authz URL');
 
-    const authorizations: ACMEAuthorization[] = await Promise.all(order.authorizations.map((url) => this.fetch<ACMEAuthorization>(url)));
+    const authorizations: ACMEAuthorization[] = await Promise.all(
+      order.authorizations.map((url) => this.fetch<ACMEAuthorization>(url)),
+    );
 
     for (const authorization of authorizations) {
-      const challenge: ACMEChallenge | undefined = authorization.challenges?.find((c: any) => c.type === handler.challengeType);
+      const challenge: ACMEChallenge | undefined = authorization.challenges?.find(
+        (c: any) => c.type === handler.challengeType,
+      );
       if (!challenge) throw new Error(`No ${handler.challengeType} challenge`);
 
       const keyAuth = await this.keyAuthorization(challenge.token);
-      const challengePreparation = await handler.prepareChallenge(authorization, keyAuth, challenge);
+      const challengePreparation = await handler.prepareChallenge(
+        authorization,
+        keyAuth,
+        challenge,
+      );
 
       await handler.setChallenge(challengePreparation);
       await handler.waitFor(challengePreparation);
@@ -220,34 +232,48 @@ export class AcmeAccountSession {
     return await this.waitOrder(order.url, ['ready', 'valid']);
   }
 
-  async solveDns01(order: ACMEOrder, opts: {
-    waitFor: (preparation: ChallengePreparation) => Promise<void>;
-    setDns: (preparation: ChallengePreparation) => Promise<void>;
-  }) {
+  async solveDns01(
+    order: ACMEOrder,
+    opts: {
+      waitFor: (preparation: ChallengePreparation) => Promise<void>;
+      setDns: (preparation: ChallengePreparation) => Promise<void>;
+    },
+  ) {
     return this.solveChallenge(order, {
       challengeType: 'dns-01',
-      prepareChallenge: async (authorization: ACMEAuthorization, keyAuth: string, _challenge: ACMEChallenge) => {
+      prepareChallenge: async (
+        authorization: ACMEAuthorization,
+        keyAuth: string,
+        _challenge: ACMEChallenge,
+      ) => {
         const txtValue = createHash('sha256').update(keyAuth).digest('base64url');
         const fqdn = `_acme-challenge.${authorization.identifier.value}`;
         return { target: fqdn, value: txtValue };
       },
       setChallenge: opts.setDns,
-      waitFor: opts.waitFor
+      waitFor: opts.waitFor,
     });
   }
 
-  async solveHttp01(order: ACMEOrder, opts: {
-    waitFor: (preparation: ChallengePreparation) => Promise<void>;
-    setHttp: (preparation: ChallengePreparation) => Promise<void>;
-  }) {
+  async solveHttp01(
+    order: ACMEOrder,
+    opts: {
+      waitFor: (preparation: ChallengePreparation) => Promise<void>;
+      setHttp: (preparation: ChallengePreparation) => Promise<void>;
+    },
+  ) {
     return this.solveChallenge(order, {
       challengeType: 'http-01',
-      prepareChallenge: async (authorization: ACMEAuthorization, keyAuth: string, challenge: ACMEChallenge) => {
+      prepareChallenge: async (
+        authorization: ACMEAuthorization,
+        keyAuth: string,
+        challenge: ACMEChallenge,
+      ) => {
         const url = `http://${authorization.identifier.value}/.well-known/acme-challenge/${challenge.token}`;
         return { target: url, value: keyAuth, additional: { token: challenge.token } };
       },
       setChallenge: opts.setHttp,
-      waitFor: opts.waitFor
+      waitFor: opts.waitFor,
     });
   }
 
@@ -256,7 +282,11 @@ export class AcmeAccountSession {
     const nm = this.nonce!;
     const ns = await this.nonceNamespace();
     const res = await nm.withNonceRetry(ns, async (nonce) => {
-      const jws = await this.signJws({ keyAuthorization: await this.keyAuthorization(ch.token) }, ch.url, nonce);
+      const jws = await this.signJws(
+        { keyAuthorization: await this.keyAuthorization(ch.token) },
+        ch.url,
+        nonce,
+      );
       return this.client.getHttp().post(ch.url, jws, {
         'Content-Type': 'application/jose+json',
         Accept: 'application/json',
@@ -267,7 +297,7 @@ export class AcmeAccountSession {
 
   /** Wait until order status becomes one of target (or 'invalid') */
   public async waitOrder(url: string, target: Array<ACMEOrder['status']>): Promise<ACMEOrder> {
-    for (; ;) {
+    for (;;) {
       const o = await this.fetch<ACMEOrder>(url);
       if (target.includes(o.status) || o.status === 'invalid') return o;
       await new Promise((r) => setTimeout(r, 3000));
@@ -336,7 +366,9 @@ export class AcmeAccountSession {
   }
 
   /** Create External Account Binding JWS per RFC 8555 Section 7.3.4 */
-  private async createExternalAccountBinding(eab: ExternalAccountBinding): Promise<jose.FlattenedJWS> {
+  private async createExternalAccountBinding(
+    eab: ExternalAccountBinding,
+  ): Promise<jose.FlattenedJWS> {
     const jwk = await jose.exportJWK(this.keys.publicKey);
 
     // Decode HMAC key from base64url
@@ -348,7 +380,7 @@ export class AcmeAccountSession {
       hmacKeyBytes,
       { name: 'HMAC', hash: 'SHA-256' },
       false,
-      ['sign']
+      ['sign'],
     );
 
     const protectedHeader: jose.JWSHeaderParameters = {

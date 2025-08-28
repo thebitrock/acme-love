@@ -10,7 +10,7 @@ export class AcmeDirectory {
   constructor(
     private readonly http: SimpleHttpClient,
     private readonly directoryUrl: string,
-  ) { }
+  ) {}
 
   async get(): Promise<ACMEDirectory> {
     if (this.cached) return this.cached;

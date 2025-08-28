@@ -29,7 +29,6 @@ describe('Simple Nonce Test', () => {
 
       expect(nonce).toBeTruthy();
       expect(duration).toBeLessThan(10000); // Should not take more than 10 seconds
-
     } catch (error) {
       const duration = Date.now() - start;
       console.error(`   ❌ Single nonce failed after ${duration}ms: ${error}`);
@@ -58,7 +57,6 @@ describe('Simple Nonce Test', () => {
         nonces.push(nonce);
 
         expect(duration).toBeLessThan(10000);
-
       } catch (error) {
         const duration = Date.now() - start;
         console.error(`   ❌ Nonce ${i + 1} failed after ${duration}ms: ${error}`);
@@ -84,13 +82,16 @@ describe('Simple Nonce Test', () => {
     const start = Date.now();
 
     const promises = Array.from({ length: 3 }, (_, i) => {
-      return nonceManager.take(namespace)
-        .then(nonce => {
+      return nonceManager
+        .take(namespace)
+        .then((nonce) => {
           const duration = Date.now() - start;
-          console.log(`   ✅ Concurrent nonce ${i + 1} fetched in ${duration}ms: ${nonce.substring(0, 10)}...`);
+          console.log(
+            `   ✅ Concurrent nonce ${i + 1} fetched in ${duration}ms: ${nonce.substring(0, 10)}...`,
+          );
           return nonce;
         })
-        .catch(error => {
+        .catch((error) => {
           const duration = Date.now() - start;
           console.error(`   ❌ Concurrent nonce ${i + 1} failed after ${duration}ms: ${error}`);
           throw error;
@@ -107,7 +108,6 @@ describe('Simple Nonce Test', () => {
 
       // All nonces should be unique
       expect(new Set(nonces).size).toBe(3);
-
     } catch (error) {
       const totalDuration = Date.now() - start;
       console.error(`   ❌ Concurrent test failed after ${totalDuration}ms: ${error}`);

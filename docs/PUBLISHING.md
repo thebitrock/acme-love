@@ -1,47 +1,125 @@
 # ACME Love - Publishing to NPM
 
-## Preparation for publishing
+## 🚀 Quick Start (Automated Publishing)
 
-### 1. Check build
+### Recommended Workflow
 
 ```bash
+# Always start with a dry run to check everything
+npm run release:dry
+
+# If everything looks good, publish
+npm run release:patch   # For bug fixes
+npm run release:minor   # For new features
+npm run release:major   # For breaking changes
+```
+
+### All Available Commands
+
+```bash
+# Automated Publishing (Recommended)
+npm run release:dry     # Dry run (no publishing)
+npm run release:patch   # 1.0.0 → 1.0.1
+npm run release:minor   # 1.0.0 → 1.1.0
+npm run release:major   # 1.0.0 → 2.0.0
+npm run release:beta    # 1.0.0 → 1.0.1-beta.0
+npm run release:alpha   # 1.0.0 → 1.0.1-alpha.0
+
+# Manual Publishing (Alternative)
+npm run publish:patch   # Manual patch version
+npm run publish:minor   # Manual minor version
+npm run publish:major   # Manual major version
+npm run publish:beta    # Manual beta version
+npm run publish:alpha   # Manual alpha version
+npm run publish:dry     # Size check only
+```
+
+## ⚡ What the Automated Script Does
+
+The automated publishing script (`scripts/publish.sh` and `scripts/publish.mjs`) performs comprehensive checks and automation:
+
+### 1. Security Checks
+
+- ✅ Verifies npm authentication (`npm whoami`)
+- ✅ Checks git status (uncommitted changes)
+- ✅ Validates current branch (main/master)
+
+### 2. Code Quality
+
+- ✅ Runs code formatting check (Prettier)
+- ✅ Runs linting check (ESLint)
+- ✅ Executes all tests
+
+### 3. Build Process
+
+- ✅ Cleans dist directory
+- ✅ Builds production version (no source maps)
+- ✅ Shows final package size
+
+### 4. Publishing
+
+- ✅ Updates version in package.json
+- ✅ Creates git tag
+- ✅ Publishes to npm
+- ✅ Pushes changes to git repository
+
+## 📋 Version Types Guide
+
+| Command | Example Change        | When to Use                       |
+| ------- | --------------------- | --------------------------------- |
+| `patch` | 1.0.0 → 1.0.1         | Bug fixes, small corrections      |
+| `minor` | 1.0.0 → 1.1.0         | New features, backward compatible |
+| `major` | 1.0.0 → 2.0.0         | Breaking API changes              |
+| `beta`  | 1.0.0 → 1.0.1-beta.0  | Test versions                     |
+| `alpha` | 1.0.0 → 1.0.1-alpha.0 | Early test versions               |
+
+## 📦 Package Optimization Results
+
+Current package optimization achievements:
+
+- **Size**: ~42 kB (compressed) vs 132 kB before optimization
+- **Files**: ~51 vs 189 before optimization
+- **Excluded**: tests, source maps, development documentation
+- **Reduction**: 68% size reduction, 73% fewer files
+
+## 🔧 Manual Publishing Process
+
+If you prefer manual control or need to troubleshoot:
+
+### 1. Pre-publishing Checks
+
+```bash
+# Check build
 npm run build
-```
 
-### 2. Check tests
-
-```bash
+# Run tests
 npm test
-```
 
-### 3. Check CLI
-
-```bash
-# Test locally
+# Test CLI locally
 npx . --help
 npx . create-account-key --help
 ```
 
-### 4. Update version
+### 2. Version Management
 
 ```bash
-# Patch version (1.0.3 -> 1.0.4)
+# Patch version (1.0.3 → 1.0.4)
 npm version patch
 
-# Minor version (1.0.3 -> 1.1.0)
+# Minor version (1.0.3 → 1.1.0)
 npm version minor
 
-# Major version (1.0.3 -> 2.0.0)
+# Major version (1.0.3 → 2.0.0)
 npm version major
 ```
 
-### 5. Publish
+### 3. Publishing
 
 ```bash
-# First make sure you're logged in to npm
+# Ensure npm authentication
 npm whoami
 
-# If not logged in
+# Login if needed
 npm login
 
 # Publish
@@ -51,9 +129,93 @@ npm publish
 npm publish --access public
 ```
 
-## After publishing
+## 🎯 Usage Examples
 
-### Check installation
+### Regular Development Workflow
+
+```bash
+# Made a bug fix
+npm run release:patch
+
+# Added new feature
+npm run release:minor
+
+# Changed API (breaking change)
+npm run release:major
+```
+
+### Testing Releases
+
+```bash
+# Create test version
+npm run release:beta
+
+# Install beta version
+npm install acme-love@beta
+
+# Test the beta
+npx acme-love --version
+```
+
+### Pre-publish Verification
+
+```bash
+# Always do a dry run first
+npm run release:dry
+
+# Review the output, then publish
+npm run release:patch
+```
+
+## 🔧 Debugging & Troubleshooting
+
+If something goes wrong:
+
+### 1. Check Authorization
+
+```bash
+npm whoami
+```
+
+### 2. Verify Package Size
+
+```bash
+npm run publish:dry
+```
+
+### 3. Test Manually
+
+```bash
+npm test
+npm run clean && npm run build:prod
+```
+
+### 4. Debug Scripts
+
+Both bash and Node.js versions available:
+
+- `scripts/publish.sh` - Bash version (main)
+- `scripts/publish.mjs` - Node.js version (cross-platform)
+
+## ✅ Requirements
+
+- Git repository with clean status
+- npm authentication (`npm login`)
+- All tests passing
+- Node.js 18+ and npm 8+
+
+## 📋 Pre-publishing Checklist
+
+- [ ] Code builds without errors (`npm run build`)
+- [ ] All tests pass (`npm test`)
+- [ ] CLI works locally (`npx . --help`)
+- [ ] README.md updated
+- [ ] Git changes committed
+- [ ] npm authentication verified (`npm whoami`)
+
+## 🏗️ After Publishing
+
+### Verify Installation
 
 ```bash
 # Install from npm
@@ -74,23 +236,23 @@ acme-love create-account-key -o test-account.json
 acme-love interactive
 ```
 
-## Usage after publishing
+## 📚 Usage After Publishing
 
-### Global installation
+### Global Installation
 
 ```bash
 npm install -g acme-love
 acme-love cert -d acme-love.com -e admin@acme-love.com --staging
 ```
 
-### Local installation
+### Local Installation
 
 ```bash
 npm install acme-love
 npx acme-love cert -d acme-love.com -e admin@acme-love.com --staging
 ```
 
-### In project as dependency
+### As Project Dependency
 
 ```bash
 npm install acme-love
@@ -103,72 +265,9 @@ const client = new ACMEClient(directory.letsencrypt.staging.directoryUrl);
 // ... use API
 ```
 
-## Package structure after build
+## 🏭 GitHub Actions Automation
 
-```
-acme-love/
-├── package.json          # Package metadata
-├── README.md             # Documentation
-├── LICENSE               # License
-├── dist/                 # Compiled code
-│   └── src/
-│       ├── cli.js        # CLI entry point
-│       ├── index.js      # Library entry point
-│       └── ...           # Other modules
-└── docs/                 # Additional documentation
-    └── CLI.md
-```
-
-## Important fields in package.json
-
-```json
-{
-  "name": "acme-love",
-  "version": "1.0.3",
-  "type": "module",
-  "main": "dist/src/index.js",
-  "bin": {
-    "acme-love": "dist/src/cli.js"
-  },
-  "exports": {
-    ".": {
-      "import": "./dist/src/index.js",
-      "types": "./dist/src/index.d.ts"
-    }
-  },
-  "files": ["dist", "README.md", "docs"]
-}
-```
-
-## Pre-publishing checklist
-
-- [ ] Code builds without errors (`npm run build`)
-- [ ] Tests pass (`npm test`)
-- [ ] CLI works locally (`npx . --help`)
-- [ ] README.md updated
-- [ ] Version updated (`npm version`)
-- [ ] Git changes committed and pushed
-- [ ] Logged in to npm (`npm whoami`)
-
-## NPM management commands
-
-```bash
-# View package information
-npm info acme-love
-
-# View all versions
-npm view acme-love versions --json
-
-# Unpublish version (only within 72 hours)
-npm unpublish acme-love@1.0.3
-
-# Mark version as deprecated
-npm deprecate acme-love@1.0.3 "Use version 1.0.4 instead"
-```
-
-## Publishing automation
-
-### GitHub Actions
+### Workflow Configuration
 
 ```yaml
 # .github/workflows/publish.yml
@@ -206,14 +305,67 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
-### Create release
+### Creating Releases
 
 ```bash
 # Update version and create tag
 npm version patch
 
-# Push tag
+# Push tag to trigger GitHub Actions
 git push origin v1.0.4
 
-# GitHub Actions will automatically publish the package
+# GitHub Actions will automatically publish
+```
+
+## 🛠️ NPM Management Commands
+
+```bash
+# View package information
+npm info acme-love
+
+# View all versions
+npm view acme-love versions --json
+
+# Unpublish version (only within 72 hours)
+npm unpublish acme-love@1.0.3
+
+# Mark version as deprecated
+npm deprecate acme-love@1.0.3 "Use version 1.0.4 instead"
+```
+
+## 📁 Package Structure
+
+```
+acme-love/
+├── package.json          # Package metadata
+├── README.md             # Documentation
+├── LICENSE               # License
+├── dist/                 # Compiled code
+│   └── src/
+│       ├── cli.js        # CLI entry point
+│       ├── index.js      # Library entry point
+│       └── ...           # Other modules
+└── docs/                 # Additional documentation
+    └── CLI.md
+```
+
+## ⚙️ Important package.json Fields
+
+```json
+{
+  "name": "acme-love",
+  "version": "1.4.1",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "bin": {
+    "acme-love": "dist/src/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"]
+}
 ```

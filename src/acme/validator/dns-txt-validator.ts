@@ -120,10 +120,7 @@ export interface AuthoritativeOptions {
 }
 
 /** Resolve TXT via a specific Resolver bound to given name servers (IPs) */
-async function resolveTxtWithResolver(
-  resolver: Resolver,
-  name: string,
-): Promise<string[][]> {
+async function resolveTxtWithResolver(resolver: Resolver, name: string): Promise<string[][]> {
   return resolver.resolveTxt(name);
 }
 
@@ -148,7 +145,9 @@ async function maybeFollowCname(
 
   // Fallback: check CNAME via system resolver (acceptable for target discovery)
   try {
-    const { Resolver: SysResolver } = await import('dns').then((m) => ({ Resolver: (m as any).Resolver }));
+    const { Resolver: SysResolver } = await import('dns').then((m) => ({
+      Resolver: (m as any).Resolver,
+    }));
     const sys = new SysResolver();
     const cname = await (sys as any).resolveCname?.(name);
     const target = Array.isArray(cname) && cname.length > 0 ? cname[0] : null;
@@ -213,8 +212,20 @@ export async function resolveAndValidateAcmeTxtAuthoritative(
   const runWithTimeout = <T>(p: Promise<T>): Promise<T> => {
     const { timeoutMs = 4000 } = opts;
     return new Promise<T>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(`DNS query timeout after ${timeoutMs} ms`)), timeoutMs);
-      p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+      const t = setTimeout(
+        () => reject(new Error(`DNS query timeout after ${timeoutMs} ms`)),
+        timeoutMs,
+      );
+      p.then(
+        (v) => {
+          clearTimeout(t);
+          resolve(v);
+        },
+        (e) => {
+          clearTimeout(t);
+          reject(e);
+        },
+      );
     });
   };
 
@@ -244,6 +255,10 @@ export async function resolveAndValidateAcmeTxt(
     const records = await resolveTxt(name);
     return validateAcmeTxtSet(records, expected);
   } catch (e) {
-    return { ok: false, allValues: [], reasons: [`Failed to resolve TXT for ${name}: ${String(e)}`] };
+    return {
+      ok: false,
+      allValues: [],
+      reasons: [`Failed to resolve TXT for ${name}: ${String(e)}`],
+    };
   }
 }

@@ -37,7 +37,7 @@ describe('ACME Integration Tests (E2E)', () => {
     // Initialize directory
     directory = new AcmeDirectory(httpClient, STAGING_DIRECTORY_URL);
     const dirResult = await directory.get();
-    console.log('Loaded ACME directory from Let\'s Encrypt staging');
+    console.log("Loaded ACME directory from Let's Encrypt staging");
 
     // Initialize nonce manager
     nonceManager = new NonceManager({
@@ -57,7 +57,7 @@ describe('ACME Integration Tests (E2E)', () => {
     console.log('ACME integration test cleanup complete');
   });
 
-  test('should connect to Let\'s Encrypt staging directory', async () => {
+  test("should connect to Let's Encrypt staging directory", async () => {
     if (process.env.CI && !process.env.ACME_E2E_ENABLED) {
       return;
     }
@@ -147,7 +147,8 @@ describe('ACME Integration Tests (E2E)', () => {
     ];
 
     for (const algorithm of algorithms) {
-      const algoName = algorithm.kind === 'ec' ? `EC-${algorithm.namedCurve}` : `RSA-${algorithm.modulusLength}`;
+      const algoName =
+        algorithm.kind === 'ec' ? `EC-${algorithm.namedCurve}` : `RSA-${algorithm.modulusLength}`;
       console.log(`Testing CSR creation with ${algoName}...`);
 
       const keyPair = await generateKeyPair(algorithm);
@@ -199,7 +200,7 @@ describe('ACME Integration Tests (E2E)', () => {
     const invalidHttpClient = new SimpleHttpClient();
     const invalidDirectory = new AcmeDirectory(
       invalidHttpClient,
-      'https://invalid-acme-server.example.com/directory'
+      'https://invalid-acme-server.example.com/directory',
     );
 
     await expect(invalidDirectory.get()).rejects.toThrow();

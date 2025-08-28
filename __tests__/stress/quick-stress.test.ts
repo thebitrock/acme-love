@@ -13,14 +13,14 @@ function extractEndpoint(url: string): string {
     const path = parsedUrl.pathname;
 
     // Let's Encrypt specific endpoints
-    if (path.includes('/acme/new-nonce')) return 'Let\'s Encrypt: new-nonce';
-    if (path.includes('/acme/new-acct')) return 'Let\'s Encrypt: new-account';
-    if (path.includes('/acme/new-order')) return 'Let\'s Encrypt: new-order';
-    if (path.includes('/acme/authz/')) return 'Let\'s Encrypt: authorization';
-    if (path.includes('/acme/order/')) return 'Let\'s Encrypt: order';
-    if (path.includes('/acme/chall/')) return 'Let\'s Encrypt: challenge';
-    if (path.includes('/acme/cert/')) return 'Let\'s Encrypt: certificate';
-    if (path.includes('/directory')) return 'Let\'s Encrypt: directory';
+    if (path.includes('/acme/new-nonce')) return "Let's Encrypt: new-nonce";
+    if (path.includes('/acme/new-acct')) return "Let's Encrypt: new-account";
+    if (path.includes('/acme/new-order')) return "Let's Encrypt: new-order";
+    if (path.includes('/acme/authz/')) return "Let's Encrypt: authorization";
+    if (path.includes('/acme/order/')) return "Let's Encrypt: order";
+    if (path.includes('/acme/chall/')) return "Let's Encrypt: challenge";
+    if (path.includes('/acme/cert/')) return "Let's Encrypt: certificate";
+    if (path.includes('/directory')) return "Let's Encrypt: directory";
 
     // Fallback to generic path
     return `Generic: ${path}`;
@@ -37,7 +37,8 @@ function trackEndpoint(url: string): void {
 // Monkey patch for tracking
 const originalFetch = global.fetch;
 global.fetch = async (input: any, init?: RequestInit) => {
-  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  const url =
+    typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
   trackEndpoint(url);
   return originalFetch(input, init);
 };
@@ -76,7 +77,7 @@ describe('ACME Quick Stress Test - 1 Account × 2 Orders', () => {
         method,
         timestamp: Date.now() - this.startTime,
         duration,
-        status
+        status,
       });
 
       if (url.includes('new-nonce')) {
@@ -91,16 +92,17 @@ describe('ACME Quick Stress Test - 1 Account × 2 Orders', () => {
       let accountsCreated = 0;
       let ordersCreated = 0;
 
-      this.metrics.forEach(metric => {
+      this.metrics.forEach((metric) => {
         requestsByType[metric.type] = (requestsByType[metric.type] || 0) + 1;
 
         if (metric.url.includes('new-acct') && metric.method === 'POST') accountsCreated++;
         if (metric.url.includes('new-order') && metric.method === 'POST') ordersCreated++;
       });
 
-      const averageResponseTime = this.metrics.length > 0
-        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
-        : 0;
+      const averageResponseTime =
+        this.metrics.length > 0
+          ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
+          : 0;
 
       return {
         totalTime,
@@ -109,7 +111,7 @@ describe('ACME Quick Stress Test - 1 Account × 2 Orders', () => {
         totalRequests: this.metrics.length,
         newNonceRequests: this.nonceRequests,
         averageResponseTime,
-        requestsByType
+        requestsByType,
       };
     }
   }
@@ -193,7 +195,7 @@ describe('ACME Quick Stress Test - 1 Account × 2 Orders', () => {
         'quick-stress-1',
         STAGING_DIRECTORY_URL,
         `quick-stress-${Date.now()}@acme-love.com`,
-        { nonce: { maxPool: 8 } }
+        { nonce: { maxPool: 8 } },
       );
 
       // Add metrics wrapper
@@ -228,7 +230,7 @@ describe('ACME Quick Stress Test - 1 Account × 2 Orders', () => {
               domain,
               order,
               challenge: httpChallenge,
-              keyAuth
+              keyAuth,
             });
           } else {
             throw new Error('No HTTP-01 challenge found');
@@ -266,11 +268,15 @@ describe('ACME Quick Stress Test - 1 Account × 2 Orders', () => {
       console.log(`Average Response Time: ${Math.round(results.averageResponseTime)}ms`);
       console.log(`Requests per Second: ${Math.round(results.totalRequests / (totalTime / 1000))}`);
       console.log(`Nonces Remaining: ${noncesRemaining}`);
-      console.log(`Pool Efficiency: ${results.newNonceRequests > 0 ? Math.round(((results.totalRequests - results.newNonceRequests) / results.totalRequests) * 100) : 0}%`);
+      console.log(
+        `Pool Efficiency: ${results.newNonceRequests > 0 ? Math.round(((results.totalRequests - results.newNonceRequests) / results.totalRequests) * 100) : 0}%`,
+      );
 
       console.log(`\n📈 REQUEST BREAKDOWN:`);
       Object.entries(results.requestsByType).forEach(([type, count]) => {
-        console.log(`   ${type}: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`);
+        console.log(
+          `   ${type}: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`,
+        );
       });
 
       // Endpoint statistics
@@ -287,13 +293,17 @@ describe('ACME Quick Stress Test - 1 Account × 2 Orders', () => {
       // Let's Encrypt specific breakdown
       console.log(`\n🔒 Let's Encrypt Staging API Breakdown`);
       console.log(`======================================`);
-      const letsEncryptStats = sortedStats.filter(([endpoint]) => endpoint.startsWith('Let\'s Encrypt'));
+      const letsEncryptStats = sortedStats.filter(([endpoint]) =>
+        endpoint.startsWith("Let's Encrypt"),
+      );
       let letsEncryptTotal = 0;
       for (const [endpoint, count] of letsEncryptStats) {
         console.log(`${endpoint}: ${count} requests`);
         letsEncryptTotal += count;
       }
-      console.log(`Let's Encrypt Total: ${letsEncryptTotal} requests (${((letsEncryptTotal / totalRequests) * 100).toFixed(1)}% of all requests)`);
+      console.log(
+        `Let's Encrypt Total: ${letsEncryptTotal} requests (${((letsEncryptTotal / totalRequests) * 100).toFixed(1)}% of all requests)`,
+      );
 
       // Cleanup
       global.fetch = originalFetch;
@@ -322,9 +332,12 @@ describe('ACME Quick Stress Test - 1 Account × 2 Orders', () => {
 - **Nonces Remaining**: ${noncesRemaining}
 
 ## Request Distribution
-${Object.entries(results.requestsByType).map(([type, count]) =>
-        `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`
-      ).join('\n')}
+${Object.entries(results.requestsByType)
+  .map(
+    ([type, count]) =>
+      `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`,
+  )
+  .join('\n')}
 
 ## Conclusion
 ✅ Successfully processed ${orders.length} orders in ${Math.round(totalTime / 1000)} seconds
@@ -335,7 +348,7 @@ ${Object.entries(results.requestsByType).map(([type, count]) =>
 `;
 
       // Save report
-      const reportPath = path.join(process.cwd(), 'QUICK-STRESS-TEST-RESULTS.md');
+      const reportPath = path.join(process.cwd(), 'docs/reports/QUICK-STRESS-TEST-RESULTS.md');
       fs.writeFileSync(reportPath, report);
       console.log(`\n📋 Report saved to ${reportPath}`);
 
@@ -344,7 +357,6 @@ ${Object.entries(results.requestsByType).map(([type, count]) =>
       expect(results.totalRequests).toBeGreaterThan(4);
       expect(results.newNonceRequests).toBeGreaterThan(0);
       expect(results.averageResponseTime).toBeLessThan(5000);
-
     } catch (error) {
       console.error(`💥 Quick stress test failed:`, error);
       throw error;

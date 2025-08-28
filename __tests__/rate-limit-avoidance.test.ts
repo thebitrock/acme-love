@@ -21,11 +21,11 @@ async function realFetch(url: string) {
   return {
     status: response.status,
     headers: Object.fromEntries(response.headers.entries()),
-    data: null
+    data: null,
   };
 }
 
-describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
+describe("Real Let's Encrypt Rate Limit Avoidance", () => {
   const STAGING_NEW_NONCE_URL = 'https://acme-staging-v02.api.letsencrypt.org/acme/new-nonce';
 
   // Skip this test in CI or if REAL_ACME_TEST is not set
@@ -39,25 +39,25 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
       // Production-like rate limiter settings
       rateLimiter = new RateLimiter({
         maxRetries: 5,
-        baseDelayMs: 2000,      // 2 second base delay
-        maxDelayMs: 300000,     // 5 minute max delay
-        respectRetryAfter: true
+        baseDelayMs: 2000, // 2 second base delay
+        maxDelayMs: 300000, // 5 minute max delay
+        respectRetryAfter: true,
       });
 
       nonceManager = new NonceManager({
         newNonceUrl: STAGING_NEW_NONCE_URL,
         fetch: realFetch,
         rateLimiter,
-        prefetchLowWater: 2,    // Keep some nonces ready
-        prefetchHighWater: 5,   // Don't over-fetch
-        maxPool: 10
+        prefetchLowWater: 2, // Keep some nonces ready
+        prefetchHighWater: 5, // Don't over-fetch
+        maxPool: 10,
       });
     });
 
     test('should successfully get nonces from staging without rate limits', async () => {
       const namespace = NonceManager.makeNamespace('staging-test');
 
-      console.log('Testing single nonce fetch from Let\'s Encrypt staging...');
+      console.log("Testing single nonce fetch from Let's Encrypt staging...");
       const startTime = Date.now();
 
       const nonce = await nonceManager.take(namespace);
@@ -91,7 +91,7 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
 
         // Small delay between requests to be respectful
         if (i < 4) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
       }
 
@@ -100,7 +100,7 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
       expect(uniqueNonces.size).toBe(5);
 
       // Most requests should be fast (cached/pooled)
-      const fastRequests = delays.filter(d => d < 2000).length;
+      const fastRequests = delays.filter((d) => d < 2000).length;
       expect(fastRequests).toBeGreaterThanOrEqual(3);
 
       console.log(`Average delay: ${delays.reduce((a, b) => a + b, 0) / delays.length}ms`);
@@ -114,7 +114,7 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
 
       // Request 3 nonces concurrently (moderate load)
       const promises = Array.from({ length: 3 }, (_, i) => {
-        return nonceManager.take(namespace).then(nonce => {
+        return nonceManager.take(namespace).then((nonce) => {
           console.log(`  Concurrent request ${i + 1} completed: ${nonce.substring(0, 15)}...`);
           return nonce;
         });
@@ -153,8 +153,8 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
         });
 
         const results = await Promise.all(promises);
-        const successes = results.filter(r => r.success).length;
-        const failures = results.filter(r => !r.success).length;
+        const successes = results.filter((r) => r.success).length;
+        const failures = results.filter((r) => !r.success).length;
 
         console.log(`Stress test results: ${successes} successes, ${failures} failures`);
 
@@ -163,13 +163,15 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
 
         // If there were failures, they should be rate limit related
         const rateLimitFailures = results
-          .filter(r => !r.success)
-          .filter(r => r.error?.includes('rate') || r.error?.includes('limit') || r.error?.includes('503'));
+          .filter((r) => !r.success)
+          .filter(
+            (r) =>
+              r.error?.includes('rate') || r.error?.includes('limit') || r.error?.includes('503'),
+          );
 
         if (failures > 0) {
           console.log(`Rate limit failures: ${rateLimitFailures.length}/${failures}`);
         }
-
       } catch (error) {
         console.log(`Stress test error: ${error}`);
         // Test shouldn't fail completely, just log what happened
@@ -180,18 +182,18 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
       // Test with conservative settings for production
       const conservativeRateLimiter = new RateLimiter({
         maxRetries: 3,
-        baseDelayMs: 5000,      // 5 second base delay
-        maxDelayMs: 600000,     // 10 minute max delay
-        respectRetryAfter: true
+        baseDelayMs: 5000, // 5 second base delay
+        maxDelayMs: 600000, // 10 minute max delay
+        respectRetryAfter: true,
       });
 
       const conservativeNonceManager = new NonceManager({
         newNonceUrl: STAGING_NEW_NONCE_URL,
         fetch: realFetch,
         rateLimiter: conservativeRateLimiter,
-        prefetchLowWater: 1,    // Minimal prefetch
+        prefetchLowWater: 1, // Minimal prefetch
         prefetchHighWater: 3,
-        maxPool: 5
+        maxPool: 5,
       });
 
       const namespace = NonceManager.makeNamespace('conservative-test');
@@ -219,7 +221,7 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
       // Show how to create domain-specific rate limiters
       const domainSpecificRateLimiter = new RateLimiter({
         maxRetries: 3,
-        baseDelayMs: 1000
+        baseDelayMs: 1000,
       });
 
       // Simulate different scenarios
@@ -227,7 +229,7 @@ describe('Real Let\'s Encrypt Rate Limit Avoidance', () => {
         'New account creation',
         'Certificate ordering',
         'Domain validation',
-        'Certificate renewal'
+        'Certificate renewal',
       ];
 
       console.log('\\nRate limiting scenarios to consider:');

@@ -22,13 +22,13 @@ describe('ACME Rate Limiting Tests', () => {
       maxRetries: 2,
       baseDelayMs: 100, // Faster for testing
       maxDelayMs: 1000,
-      respectRetryAfter: true
+      respectRetryAfter: true,
     });
 
     nonceManager = new NonceManager({
       newNonceUrl: 'https://test-staging.acme-love.com/acme/new-nonce', // Fake URL for testing
       fetch: mockFetch,
-      rateLimiter
+      rateLimiter,
     });
   });
 
@@ -42,7 +42,7 @@ describe('ACME Rate Limiting Tests', () => {
           const error = new Error('Rate limited');
           (error as any).response = {
             status: 503,
-            headers: { 'retry-after': '1' } // 1 second
+            headers: { 'retry-after': '1' }, // 1 second
           };
           throw error;
         }
@@ -64,7 +64,9 @@ describe('ACME Rate Limiting Tests', () => {
       const mockFn = jest.fn(async () => {
         callCount++;
         if (callCount === 1) {
-          throw new Error('too many new registrations (10) from this IP address in the last 3h0m0s, retry after 2025-01-01 00:00:01 UTC.');
+          throw new Error(
+            'too many new registrations (10) from this IP address in the last 3h0m0s, retry after 2025-01-01 00:00:01 UTC.',
+          );
         }
         return 'success';
       });
@@ -79,14 +81,14 @@ describe('ACME Rate Limiting Tests', () => {
         const error = new Error('Rate limited');
         (error as any).response = {
           status: 503,
-          headers: { 'retry-after': '1' }
+          headers: { 'retry-after': '1' },
         };
         throw error;
       });
 
-      await expect(
-        rateLimiter.executeWithRateLimit(mockFn, '/test-endpoint')
-      ).rejects.toThrow(RateLimitError);
+      await expect(rateLimiter.executeWithRateLimit(mockFn, '/test-endpoint')).rejects.toThrow(
+        RateLimitError,
+      );
 
       expect(mockFn).toHaveBeenCalledTimes(3); // Initial + 2 retries
     });
@@ -96,9 +98,9 @@ describe('ACME Rate Limiting Tests', () => {
         throw new Error('Network error');
       });
 
-      await expect(
-        rateLimiter.executeWithRateLimit(mockFn, '/test-endpoint')
-      ).rejects.toThrow('Network error');
+      await expect(rateLimiter.executeWithRateLimit(mockFn, '/test-endpoint')).rejects.toThrow(
+        'Network error',
+      );
 
       expect(mockFn).toHaveBeenCalledTimes(1); // No retries
     });
@@ -108,15 +110,15 @@ describe('ACME Rate Limiting Tests', () => {
         const error = new Error('Rate limited');
         (error as any).response = {
           status: 503,
-          headers: { 'retry-after': '10' } // 10 seconds
+          headers: { 'retry-after': '10' }, // 10 seconds
         };
         throw error;
       });
 
       // First call should hit rate limit
-      await expect(
-        rateLimiter.executeWithRateLimit(mockFn, '/test-endpoint')
-      ).rejects.toThrow(RateLimitError);
+      await expect(rateLimiter.executeWithRateLimit(mockFn, '/test-endpoint')).rejects.toThrow(
+        RateLimitError,
+      );
 
       // Check that rate limit window is tracked
       const status = rateLimiter.getRateLimitStatus('/test-endpoint');
@@ -144,7 +146,7 @@ describe('ACME Rate Limiting Tests', () => {
         return {
           status: 200,
           headers: { 'replay-nonce': 'test-nonce-123' },
-          data: null
+          data: null,
         };
       });
 
@@ -158,14 +160,14 @@ describe('ACME Rate Limiting Tests', () => {
       expect(elapsed).toBeGreaterThanOrEqual(900); // Should wait for rate limit
     });
 
-    test('should detect Let\'s Encrypt rate limit responses', async () => {
+    test("should detect Let's Encrypt rate limit responses", async () => {
       // Simulate actual Let's Encrypt 503 response structure
       mockFetch.mockImplementation(async () => {
         const error = new Error('newNonce failed: HTTP 503');
         (error as any).status = 503;
         (error as any).headers = {
           'retry-after': '10',
-          'content-type': 'application/problem+json'
+          'content-type': 'application/problem+json',
         };
         throw error;
       });
@@ -173,7 +175,9 @@ describe('ACME Rate Limiting Tests', () => {
       const namespace = NonceManager.makeNamespace('test-ca');
 
       // Should fail after retries due to persistent rate limiting
-      await expect(nonceManager.take(namespace)).rejects.toThrow(/Nonce refill timeout after 10000ms for namespace: test-ca/);
+      await expect(nonceManager.take(namespace)).rejects.toThrow(
+        /Nonce refill timeout after 10000ms for namespace: test-ca/,
+      );
 
       // Should have attempted multiple times
       expect(mockFetch).toHaveBeenCalledTimes(3); // Initial + 2 retries
@@ -183,7 +187,7 @@ describe('ACME Rate Limiting Tests', () => {
       mockFetch.mockResolvedValue({
         status: 200,
         headers: { 'replay-nonce': 'quick-nonce-456' },
-        data: null
+        data: null,
       });
 
       const namespace = NonceManager.makeNamespace('test-ca');
@@ -211,7 +215,7 @@ describe('ACME Rate Limiting Tests', () => {
         return {
           status: 200,
           headers: { 'replay-nonce': `nonce-${callCount}` },
-          data: null
+          data: null,
         };
       });
 
@@ -221,14 +225,14 @@ describe('ACME Rate Limiting Tests', () => {
       const promises = [
         nonceManager.take(namespace),
         nonceManager.take(namespace),
-        nonceManager.take(namespace)
+        nonceManager.take(namespace),
       ];
 
       const results = await Promise.all(promises);
 
       // All should succeed eventually
       expect(results).toHaveLength(3);
-      results.forEach(nonce => {
+      results.forEach((nonce) => {
         expect(nonce).toMatch(/nonce-\d+/);
       });
 
@@ -240,16 +244,16 @@ describe('ACME Rate Limiting Tests', () => {
   describe('Production Rate Limit Configuration', () => {
     test('should use production-friendly rate limit settings', () => {
       const prodRateLimiter = new RateLimiter({
-        maxRetries: 5,           // More retries for production
-        baseDelayMs: 2000,       // 2 second base delay
-        maxDelayMs: 300000,      // 5 minute max delay
-        respectRetryAfter: true  // Always respect server Retry-After
+        maxRetries: 5, // More retries for production
+        baseDelayMs: 2000, // 2 second base delay
+        maxDelayMs: 300000, // 5 minute max delay
+        respectRetryAfter: true, // Always respect server Retry-After
       });
 
       const prodNonceManager = new NonceManager({
         newNonceUrl: 'https://acme-v02.api.letsencrypt.org/acme/new-nonce',
         fetch: mockFetch,
-        rateLimiter: prodRateLimiter
+        rateLimiter: prodRateLimiter,
       });
 
       expect(prodNonceManager).toBeDefined();

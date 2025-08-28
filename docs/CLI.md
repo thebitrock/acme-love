@@ -96,8 +96,8 @@ acme-love status -d acme-love.com
 
 | Parameter               | Description                         | Example                               |
 | ----------------------- | ----------------------------------- | ------------------------------------- |
-| `-d, --domain <domain>` | Domain name for certificate         | `-d acme-love.com`                      |
-| `-e, --email <email>`   | Email for ACME account registration | `-e admin@acme-love.com`                |
+| `-d, --domain <domain>` | Domain name for certificate         | `-d acme-love.com`                    |
+| `-e, --email <email>`   | Email for ACME account registration | `-e admin@acme-love.com`              |
 | `--staging`             | Use Let's Encrypt staging           | `--staging`                           |
 | `--production`          | Use Let's Encrypt production        | `--production`                        |
 | `--directory <url>`     | Custom ACME directory               | `--directory https://acme.ca.com/dir` |

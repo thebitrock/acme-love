@@ -70,9 +70,10 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       if (!this.currentPhase) return;
 
       const now = Date.now();
-      const phaseMetrics = this.metrics.filter(m =>
-        m.timestamp >= this.phaseStartTime - this.startTime &&
-        m.timestamp <= now - this.startTime
+      const phaseMetrics = this.metrics.filter(
+        (m) =>
+          m.timestamp >= this.phaseStartTime - this.startTime &&
+          m.timestamp <= now - this.startTime,
       );
 
       this.phases.push({
@@ -81,16 +82,25 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
         endTime: now,
         duration: now - this.phaseStartTime,
         requestCount: phaseMetrics.length,
-        errorCount: phaseMetrics.filter(m => m.status >= 400).length,
-        averageResponseTime: phaseMetrics.length > 0
-          ? phaseMetrics.reduce((sum, m) => sum + m.duration, 0) / phaseMetrics.length
-          : 0
+        errorCount: phaseMetrics.filter((m) => m.status >= 400).length,
+        averageResponseTime:
+          phaseMetrics.length > 0
+            ? phaseMetrics.reduce((sum, m) => sum + m.duration, 0) / phaseMetrics.length
+            : 0,
       });
 
       this.currentPhase = '';
     }
 
-    addRequest(type: string, url: string, method: string, duration: number, status: number, accountIndex?: number, orderIndex?: number) {
+    addRequest(
+      type: string,
+      url: string,
+      method: string,
+      duration: number,
+      status: number,
+      accountIndex?: number,
+      orderIndex?: number,
+    ) {
       this.metrics.push({
         type,
         url,
@@ -99,7 +109,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
         duration,
         status,
         accountIndex,
-        orderIndex
+        orderIndex,
       });
 
       if (url.includes('new-nonce')) {
@@ -123,14 +133,15 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       let ordersCreated = 0;
       let authorizationsCreated = 0;
 
-      this.metrics.forEach(metric => {
+      this.metrics.forEach((metric) => {
         requestsByType[metric.type] = (requestsByType[metric.type] || 0) + 1;
 
         const endpoint = this.extractEndpoint(metric.url);
         requestsByEndpoint[endpoint] = (requestsByEndpoint[endpoint] || 0) + 1;
 
         if (metric.accountIndex !== undefined) {
-          requestsByAccount[metric.accountIndex] = (requestsByAccount[metric.accountIndex] || 0) + 1;
+          requestsByAccount[metric.accountIndex] =
+            (requestsByAccount[metric.accountIndex] || 0) + 1;
         }
 
         if (metric.url.includes('new-acct') && metric.method === 'POST') accountsCreated++;
@@ -139,14 +150,15 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       });
 
       // Calculate response time percentiles
-      const responseTimes = this.metrics.map(m => m.duration).sort((a, b) => a - b);
+      const responseTimes = this.metrics.map((m) => m.duration).sort((a, b) => a - b);
       const p50 = responseTimes[Math.floor(responseTimes.length * 0.5)] || 0;
       const p95 = responseTimes[Math.floor(responseTimes.length * 0.95)] || 0;
       const p99 = responseTimes[Math.floor(responseTimes.length * 0.99)] || 0;
 
-      const averageResponseTime = this.metrics.length > 0
-        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
-        : 0;
+      const averageResponseTime =
+        this.metrics.length > 0
+          ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
+          : 0;
 
       const requestsPerSecond = this.metrics.length / (totalTime / 1000);
       const ordersPerSecond = ordersCreated / (totalTime / 1000);
@@ -167,7 +179,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
         requestsByEndpoint,
         requestsByAccount,
         phases: this.phases,
-        allMetrics: this.metrics
+        allMetrics: this.metrics,
       };
     }
 
@@ -228,11 +240,27 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       try {
         const result = await this.originalClient.get(url, headers);
         const duration = Date.now() - start;
-        this.collector.addRequest('GET', url, 'GET', duration, result.status, this.accountIndex, this.orderIndex);
+        this.collector.addRequest(
+          'GET',
+          url,
+          'GET',
+          duration,
+          result.status,
+          this.accountIndex,
+          this.orderIndex,
+        );
         return result;
       } catch (error: any) {
         const duration = Date.now() - start;
-        this.collector.addRequest('GET', url, 'GET', duration, error.status || 500, this.accountIndex, this.orderIndex);
+        this.collector.addRequest(
+          'GET',
+          url,
+          'GET',
+          duration,
+          error.status || 500,
+          this.accountIndex,
+          this.orderIndex,
+        );
         throw error;
       }
     }
@@ -242,11 +270,27 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       try {
         const result = await this.originalClient.post(url, body, headers);
         const duration = Date.now() - start;
-        this.collector.addRequest('POST', url, 'POST', duration, result.status, this.accountIndex, this.orderIndex);
+        this.collector.addRequest(
+          'POST',
+          url,
+          'POST',
+          duration,
+          result.status,
+          this.accountIndex,
+          this.orderIndex,
+        );
         return result;
       } catch (error: any) {
         const duration = Date.now() - start;
-        this.collector.addRequest('POST', url, 'POST', duration, error.status || 500, this.accountIndex, this.orderIndex);
+        this.collector.addRequest(
+          'POST',
+          url,
+          'POST',
+          duration,
+          error.status || 500,
+          this.accountIndex,
+          this.orderIndex,
+        );
         throw error;
       }
     }
@@ -256,11 +300,27 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       try {
         const result = await this.originalClient.head(url, headers);
         const duration = Date.now() - start;
-        this.collector.addRequest('HEAD', url, 'HEAD', duration, result.status, this.accountIndex, this.orderIndex);
+        this.collector.addRequest(
+          'HEAD',
+          url,
+          'HEAD',
+          duration,
+          result.status,
+          this.accountIndex,
+          this.orderIndex,
+        );
         return result;
       } catch (error: any) {
         const duration = Date.now() - start;
-        this.collector.addRequest('HEAD', url, 'HEAD', duration, error.status || 500, this.accountIndex, this.orderIndex);
+        this.collector.addRequest(
+          'HEAD',
+          url,
+          'HEAD',
+          duration,
+          error.status || 500,
+          this.accountIndex,
+          this.orderIndex,
+        );
         throw error;
       }
     }
@@ -303,7 +363,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
           `heavy-stress-${accountIndex + 1}`,
           STAGING_DIRECTORY_URL,
           `heavy-stress-${accountIndex}-${Date.now()}@acme-love.com`,
-          { nonce: { maxPool: 20 } } // Larger pool for heavy load
+          { nonce: { maxPool: 20 } }, // Larger pool for heavy load
         );
 
         // Add metrics wrapper to the existing core
@@ -356,7 +416,9 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
                   const progress = Math.round((receivedChallenges / TOTAL_ORDERS) * 100);
                   const elapsed = Date.now() - orderCreationStart;
                   const rate = receivedChallenges / (elapsed / 1000);
-                  console.log(`     📊 ${receivedChallenges}/${TOTAL_ORDERS} orders (${progress}%) - ${Math.round(rate)} orders/sec`);
+                  console.log(
+                    `     📊 ${receivedChallenges}/${TOTAL_ORDERS} orders (${progress}%) - ${Math.round(rate)} orders/sec`,
+                  );
                 }
 
                 return {
@@ -365,13 +427,15 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
                   domain,
                   order,
                   challenge: httpChallenge,
-                  keyAuth
+                  keyAuth,
                 };
               }
 
               throw new Error('No HTTP-01 challenge found');
             } catch (error) {
-              console.error(`     ❌ Failed order ${orderIndex + 1} for account ${accountIndex + 1}: ${error}`);
+              console.error(
+                `     ❌ Failed order ${orderIndex + 1} for account ${accountIndex + 1}: ${error}`,
+              );
               throw error;
             }
           })();
@@ -388,7 +452,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 
         // Small delay between batches to prevent overwhelming the server
         if (batchStart + batchSize < TOTAL_ORDERS) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
 
@@ -412,9 +476,9 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
             accountIndex,
             initialPool: 0, // Would need to track from beginning
             finalPool: poolSize,
-            peakPool: 0,   // Would need to track throughout
+            peakPool: 0, // Would need to track throughout
             totalGenerated: 0, // Would need enhanced tracking
-            totalConsumed: 0   // Would need enhanced tracking
+            totalConsumed: 0, // Would need enhanced tracking
           };
 
           nonceStats.push(stats);
@@ -453,7 +517,9 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       Object.entries(results.requestsByType)
         .sort(([, a], [, b]) => (b as number) - (a as number))
         .forEach(([type, count]) => {
-          console.log(`   ${type}: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`);
+          console.log(
+            `   ${type}: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`,
+          );
         });
 
       console.log(`\n🔗 TOP ENDPOINTS:`);
@@ -466,7 +532,19 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 
       console.log(`\n🏢 LET'S ENCRYPT STAGING API:`);
       Object.entries(results.requestsByEndpoint)
-        .filter(([endpoint]) => ['new-nonce', 'new-account', 'new-order', 'authorization', 'challenge', 'finalize', 'certificate', 'directory', 'order-status'].includes(endpoint))
+        .filter(([endpoint]) =>
+          [
+            'new-nonce',
+            'new-account',
+            'new-order',
+            'authorization',
+            'challenge',
+            'finalize',
+            'certificate',
+            'directory',
+            'order-status',
+          ].includes(endpoint),
+        )
         .sort(([, a], [, b]) => (b as number) - (a as number))
         .forEach(([endpoint, count]) => {
           const percentage = Math.round(((count as number) / results.totalRequests) * 100);
@@ -482,7 +560,9 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
       console.log(`Total Requests: ${results.totalRequests}`);
       console.log(`New-Nonce Requests: ${results.newNonceRequests}`);
       console.log(`Saved Requests: ${results.totalRequests - results.newNonceRequests}`);
-      console.log(`Pool Efficiency: ${results.newNonceRequests > 0 ? Math.round(((results.totalRequests - results.newNonceRequests) / results.totalRequests) * 100) : 0}%`);
+      console.log(
+        `Pool Efficiency: ${results.newNonceRequests > 0 ? Math.round(((results.totalRequests - results.newNonceRequests) / results.totalRequests) * 100) : 0}%`,
+      );
       console.log(`Total Nonces Remaining: ${totalNoncesRemaining}`);
 
       // Generate comprehensive report
@@ -518,31 +598,46 @@ describe('ACME Heavy Stress Test - 4 Accounts × 100 Orders', () => {
 
 ## Request Distribution
 ${Object.entries(results.requestsByType)
-          .sort(([, a], [, b]) => (b as number) - (a as number))
-          .map(([type, count]) => `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`)
-          .join('\n')}
+  .sort(([, a], [, b]) => (b as number) - (a as number))
+  .map(
+    ([type, count]) =>
+      `- **${type}**: ${count} (${Math.round(((count as number) / results.totalRequests) * 100)}%)`,
+  )
+  .join('\n')}
 
 ## Top Endpoints
 ${Object.entries(results.requestsByEndpoint)
-          .sort(([, a], [, b]) => (b as number) - (a as number))
-          .slice(0, 10)
-          .map(([endpoint, count]) => `- **${endpoint}**: ${count} requests`)
-          .join('\n')}
+  .sort(([, a], [, b]) => (b as number) - (a as number))
+  .slice(0, 10)
+  .map(([endpoint, count]) => `- **${endpoint}**: ${count} requests`)
+  .join('\n')}
 
 ## Let's Encrypt Staging API Breakdown
 ${Object.entries(results.requestsByEndpoint)
-          .filter(([endpoint]) => ['new-nonce', 'new-account', 'new-order', 'authorization', 'challenge', 'finalize', 'certificate', 'directory', 'order-status'].includes(endpoint))
-          .sort(([, a], [, b]) => (b as number) - (a as number))
-          .map(([endpoint, count]) => {
-            const percentage = Math.round(((count as number) / results.totalRequests) * 100);
-            return `- **${endpoint}**: ${count} requests (${percentage}%)`;
-          })
-          .join('\n')}
+  .filter(([endpoint]) =>
+    [
+      'new-nonce',
+      'new-account',
+      'new-order',
+      'authorization',
+      'challenge',
+      'finalize',
+      'certificate',
+      'directory',
+      'order-status',
+    ].includes(endpoint),
+  )
+  .sort(([, a], [, b]) => (b as number) - (a as number))
+  .map(([endpoint, count]) => {
+    const percentage = Math.round(((count as number) / results.totalRequests) * 100);
+    return `- **${endpoint}**: ${count} requests (${percentage}%)`;
+  })
+  .join('\n')}
 
 ## Per-Account Performance
 ${Object.entries(results.requestsByAccount)
-          .map(([accountIndex, count]) => `- **Account ${parseInt(accountIndex) + 1}**: ${count} requests`)
-          .join('\n')}
+  .map(([accountIndex, count]) => `- **Account ${parseInt(accountIndex) + 1}**: ${count} requests`)
+  .join('\n')}
 
 ## Nonce Manager Performance
 - **Total New-Nonce Requests**: ${results.newNonceRequests}
@@ -551,13 +646,16 @@ ${Object.entries(results.requestsByAccount)
 - **Final Pool State**: ${totalNoncesRemaining} nonces remaining
 
 ## Phase Breakdown
-${results.phases.map(phase =>
-            `### ${phase.phase}
+${results.phases
+  .map(
+    (phase) =>
+      `### ${phase.phase}
 - **Duration**: ${Math.round(phase.duration / 1000)}s
 - **Requests**: ${phase.requestCount}
 - **Errors**: ${phase.errorCount}
-- **Avg Response**: ${Math.round(phase.averageResponseTime)}ms`
-          ).join('\n\n')}
+- **Avg Response**: ${Math.round(phase.averageResponseTime)}ms`,
+  )
+  .join('\n\n')}
 
 ## Key Performance Indicators
 ✅ Successfully processed ${receivedChallenges} orders out of ${TOTAL_ORDERS} (${Math.round((receivedChallenges / TOTAL_ORDERS) * 100)}% success rate)
@@ -574,7 +672,7 @@ management with hundreds of concurrent orders while maintaining performance and 
 `;
 
       // Save comprehensive report
-      const reportPath = path.join(process.cwd(), 'HEAVY-STRESS-TEST-RESULTS.md');
+      const reportPath = path.join(process.cwd(), 'docs/reports/HEAVY-STRESS-TEST-RESULTS.md');
       fs.writeFileSync(reportPath, report);
       console.log(`\n📋 Comprehensive report saved to ${reportPath}`);
 
@@ -585,7 +683,6 @@ management with hundreds of concurrent orders while maintaining performance and 
       expect(results.averageResponseTime).toBeLessThan(5000); // Under 5 seconds average
       expect(results.errorCount / results.totalRequests).toBeLessThan(0.1); // Under 10% error rate
       expect(results.requestsPerSecond).toBeGreaterThan(1); // At least 1 request per second
-
     } catch (error) {
       console.error(`💥 Heavy stress test failed:`, error);
       throw error;

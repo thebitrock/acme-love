@@ -183,7 +183,7 @@ const nonces = await Promise.all(promises);
 
 ## 🎯 Testing Goals Achieved
 
-✅ **Unit тесты**: Покрытие всех криптографических операций и nonce management
+✅ **Unit tests**: Coverage of all cryptographic operations and nonce management
 ✅ **Integration tests**: Real requests to Let's Encrypt staging
 ✅ **NonceManager tests**: Complete pooling and concurrent access coverage
 ✅ **Asynchronous behavior**: Verification of correct operation in async calls

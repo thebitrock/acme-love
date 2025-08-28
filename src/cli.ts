@@ -2,7 +2,17 @@
 
 import { program } from 'commander';
 import { select, input, confirm } from '@inquirer/prompts';
-import { AcmeClientCore, AcmeAccountSession, directory, createAcmeCsr, generateKeyPair, resolveAndValidateAcmeTxtAuthoritative, ServerMaintenanceError, type CsrAlgo, type AccountKeys } from './index.js';
+import {
+  AcmeClientCore,
+  AcmeAccountSession,
+  directory,
+  createAcmeCsr,
+  generateKeyPair,
+  resolveAndValidateAcmeTxtAuthoritative,
+  ServerMaintenanceError,
+  type CsrAlgo,
+  type AccountKeys,
+} from './index.js';
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -21,8 +31,8 @@ async function selectAlgorithm(purpose: 'account' | 'certificate'): Promise<CsrA
       { name: '🛡️ ECDSA P-521 (maximum security, largest keys)', value: 'ec-p521' },
       { name: '🔧 RSA 2048 (legacy compatibility, minimum size)', value: 'rsa-2048' },
       { name: '⚡ RSA 3072 (enhanced security, balanced performance)', value: 'rsa-3072' },
-      { name: '🏰 RSA 4096 (maximum security, slower performance)', value: 'rsa-4096' }
-    ]
+      { name: '🏰 RSA 4096 (maximum security, slower performance)', value: 'rsa-4096' },
+    ],
   });
 
   switch (algoType) {
@@ -50,7 +60,7 @@ async function selectAdvancedOptions(): Promise<{
 }> {
   const useAdvanced = await confirm({
     message: 'Configure cryptographic algorithms? (default: P-256 ECDSA for both)',
-    default: false
+    default: false,
   });
 
   if (!useAdvanced) {
@@ -58,13 +68,13 @@ async function selectAdvancedOptions(): Promise<{
     return {
       accountAlgo: defaultAlgo,
       certAlgo: defaultAlgo,
-      separateAlgos: false
+      separateAlgos: false,
     };
   }
 
   const separateAlgos = await confirm({
     message: 'Use different algorithms for account and certificate keys?',
-    default: false
+    default: false,
   });
 
   if (separateAlgos) {
@@ -97,7 +107,9 @@ function parseAlgorithm(algoStr: string): CsrAlgo {
     case 'rsa-4096':
       return { kind: 'rsa', modulusLength: 4096, hash: 'SHA-384' };
     default:
-      throw new Error(`Unknown algorithm: ${algoStr}. Supported: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096`);
+      throw new Error(
+        `Unknown algorithm: ${algoStr}. Supported: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096`,
+      );
   }
 }
 
@@ -137,10 +149,12 @@ function handleError(error: unknown): void {
   } else if (error instanceof Error) {
     // Check if it's a maintenance-related error by message content
     const message = error.message.toLowerCase();
-    if (message.includes('maintenance') ||
+    if (
+      message.includes('maintenance') ||
       message.includes('service is down') ||
       message.includes('letsencrypt.status.io') ||
-      message.includes('http 503')) {
+      message.includes('http 503')
+    ) {
       console.error('\n🔧 Service Maintenance');
       console.error('═══════════════════════');
       console.error('❌ The ACME server appears to be under maintenance.');
@@ -166,15 +180,23 @@ program
   .description('Obtain SSL certificate using ACME protocol')
   .option('-d, --domain <domain>', 'Domain name for certificate')
   .option('-e, --email <email>', 'Email for ACME account registration')
-  .option('--staging', 'Use Let\'s Encrypt staging environment')
-  .option('--production', 'Use Let\'s Encrypt production environment')
+  .option('--staging', "Use Let's Encrypt staging environment")
+  .option('--production', "Use Let's Encrypt production environment")
   .option('--directory <url>', 'Custom ACME directory URL')
   .option('-o, --output <path>', 'Output directory for certificates', './certificates')
   .option('--account-key <path>', 'Path to account private key')
   .option('--force', 'Force certificate renewal even if valid')
   .option('--challenge <type>', 'Challenge type: dns-01 or http-01', 'dns-01')
-  .option('--account-algo <algo>', 'Account key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096', 'ec-p256')
-  .option('--cert-algo <algo>', 'Certificate key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096', 'ec-p256')
+  .option(
+    '--account-algo <algo>',
+    'Account key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096',
+    'ec-p256',
+  )
+  .option(
+    '--cert-algo <algo>',
+    'Certificate key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096',
+    'ec-p256',
+  )
   .option('--eab-kid <kid>', 'External Account Binding key identifier')
   .option('--eab-hmac-key <key>', 'External Account Binding HMAC key (base64url)')
   .action(async (options: any) => {
@@ -191,7 +213,11 @@ program
   .command('create-account-key')
   .description('Create new ACME account private key')
   .option('-o, --output <path>', 'Output path for account key', './account-key.json')
-  .option('--algo <algo>', 'Key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096', 'ec-p256')
+  .option(
+    '--algo <algo>',
+    'Key algorithm: ec-p256, ec-p384, ec-p521, rsa-2048, rsa-3072, rsa-4096',
+    'ec-p256',
+  )
   .action(async (options: any) => {
     try {
       await handleCreateAccountKey(options);
@@ -221,8 +247,8 @@ program
   .command('interactive')
   .alias('i')
   .description('Interactive mode for certificate management')
-  .option('--staging', 'Use Let\'s Encrypt staging environment')
-  .option('--production', 'Use Let\'s Encrypt production environment')
+  .option('--staging', "Use Let's Encrypt staging environment")
+  .option('--production', "Use Let's Encrypt production environment")
   .option('--directory <url>', 'Custom ACME directory URL')
   .action(async (options: any) => {
     try {
@@ -237,8 +263,8 @@ async function handleCertCommand(options: any) {
   console.log('🔐 ACME-Love Certificate Manager\n');
 
   // Get parameters
-  const domain = options.domain || await input({ message: 'Enter domain name:' });
-  const email = options.email || await input({ message: 'Enter email for ACME account:' });
+  const domain = options.domain || (await input({ message: 'Enter domain name:' }));
+  const email = options.email || (await input({ message: 'Enter email for ACME account:' }));
 
   // Get challenge type
   let challengeType: string;
@@ -249,8 +275,8 @@ async function handleCertCommand(options: any) {
       message: 'Select challenge type:',
       choices: [
         { name: 'DNS-01 (recommended, works with wildcard certificates)', value: 'dns-01' },
-        { name: 'HTTP-01 (requires domain to point to accessible web server)', value: 'http-01' }
-      ]
+        { name: 'HTTP-01 (requires domain to point to accessible web server)', value: 'http-01' },
+      ],
     });
   }
 
@@ -282,10 +308,7 @@ async function handleCertCommand(options: any) {
     const directoryChoices = buildDirectoryChoices();
     const envChoice = await select({
       message: 'Select ACME directory:',
-      choices: [
-        ...directoryChoices,
-        { name: '🔧 Custom ACME Directory URL', value: 'custom' }
-      ]
+      choices: [...directoryChoices, { name: '🔧 Custom ACME Directory URL', value: 'custom' }],
     });
 
     if (envChoice === 'custom') {
@@ -307,10 +330,16 @@ async function handleCertCommand(options: any) {
   console.log(`   Email: ${email}`);
   console.log(`   Challenge Type: ${challengeType}`);
   if (separateAlgos) {
-    console.log(`   Account Algorithm: ${accountAlgo.kind === 'ec' ? `ECDSA ${accountAlgo.namedCurve}` : `RSA ${accountAlgo.modulusLength}`}`);
-    console.log(`   Certificate Algorithm: ${certAlgo.kind === 'ec' ? `ECDSA ${certAlgo.namedCurve}` : `RSA ${certAlgo.modulusLength}`}`);
+    console.log(
+      `   Account Algorithm: ${accountAlgo.kind === 'ec' ? `ECDSA ${accountAlgo.namedCurve}` : `RSA ${accountAlgo.modulusLength}`}`,
+    );
+    console.log(
+      `   Certificate Algorithm: ${certAlgo.kind === 'ec' ? `ECDSA ${certAlgo.namedCurve}` : `RSA ${certAlgo.modulusLength}`}`,
+    );
   } else {
-    console.log(`   Algorithm: ${accountAlgo.kind === 'ec' ? `ECDSA ${accountAlgo.namedCurve}` : `RSA ${accountAlgo.modulusLength}`}`);
+    console.log(
+      `   Algorithm: ${accountAlgo.kind === 'ec' ? `ECDSA ${accountAlgo.namedCurve}` : `RSA ${accountAlgo.modulusLength}`}`,
+    );
   }
   console.log(`   Directory: ${directoryUrl}`);
   console.log(`   Output: ${outputDir}`);
@@ -335,14 +364,14 @@ async function handleCertCommand(options: any) {
       accountData.privateKey,
       { name: 'ECDSA', namedCurve: 'P-256' },
       true,
-      ['sign']
+      ['sign'],
     );
     const publicKey = await crypto.subtle.importKey(
       'jwk',
       accountData.publicKey,
       { name: 'ECDSA', namedCurve: 'P-256' },
       true,
-      ['verify']
+      ['verify'],
     );
 
     accountKeys = { privateKey, publicKey };
@@ -358,7 +387,7 @@ async function handleCertCommand(options: any) {
 
     accountKeys = {
       privateKey: keyPair.privateKey,
-      publicKey: keyPair.publicKey
+      publicKey: keyPair.publicKey,
     };
 
     // Export keys to JWK format for saving
@@ -367,7 +396,7 @@ async function handleCertCommand(options: any) {
 
     const accountData = {
       privateKey: privateKeyJwk,
-      publicKey: publicKeyJwk
+      publicKey: publicKeyJwk,
     };
 
     writeFileSync(accountKeyPath, JSON.stringify(accountData, null, 2));
@@ -378,7 +407,7 @@ async function handleCertCommand(options: any) {
     nonceOverrides: {
       maxPool: 64,
     },
-    ...(kid && { kid })
+    ...(kid && { kid }),
   };
 
   const acct = new AcmeAccountSession(core, accountKeys, sessionOptions);
@@ -391,10 +420,13 @@ async function handleCertCommand(options: any) {
   }
 
   // Register account if needed
-  const registeredKid = await acct.ensureRegistered({
-    contact: [`mailto:${email}`],
-    termsOfServiceAgreed: true
-  }, eab);
+  const registeredKid = await acct.ensureRegistered(
+    {
+      contact: [`mailto:${email}`],
+      termsOfServiceAgreed: true,
+    },
+    eab,
+  );
 
   console.log('✅ Account ready');
 
@@ -412,7 +444,9 @@ async function handleCertCommand(options: any) {
         console.log(`   Record Type: TXT`);
         console.log(`   Record Name: ${preparation.target}`);
         console.log(`   Record Value: ${preparation.value}`);
-        console.log(`\n⚠️  Please add this DNS TXT record and wait for propagation before continuing.`);
+        console.log(
+          `\n⚠️  Please add this DNS TXT record and wait for propagation before continuing.`,
+        );
 
         const maxAttempts = 24;
         const delayMs = 5_000;
@@ -421,13 +455,19 @@ async function handleCertCommand(options: any) {
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
           console.log(`🔎 Verifying DNS record (attempt ${attempt}/${maxAttempts})...`);
           try {
-            const result = await resolveAndValidateAcmeTxtAuthoritative(preparation.target, preparation.value);
+            const result = await resolveAndValidateAcmeTxtAuthoritative(
+              preparation.target,
+              preparation.value,
+            );
             if (result.ok) {
               console.log('✅ DNS record verified successfully');
               dnsVerified = true;
               break;
             } else {
-              console.log('❌ DNS record not verified yet:', result.reasons ? result.reasons.join('; ') : 'Unknown reasons');
+              console.log(
+                '❌ DNS record not verified yet:',
+                result.reasons ? result.reasons.join('; ') : 'Unknown reasons',
+              );
             }
           } catch (e) {
             console.log('⚠️  DNS verification error:', e instanceof Error ? e.message : e);
@@ -435,7 +475,7 @@ async function handleCertCommand(options: any) {
 
           if (attempt < maxAttempts) {
             console.log(`⏳ Waiting ${delayMs / 1000}s before next attempt...`);
-            await new Promise(r => setTimeout(r, delayMs));
+            await new Promise((r) => setTimeout(r, delayMs));
           }
         }
 
@@ -449,18 +489,20 @@ async function handleCertCommand(options: any) {
         console.log(`   Record Type: TXT`);
         console.log(`   Record Name: ${preparation.target}`);
         console.log(`   Record Value: ${preparation.value}`);
-        console.log(`\n⚠️  Please add this DNS TXT record and wait for propagation before continuing.`);
+        console.log(
+          `\n⚠️  Please add this DNS TXT record and wait for propagation before continuing.`,
+        );
 
         const proceed = await confirm({
           message: 'Have you added the DNS record and confirmed it has propagated?',
-          default: false
+          default: false,
         });
 
         if (!proceed) {
           console.log('❌ Certificate issuance cancelled');
           throw new Error('Certificate issuance cancelled by user');
         }
-      }
+      },
     });
   } else if (challengeType === 'http-01') {
     console.log('🔍 Solving HTTP-01 challenge...');
@@ -469,13 +511,15 @@ async function handleCertCommand(options: any) {
         console.log(`\n📌 HTTP Challenge Information:`);
         console.log(`   Challenge URL: ${preparation.target}`);
         console.log(`   Expected Content: ${preparation.value}`);
-        console.log(`\n⚠️  Please ensure your web server serves the challenge content at the URL above.`);
+        console.log(
+          `\n⚠️  Please ensure your web server serves the challenge content at the URL above.`,
+        );
         console.log(`   The content should be exactly: ${preparation.value}`);
         console.log(`   Make sure the URL is accessible via HTTP (not HTTPS) from the internet.`);
 
         const proceed = await confirm({
-          message: 'Have you set up the HTTP challenge file and confirmed it\'s accessible?',
-          default: false
+          message: "Have you set up the HTTP challenge file and confirmed it's accessible?",
+          default: false,
         });
 
         if (!proceed) {
@@ -496,17 +540,24 @@ async function handleCertCommand(options: any) {
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
           console.log(`🔎 Verifying HTTP challenge (attempt ${attempt}/${maxAttempts})...`);
           try {
-            const result = await validateHttp01ChallengeByUrl(preparation.target, preparation.value, {
-              timeoutMs: 4000,
-              followRedirects: true
-            });
+            const result = await validateHttp01ChallengeByUrl(
+              preparation.target,
+              preparation.value,
+              {
+                timeoutMs: 4000,
+                followRedirects: true,
+              },
+            );
 
             if (result.ok) {
               console.log('✅ HTTP challenge verified successfully');
               httpVerified = true;
               break;
             } else {
-              console.log('❌ HTTP challenge not verified yet:', result.reasons ? result.reasons.join('; ') : 'Unknown error');
+              console.log(
+                '❌ HTTP challenge not verified yet:',
+                result.reasons ? result.reasons.join('; ') : 'Unknown error',
+              );
             }
           } catch (e) {
             console.log('⚠️  HTTP verification error:', e instanceof Error ? e.message : e);
@@ -514,15 +565,17 @@ async function handleCertCommand(options: any) {
 
           if (attempt < maxAttempts) {
             console.log(`⏳ Waiting ${delayMs / 1000}s before next attempt...`);
-            await new Promise(r => setTimeout(r, delayMs));
+            await new Promise((r) => setTimeout(r, delayMs));
           }
         }
 
         if (!httpVerified) {
-          throw new Error('HTTP challenge could not be verified after multiple attempts. Aborting.');
+          throw new Error(
+            'HTTP challenge could not be verified after multiple attempts. Aborting.',
+          );
         }
         console.log(`✅ HTTP challenge verified: ${preparation.target} -> ${preparation.value}`);
-      }
+      },
     });
   } else {
     throw new Error(`Unsupported challenge type: ${challengeType}`);
@@ -543,7 +596,10 @@ async function handleCertCommand(options: any) {
 
   // Export certificate private key to PEM format
   const privateKeyPem = await crypto.subtle.exportKey('pkcs8', csrKeys.privateKey!);
-  const privateKeyPemString = `-----BEGIN PRIVATE KEY-----\n${Buffer.from(privateKeyPem).toString('base64').match(/.{1,64}/g)!.join('\n')}\n-----END PRIVATE KEY-----`;
+  const privateKeyPemString = `-----BEGIN PRIVATE KEY-----\n${Buffer.from(privateKeyPem)
+    .toString('base64')
+    .match(/.{1,64}/g)!
+    .join('\n')}\n-----END PRIVATE KEY-----`;
 
   // Save kid if we got one during registration
   if (registeredKid && !kid) {
@@ -572,7 +628,7 @@ async function handleCreateAccountKey(options: any) {
   if (existsSync(outputPath)) {
     const overwrite = await confirm({
       message: `Account key already exists at ${outputPath}. Overwrite?`,
-      default: false
+      default: false,
     });
 
     if (!overwrite) {
@@ -593,7 +649,9 @@ async function handleCreateAccountKey(options: any) {
     algo = await selectAlgorithm('account');
   }
 
-  console.log(`\n🔑 Generating ${algo.kind === 'ec' ? `ECDSA ${algo.namedCurve}` : `RSA ${algo.modulusLength}`} key pair...`);
+  console.log(
+    `\n🔑 Generating ${algo.kind === 'ec' ? `ECDSA ${algo.namedCurve}` : `RSA ${algo.modulusLength}`} key pair...`,
+  );
   const keyPair = await generateKeyPair(algo);
 
   if (!keyPair.privateKey || !keyPair.publicKey) {
@@ -605,7 +663,7 @@ async function handleCreateAccountKey(options: any) {
 
   const accountData = {
     privateKey: privateKeyJwk,
-    publicKey: publicKeyJwk
+    publicKey: publicKeyJwk,
   };
 
   writeFileSync(outputPath, JSON.stringify(accountData, null, 2));
@@ -640,10 +698,7 @@ async function handleInteractiveMode(options: any = {}) {
     const directoryChoices = buildDirectoryChoices();
     const envChoice = await select({
       message: 'Select ACME directory:',
-      choices: [
-        ...directoryChoices,
-        { name: '🔧 Custom ACME Directory URL', value: 'custom' }
-      ]
+      choices: [...directoryChoices, { name: '🔧 Custom ACME Directory URL', value: 'custom' }],
     });
 
     if (envChoice === 'custom') {
@@ -655,16 +710,19 @@ async function handleInteractiveMode(options: any = {}) {
 
   // Display environment info
   if (options.staging) {
-    console.log('🧪 Using Let\'s Encrypt Staging Environment');
+    console.log("🧪 Using Let's Encrypt Staging Environment");
   } else if (options.production) {
-    console.log('🏭 Using Let\'s Encrypt Production Environment');
+    console.log("🏭 Using Let's Encrypt Production Environment");
   } else if (options.directory) {
     // Try to resolve a friendly name
     let friendlyName: string | undefined;
     const root: any = (directory as any).directory ?? directory;
     outer: for (const providerData of Object.values(root) as any[]) {
       for (const envData of Object.values(providerData) as any[]) {
-        if (envData && typeof envData === 'object' && envData.directoryUrl === options.directory) { friendlyName = envData.name; break outer; }
+        if (envData && typeof envData === 'object' && envData.directoryUrl === options.directory) {
+          friendlyName = envData.name;
+          break outer;
+        }
       }
     }
     if (friendlyName) {
@@ -680,8 +738,8 @@ async function handleInteractiveMode(options: any = {}) {
       { name: '📜 Obtain SSL Certificate', value: 'cert' },
       { name: '🔑 Create Account Key', value: 'account-key' },
       { name: '📊 Check Certificate Status', value: 'status' },
-      { name: '❌ Exit', value: 'exit' }
-    ]
+      { name: '❌ Exit', value: 'exit' },
+    ],
   });
 
   switch (action) {

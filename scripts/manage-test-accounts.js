@@ -7,7 +7,7 @@ async function main() {
   const arg = process.argv[3];
 
   switch (command) {
-    case 'list':
+    case 'list': {
       const accounts = await testAccountManager.listAccounts();
       console.log('📋 Test Accounts:');
       if (accounts.length === 0) {
@@ -15,10 +15,13 @@ async function main() {
       } else {
         for (const accountId of accounts) {
           const account = await testAccountManager.loadAccount(accountId);
-          console.log(`   ${accountId} (${account?.email || 'unknown'}) - ${account?.createdAt || 'unknown'}`);
+          console.log(
+            `   ${accountId} (${account?.email || 'unknown'}) - ${account?.createdAt || 'unknown'}`,
+          );
         }
       }
       break;
+    }
 
     case 'create':
       if (!arg) {
@@ -43,22 +46,23 @@ async function main() {
       console.log(`✅ Account ${arg} deleted`);
       break;
 
-    case 'cleanup':
+    case 'cleanup': {
       const hours = arg ? parseInt(arg) : 168; // 7 days default
       console.log(`🧹 Cleaning up accounts older than ${hours} hours...`);
       await testAccountManager.cleanupOldAccounts(hours);
       break;
+    }
 
-    case 'prepare-stress':
+    case 'prepare-stress': {
       console.log('🚀 Preparing accounts for stress tests...');
-      
+
       // Prepare accounts for different stress tests
       const stressTests = [
         { name: 'light-stress', count: 2 },
         { name: 'quick-stress', count: 1 },
         { name: 'demo-stress', count: 3 },
         { name: 'heavy-stress', count: 5 },
-        { name: 'deadlock-detection', count: 3 }
+        { name: 'deadlock-detection', count: 3 },
       ];
 
       for (const test of stressTests) {
@@ -66,9 +70,10 @@ async function main() {
         const keys = await testAccountManager.getMultipleAccountKeys(test.name, test.count);
         console.log(`   ✅ ${test.name}: ${keys.length} accounts ready`);
       }
-      
+
       console.log('🎉 All stress test accounts prepared!');
       break;
+    }
 
     default:
       console.log('🔧 Test Account Manager');
@@ -77,7 +82,9 @@ async function main() {
       console.log('  npm run accounts list                    - List all test accounts');
       console.log('  npm run accounts create <account-id>     - Create/load account');
       console.log('  npm run accounts delete <account-id>     - Delete account');
-      console.log('  npm run accounts cleanup [hours]        - Delete old accounts (default: 168h)');
+      console.log(
+        '  npm run accounts cleanup [hours]        - Delete old accounts (default: 168h)',
+      );
       console.log('  npm run accounts prepare-stress         - Prepare all stress test accounts');
       console.log('');
       console.log('Examples:');
@@ -88,7 +95,7 @@ async function main() {
   }
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error('❌ Error:', error);
   process.exit(1);
 });

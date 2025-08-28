@@ -1,7 +1,14 @@
 import { createHash } from 'crypto';
 import { UnauthorizedError } from '../errors/errors.js';
 import type { ACMEAccount } from '../types/account.js';
-import { calculateJwkThumbprint, exportJWK, FlattenedSign, type FlattenedJWS, type JWK, type JWSHeaderParameters } from 'jose';
+import {
+  calculateJwkThumbprint,
+  exportJWK,
+  FlattenedSign,
+  type FlattenedJWS,
+  type JWK,
+  type JWSHeaderParameters,
+} from 'jose';
 
 /** Minimal signer interface used by AcmeTransport/ACMEClient */
 export interface AcmeSigner {
@@ -31,7 +38,7 @@ export interface AcmeSigner {
 export class JoseAcmeSigner implements AcmeSigner {
   private jwkPromise: Promise<JWK> | null = null;
 
-  constructor(private readonly account: ACMEAccount) { }
+  constructor(private readonly account: ACMEAccount) {}
 
   getAccount(): ACMEAccount {
     return this.account;

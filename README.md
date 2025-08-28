@@ -186,7 +186,7 @@ make interactive
 make staging
 ```
 
-See [CLI-USAGE.md](./CLI-USAGE.md) for detailed development setup.
+See [CLI-USAGE.md](./docs/CLI-USAGE.md) for detailed development setup.
 
 ### 📖 CLI Commands Reference
 
@@ -1149,7 +1149,7 @@ Use `--eab-kid` and `--eab-hmac-key` CLI options or the `eab` parameter in `ensu
 
 ## 📖 Documentation
 
-- [CLI Usage Guide](./CLI-USAGE.md) - Development setup and usage examples
+- [CLI Usage Guide](./docs/CLI-USAGE.md) - Development setup and usage examples
 - [API Documentation](./docs/) - Library API reference
 - [Examples](./examples/) - Code examples and use cases
 
@@ -1264,10 +1264,10 @@ const core = new AcmeClientCore(directoryUrl, {
 
 ### 📈 Detailed Reports
 
-- Quick: [QUICK-STRESS-TEST-RESULTS.md](./QUICK-STRESS-TEST-RESULTS.md)
-- Light: [LIGHT-STRESS-TEST-RESULTS.md](./LIGHT-STRESS-TEST-RESULTS.md)
-- Standard: [STRESS-TEST-RESULTS.md](./STRESS-TEST-RESULTS.md)
-- Heavy: [HEAVY-STRESS-TEST-RESULTS.md](./HEAVY-STRESS-TEST-RESULTS.md)
+- Quick: [QUICK-STRESS-TEST-RESULTS.md](./docs/reports/QUICK-STRESS-TEST-RESULTS.md)
+- Light: [LIGHT-STRESS-TEST-RESULTS.md](./docs/reports/LIGHT-STRESS-TEST-RESULTS.md)
+- Standard: [STRESS-TEST-RESULTS.md](./docs/reports/STRESS-TEST-RESULTS.md)
+- Heavy: [HEAVY-STRESS-TEST-RESULTS.md](./docs/reports/HEAVY-STRESS-TEST-RESULTS.md)
 
 ### 🏃 Running the Tests
 
@@ -1293,7 +1293,7 @@ npm run test:stress        # ~30 seconds, production scenario testing
 npm run test:heavy         # ~35 seconds, enterprise load testing
 ```
 
-📋 **Latest test report**: [HEAVY-STRESS-TEST-RESULTS.md](./HEAVY-STRESS-TEST-RESULTS.md)
+📋 **Latest test report**: [HEAVY-STRESS-TEST-RESULTS.md](./docs/reports/HEAVY-STRESS-TEST-RESULTS.md)
 
 ## 🚨 ~~Known Issues~~ ✅ Resolved Issues
 
@@ -1370,7 +1370,7 @@ npm run test:stress:all   # Run all stress tests (takes ~15 minutes)
 
 **Note**: Stress tests are excluded from the default `npm test` command to keep CI/CD pipelines fast. They should be run manually or in dedicated test environments.
 
-📋 **Detailed testing guide**: [TESTING.md](./TESTING.md)
+📋 **Detailed testing guide**: [TESTING.md](./docs/TESTING.md)
 
 ### 🔑 Test Account Management
 
@@ -1397,7 +1397,7 @@ npm run accounts cleanup 24
 - ✅ Isolated accounts per test type
 - ✅ Automatic git ignore protection
 
-📋 **Detailed account management guide**: [TEST-ACCOUNT-MANAGEMENT.md](./TEST-ACCOUNT-MANAGEMENT.md)
+📋 **Detailed account management guide**: [TEST-ACCOUNT-MANAGEMENT.md](./docs/reports/TEST-ACCOUNT-MANAGEMENT.md)
 
 ## 📄 License
 

@@ -86,7 +86,7 @@ export class TestAccountManager {
 
     return {
       privateKey: keyPair.privateKey!,
-      publicKey: keyPair.publicKey
+      publicKey: keyPair.publicKey,
     };
   }
 
@@ -95,8 +95,8 @@ export class TestAccountManager {
       await this.ensureAccountsDir();
       const files = await fs.readdir(this.accountsDir);
       return files
-        .filter(file => file.endsWith('.json'))
-        .map(file => path.basename(file, '.json'));
+        .filter((file) => file.endsWith('.json'))
+        .map((file) => path.basename(file, '.json'));
     } catch {
       return [];
     }
@@ -114,7 +114,7 @@ export class TestAccountManager {
 
   async cleanupOldAccounts(maxAgeHours: number = 168): Promise<void> {
     const accounts = await this.listAccounts();
-    const cutoffTime = Date.now() - (maxAgeHours * 60 * 60 * 1000);
+    const cutoffTime = Date.now() - maxAgeHours * 60 * 60 * 1000;
 
     for (const accountId of accounts) {
       const account = await this.loadAccount(accountId);
@@ -144,7 +144,7 @@ export class TestAccountManager {
     id: string,
     directoryUrl: string,
     email?: string,
-    options?: any
+    options?: any,
   ): Promise<AcmeAccountSession> {
     // Try to load existing account
     const existing = await this.loadAccount(id);
@@ -152,7 +152,9 @@ export class TestAccountManager {
     let kid: string | undefined;
 
     if (existing) {
-      console.log(`📋 Using existing test account: ${id} (kid: ${existing.kid || 'not registered'})`);
+      console.log(
+        `📋 Using existing test account: ${id} (kid: ${existing.kid || 'not registered'})`,
+      );
       const privateKey = await importPKCS8(existing.keyPair.privateKeyPem, 'ES256');
       const publicKey = await importSPKI(existing.keyPair.publicKeyPem, 'ES256');
       accountKeys = { privateKey, publicKey };
@@ -167,7 +169,7 @@ export class TestAccountManager {
 
       accountKeys = {
         privateKey: keyPair.privateKey!,
-        publicKey: keyPair.publicKey
+        publicKey: keyPair.publicKey,
       };
 
       const accountEmail = email || `stress-test-${id}-${Date.now()}@acme-love.com`;
@@ -195,7 +197,7 @@ export class TestAccountManager {
     try {
       const registrationKid = await session.ensureRegistered({
         contact: [`mailto:${existing?.email || `stress-test-${id}-${Date.now()}@acme-love.com`}`],
-        termsOfServiceAgreed: true
+        termsOfServiceAgreed: true,
       });
 
       // If this is a new registration or we didn't have kid before, save it
@@ -210,7 +212,7 @@ export class TestAccountManager {
             },
             createdAt: new Date().toISOString(),
           }),
-          kid: registrationKid
+          kid: registrationKid,
         };
         await this.saveAccount(updatedAccount);
         console.log(`✅ Account ${id} registered with kid: ${registrationKid}`);

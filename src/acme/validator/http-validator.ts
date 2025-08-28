@@ -31,7 +31,7 @@ export async function validateHttp01Challenge(
   domain: string,
   token: string,
   expectedKeyAuth?: string,
-  opts: HttpValidationOptions = {}
+  opts: HttpValidationOptions = {},
 ): Promise<HttpValidationResult> {
   const url = `http://${domain}/.well-known/acme-challenge/${token}`;
   return validateHttp01ChallengeByUrl(url, expectedKeyAuth, opts);
@@ -46,24 +46,20 @@ export async function validateHttp01Challenge(
 export async function validateHttp01ChallengeByUrl(
   challengeUrl: string,
   expectedKeyAuth?: string,
-  opts: HttpValidationOptions = {}
+  opts: HttpValidationOptions = {},
 ): Promise<HttpValidationResult> {
-  const {
-    timeoutMs = 4000,
-    followRedirects = true,
-    userAgent = 'acme-love/1.0'
-  } = opts;
+  const { timeoutMs = 4000, followRedirects = true, userAgent = 'acme-love/1.0' } = opts;
 
   try {
     const response = await request(challengeUrl, {
       method: 'GET',
       headers: {
         'User-Agent': userAgent,
-        'Accept': 'text/plain'
+        Accept: 'text/plain',
       },
       bodyTimeout: timeoutMs,
       headersTimeout: timeoutMs,
-      ...(followRedirects ? {} : { maxRedirections: 0 })
+      ...(followRedirects ? {} : { maxRedirections: 0 }),
     });
 
     const statusCode = response.statusCode;
@@ -75,7 +71,7 @@ export async function validateHttp01ChallengeByUrl(
         ok: false,
         content,
         statusCode,
-        reasons: [`HTTP ${statusCode}: ${content || 'No content'}`]
+        reasons: [`HTTP ${statusCode}: ${content || 'No content'}`],
       };
     }
 
@@ -84,7 +80,7 @@ export async function validateHttp01ChallengeByUrl(
       return {
         ok: true,
         content,
-        statusCode
+        statusCode,
       };
     }
 
@@ -94,7 +90,7 @@ export async function validateHttp01ChallengeByUrl(
       return {
         ok: true,
         content: trimmedContent,
-        statusCode
+        statusCode,
       };
     }
 
@@ -102,13 +98,14 @@ export async function validateHttp01ChallengeByUrl(
       ok: false,
       content: trimmedContent,
       statusCode,
-      reasons: [`Content mismatch: expected '${expectedKeyAuth}', got '${trimmedContent}'`]
+      reasons: [`Content mismatch: expected '${expectedKeyAuth}', got '${trimmedContent}'`],
     };
-
   } catch (error) {
     return {
       ok: false,
-      reasons: [`Failed to fetch ${challengeUrl}: ${error instanceof Error ? error.message : String(error)}`]
+      reasons: [
+        `Failed to fetch ${challengeUrl}: ${error instanceof Error ? error.message : String(error)}`,
+      ],
     };
   }
 }

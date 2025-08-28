@@ -309,7 +309,10 @@ export class ServerInternalError extends AcmeError {
  * Error indicating that the server is down for maintenance
  */
 export class ServerMaintenanceError extends AcmeError {
-  constructor(detail = 'The service is down for maintenance or had an internal error', status = 503) {
+  constructor(
+    detail = 'The service is down for maintenance or had an internal error',
+    status = 503,
+  ) {
     super(detail, status);
     this.type = ACME_ERROR.serverInternal;
     this.isMaintenanceError = true;
@@ -318,10 +321,12 @@ export class ServerMaintenanceError extends AcmeError {
   isMaintenanceError: boolean;
 
   override toString(): string {
-    return `${this.constructor.name}: ${this.detail}\n` +
+    return (
+      `${this.constructor.name}: ${this.detail}\n` +
       `🔧 The ACME server is currently under maintenance.\n` +
       `📊 Check service status at: https://letsencrypt.status.io/\n` +
-      `⏳ Please try again later when the service is restored.`;
+      `⏳ Please try again later when the service is restored.`
+    );
   }
 }
 

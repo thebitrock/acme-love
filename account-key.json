@@ -1,8 +1,6 @@
 {
   "privateKey": {
-    "key_ops": [
-      "sign"
-    ],
+    "key_ops": ["sign"],
     "ext": true,
     "kty": "EC",
     "x": "u_WBSYd7GP1P4Luajn08f2Dxmoq0sRzFmNW7ySC4-V4",
@@ -11,9 +9,7 @@
     "d": "GvHzLbqPgvAZQQ6nTkNwgfXN5RGZt_lg13KppVLsBMU"
   },
   "publicKey": {
-    "key_ops": [
-      "verify"
-    ],
+    "key_ops": ["verify"],
     "ext": true,
     "kty": "EC",
     "x": "u_WBSYd7GP1P4Luajn08f2Dxmoq0sRzFmNW7ySC4-V4",

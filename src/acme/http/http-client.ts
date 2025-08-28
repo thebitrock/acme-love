@@ -20,7 +20,11 @@ export class SimpleHttpClient {
       const __filename = fileURLToPath(import.meta.url);
       const pkgPath = findPackageJson(dirname(__filename));
       if (pkgPath) {
-        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { name?: string; version?: string; homepage?: string };
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as {
+          name?: string;
+          version?: string;
+          homepage?: string;
+        };
         const name = pkg.name || 'acme-love';
         const version = pkg.version || '0.0.0-dev';
         const homepage = pkg.homepage || 'https://github.com/thebitrock/acme-love';
@@ -33,7 +37,7 @@ export class SimpleHttpClient {
   }
 
   private ensureUserAgent(headers: Record<string, string>): Record<string, string> {
-    const hasUA = Object.keys(headers).some(k => k.toLowerCase() === 'user-agent');
+    const hasUA = Object.keys(headers).some((k) => k.toLowerCase() === 'user-agent');
     if (!hasUA) {
       headers['User-Agent'] = SimpleHttpClient.userAgent;
     }
@@ -48,7 +52,13 @@ export class SimpleHttpClient {
     const start = Date.now();
     try {
       res = await request(url, { method: 'GET', headers });
-      debugHttp('GET %s response status=%d durationMs=%d content-type=%s', url, res.statusCode, Date.now() - start, res.headers['content-type']);
+      debugHttp(
+        'GET %s response status=%d durationMs=%d content-type=%s',
+        url,
+        res.statusCode,
+        Date.now() - start,
+        res.headers['content-type'],
+      );
       try {
         data = await res.body.json();
         debugHttp('GET %s parsed json ok', url);
@@ -101,21 +111,27 @@ export class SimpleHttpClient {
         headers,
         body: serializedBody,
       });
-      debugHttp('POST %s response status=%d durationMs=%d content-type=%s', url, res.statusCode, Date.now() - start, res.headers['content-type']);
+      debugHttp(
+        'POST %s response status=%d durationMs=%d content-type=%s',
+        url,
+        res.statusCode,
+        Date.now() - start,
+        res.headers['content-type'],
+      );
     } catch (err) {
       debugHttp('POST %s network error: %s', url, (err as Error).message);
       throw err;
     }
 
-    const rawCt = res.headers["content-type"];
-    const ct = (Array.isArray(rawCt) ? rawCt[0] : rawCt)?.toLowerCase() ?? "";
+    const rawCt = res.headers['content-type'];
+    const ct = (Array.isArray(rawCt) ? rawCt[0] : rawCt)?.toLowerCase() ?? '';
 
     let data: unknown;
     try {
-      if (ct.includes("application/json") || ct.includes("application/problem+json")) {
+      if (ct.includes('application/json') || ct.includes('application/problem+json')) {
         data = await res.body.json();
         debugHttp('POST %s parsed json', url);
-      } else if (ct.startsWith("text/") || ct.includes("application/pem-certificate-chain")) {
+      } else if (ct.startsWith('text/') || ct.includes('application/pem-certificate-chain')) {
         data = await res.body.text();
         debugHttp('POST %s read text len=%d', url, typeof data === 'string' ? data.length : 0);
       } else {
@@ -142,7 +158,12 @@ export class SimpleHttpClient {
     let res;
     try {
       res = await request(url, { method: 'HEAD', headers });
-      debugHttp('HEAD %s response status=%d durationMs=%d', url, res.statusCode, Date.now() - start);
+      debugHttp(
+        'HEAD %s response status=%d durationMs=%d',
+        url,
+        res.statusCode,
+        Date.now() - start,
+      );
     } catch (err) {
       debugHttp('HEAD %s error: %s', url, (err as Error).message);
       throw err;
@@ -174,7 +195,11 @@ export class SimpleHttpClient {
   private describeBodyForDebug(body: string | Uint8Array | Buffer | null): any {
     if (body === null) return { type: 'null' };
     if (typeof body === 'string') {
-      return { type: 'string', length: body.length, preview: body.length > 120 ? body.slice(0, 120) + '…' : body };
+      return {
+        type: 'string',
+        length: body.length,
+        preview: body.length > 120 ? body.slice(0, 120) + '…' : body,
+      };
     }
     if (body instanceof Uint8Array) {
       // Covers Buffer too since Buffer extends Uint8Array in Node.js
@@ -188,12 +213,15 @@ export class SimpleHttpClient {
 // Helper to locate nearest package.json walking up dirs (limited depth)
 function findPackageJson(startDir: string): string | null {
   let dir = startDir;
-  for (let i = 0; i < 6; i++) { // limit to prevent infinite loop
+  for (let i = 0; i < 6; i++) {
+    // limit to prevent infinite loop
     const candidate = join(dir, 'package.json');
     try {
       readFileSync(candidate);
       return candidate;
-    } catch { /* continue up */ }
+    } catch {
+      /* continue up */
+    }
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;

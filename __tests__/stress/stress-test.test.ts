@@ -12,14 +12,14 @@ function extractEndpoint(url: string): string {
     const path = parsedUrl.pathname;
 
     // Let's Encrypt specific endpoints
-    if (path.includes('/acme/new-nonce')) return 'Let\'s Encrypt: new-nonce';
-    if (path.includes('/acme/new-acct')) return 'Let\'s Encrypt: new-account';
-    if (path.includes('/acme/new-order')) return 'Let\'s Encrypt: new-order';
-    if (path.includes('/acme/authz/')) return 'Let\'s Encrypt: authorization';
-    if (path.includes('/acme/order/')) return 'Let\'s Encrypt: order';
-    if (path.includes('/acme/chall/')) return 'Let\'s Encrypt: challenge';
-    if (path.includes('/acme/cert/')) return 'Let\'s Encrypt: certificate';
-    if (path.includes('/directory')) return 'Let\'s Encrypt: directory';
+    if (path.includes('/acme/new-nonce')) return "Let's Encrypt: new-nonce";
+    if (path.includes('/acme/new-acct')) return "Let's Encrypt: new-account";
+    if (path.includes('/acme/new-order')) return "Let's Encrypt: new-order";
+    if (path.includes('/acme/authz/')) return "Let's Encrypt: authorization";
+    if (path.includes('/acme/order/')) return "Let's Encrypt: order";
+    if (path.includes('/acme/chall/')) return "Let's Encrypt: challenge";
+    if (path.includes('/acme/cert/')) return "Let's Encrypt: certificate";
+    if (path.includes('/directory')) return "Let's Encrypt: directory";
 
     // Fallback to generic path
     return `Generic: ${path}`;
@@ -36,7 +36,8 @@ function trackEndpoint(url: string): void {
 // Monkey patch for tracking
 const originalFetch = global.fetch;
 global.fetch = async (input: any, init?: RequestInit) => {
-  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  const url =
+    typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
   trackEndpoint(url);
   return originalFetch(input, init);
 };
@@ -84,7 +85,7 @@ class MetricsCollector {
     remainingInPool: 0,
     newNonceRequests: 0,
     poolHits: 0,
-    poolMisses: 0
+    poolMisses: 0,
   };
 
   start() {
@@ -96,7 +97,7 @@ class MetricsCollector {
       remainingInPool: 0,
       newNonceRequests: 0,
       poolHits: 0,
-      poolMisses: 0
+      poolMisses: 0,
     };
   }
 
@@ -107,7 +108,7 @@ class MetricsCollector {
       method,
       timestamp: Date.now() - this.startTime,
       duration,
-      status
+      status,
     });
 
     // Count new-nonce requests specifically
@@ -130,13 +131,13 @@ class MetricsCollector {
     const requestsByType: Record<string, number> = {};
     const requestsByEndpoint: Record<string, number> = {};
 
-    let httpChallenges = 0;
-    let dnsChallenges = 0;
+    const httpChallenges = 0;
+    const dnsChallenges = 0;
     let accountsCreated = 0;
     let ordersCreated = 0;
     let challengesGenerated = 0;
 
-    this.metrics.forEach(metric => {
+    this.metrics.forEach((metric) => {
       // Count by type
       requestsByType[metric.type] = (requestsByType[metric.type] || 0) + 1;
 
@@ -150,9 +151,10 @@ class MetricsCollector {
       if (metric.url.includes('authz-v3')) challengesGenerated++;
     });
 
-    const averageResponseTime = this.metrics.length > 0
-      ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
-      : 0;
+    const averageResponseTime =
+      this.metrics.length > 0
+        ? this.metrics.reduce((sum, m) => sum + m.duration, 0) / this.metrics.length
+        : 0;
 
     return {
       totalTime,
@@ -166,7 +168,7 @@ class MetricsCollector {
       httpChallenges,
       dnsChallenges,
       nonceMetrics: this.nonceMetrics,
-      metrics: this.metrics
+      metrics: this.metrics,
     };
   }
 
@@ -242,7 +244,7 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
   const ORDERS_PER_ACCOUNT = 10;
   const TOTAL_ACCOUNTS = 6;
   const HTTP_ACCOUNTS = 3; // First 3 accounts use HTTP-01
-  const DNS_ACCOUNTS = 3;  // Last 3 accounts use DNS-01
+  const DNS_ACCOUNTS = 3; // Last 3 accounts use DNS-01
 
   let collector: MetricsCollector;
   let testDomains: string[];
@@ -299,7 +301,7 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
           `stress-test-${accountIndex + 1}`,
           STAGING_DIRECTORY_URL,
           `stress-test-${accountIndex}-${Date.now()}@acme-love.com`,
-          { nonce: { maxPool: 32 } } // Reasonable pool for smaller test
+          { nonce: { maxPool: 32 } }, // Reasonable pool for smaller test
         );
 
         // Add metrics wrapper to the existing core
@@ -324,7 +326,9 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
         const isHttpAccount = accountIndex < HTTP_ACCOUNTS;
         const challengeType = isHttpAccount ? 'HTTP-01' : 'DNS-01';
 
-        console.log(`   🔄 Account ${accountIndex + 1}: Creating ${ORDERS_PER_ACCOUNT} orders (${challengeType})`);
+        console.log(
+          `   🔄 Account ${accountIndex + 1}: Creating ${ORDERS_PER_ACCOUNT} orders (${challengeType})`,
+        );
 
         return Array.from({ length: ORDERS_PER_ACCOUNT }, async (_, orderIndex) => {
           const domainIndex = accountIndex * ORDERS_PER_ACCOUNT + orderIndex;
@@ -355,13 +359,16 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
               challengeResponse = await acct.keyAuthorization(challenge.token);
               // For DNS, we would normally create a SHA256 hash and base64url encode
               const crypto = await import('crypto');
-              challengeResponse = crypto.createHash('sha256')
+              challengeResponse = crypto
+                .createHash('sha256')
                 .update(challengeResponse)
                 .digest('base64url');
             }
 
             if (orderIndex % 5 === 0) {
-              console.log(`     📊 Account ${accountIndex + 1}: ${orderIndex + 1}/${ORDERS_PER_ACCOUNT} orders (${challengeType})`);
+              console.log(
+                `     📊 Account ${accountIndex + 1}: ${orderIndex + 1}/${ORDERS_PER_ACCOUNT} orders (${challengeType})`,
+              );
             }
 
             return {
@@ -371,10 +378,12 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
               order,
               challenge,
               challengeResponse,
-              challengeType
+              challengeType,
             };
           } catch (error) {
-            console.error(`     ❌ Failed to create order ${orderIndex + 1} for account ${accountIndex + 1}: ${error}`);
+            console.error(
+              `     ❌ Failed to create order ${orderIndex + 1} for account ${accountIndex + 1}: ${error}`,
+            );
             throw error;
           }
         });
@@ -386,16 +395,16 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
 
       // Collect nonce metrics from all accounts
       console.log(`📊 Collecting nonce manager metrics...`);
-      let totalNoncesConsumed = 0;
+      const totalNoncesConsumed = 0;
       let totalNoncesRemaining = 0;
-      let totalPoolHits = 0;
-      let totalPoolMisses = 0;
+      const totalPoolHits = 0;
+      const totalPoolMisses = 0;
 
       accounts.forEach(({ accountIndex, core }) => {
         try {
           const nonceManager = core.getDefaultNonce();
           // Try to access private fields through type assertion for metrics
-          const nonceStats = (nonceManager as any);
+          const nonceStats = nonceManager as any;
 
           console.log(`   Account ${accountIndex + 1} nonce stats:`, {
             poolSize: nonceStats.pool?.length || 0,
@@ -413,7 +422,7 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
         totalNoncesConsumed,
         totalNoncesRemaining,
         totalPoolHits,
-        totalPoolMisses
+        totalPoolMisses,
       );
 
       // Collect and analyze results
@@ -427,11 +436,11 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
         dnsAccounts: DNS_ACCOUNTS,
         accountCreationTime,
         orderCreationTime,
-        allOrders
+        allOrders,
       });
 
       // Save results to file
-      const resultsPath = path.join(process.cwd(), 'STRESS-TEST-RESULTS.md');
+      const resultsPath = path.join(process.cwd(), 'docs/reports/STRESS-TEST-RESULTS.md');
       fs.writeFileSync(resultsPath, report);
       console.log(`📋 Detailed results saved to ${resultsPath}`);
 
@@ -443,15 +452,21 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
       console.log(`Orders Created: ${allOrders.length}`);
       console.log(`Total HTTP Requests: ${results.totalRequests}`);
       console.log(`Average Response Time: ${Math.round(results.averageResponseTime)}ms`);
-      console.log(`Requests per Second: ${Math.round(results.totalRequests / (results.totalTime / 1000))}`);
+      console.log(
+        `Requests per Second: ${Math.round(results.totalRequests / (results.totalTime / 1000))}`,
+      );
       console.log(`\n🎯 NONCE MANAGER METRICS`);
       console.log(`=========================`);
       console.log(`New-Nonce Requests: ${results.nonceMetrics.newNonceRequests}`);
       console.log(`Total Generated: ${results.nonceMetrics.totalGenerated}`);
       console.log(`Total Consumed: ${results.nonceMetrics.totalConsumed}`);
       console.log(`Remaining in Pool: ${results.nonceMetrics.remainingInPool}`);
-      console.log(`Pool Efficiency: ${results.nonceMetrics.totalGenerated > 0 ? Math.round((results.nonceMetrics.totalConsumed / results.nonceMetrics.totalGenerated) * 100) : 0}%`);
-      console.log(`Network Savings: ${Math.max(0, results.nonceMetrics.totalConsumed - results.nonceMetrics.newNonceRequests)} requests`);
+      console.log(
+        `Pool Efficiency: ${results.nonceMetrics.totalGenerated > 0 ? Math.round((results.nonceMetrics.totalConsumed / results.nonceMetrics.totalGenerated) * 100) : 0}%`,
+      );
+      console.log(
+        `Network Savings: ${Math.max(0, results.nonceMetrics.totalConsumed - results.nonceMetrics.newNonceRequests)} requests`,
+      );
 
       // Detailed endpoint statistics
       console.log(`\n🌐 ENDPOINT STATISTICS`);
@@ -467,13 +482,17 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
       // Let's Encrypt specific breakdown
       console.log(`\n🔒 Let's Encrypt Staging API Breakdown`);
       console.log(`======================================`);
-      const letsEncryptStats = sortedStats.filter(([endpoint]) => endpoint.startsWith('Let\'s Encrypt'));
+      const letsEncryptStats = sortedStats.filter(([endpoint]) =>
+        endpoint.startsWith("Let's Encrypt"),
+      );
       let letsEncryptTotal = 0;
       for (const [endpoint, count] of letsEncryptStats) {
         console.log(`${endpoint}: ${count} requests`);
         letsEncryptTotal += count;
       }
-      console.log(`Let's Encrypt Total: ${letsEncryptTotal} requests (${((letsEncryptTotal / totalRequests) * 100).toFixed(1)}% of all requests)`);
+      console.log(
+        `Let's Encrypt Total: ${letsEncryptTotal} requests (${((letsEncryptTotal / totalRequests) * 100).toFixed(1)}% of all requests)`,
+      );
 
       // Cleanup
       global.fetch = originalFetch;
@@ -483,7 +502,6 @@ describe('ACME Stress Test - 6 Accounts × 10 Orders', () => {
       expect(results.totalRequests).toBeGreaterThan(0);
       expect(results.nonceMetrics.newNonceRequests).toBeGreaterThan(0);
       expect(results.averageResponseTime).toBeLessThan(5000); // Less than 5 seconds average
-
     } catch (error) {
       console.error(`💥 Stress test failed:`, error);
       throw error;
@@ -524,18 +542,24 @@ function generateDetailedReport(results: TestResults, testConfig: any): string {
 | Request Type | Count | Percentage |
 |--------------|-------|------------|
 ${Object.entries(results.requestsByType)
-      .sort(([, a], [, b]) => (b as number) - (a as number))
-      .map(([type, count]) => `| **${type}** | ${count} | ${Math.round(((count as number) / results.totalRequests) * 100)}% |`)
-      .join('\n')}
+  .sort(([, a], [, b]) => (b as number) - (a as number))
+  .map(
+    ([type, count]) =>
+      `| **${type}** | ${count} | ${Math.round(((count as number) / results.totalRequests) * 100)}% |`,
+  )
+  .join('\n')}
 
 ## Request Breakdown by Endpoint
 
 | Endpoint | Count | Percentage |
 |----------|-------|------------|
 ${Object.entries(results.requestsByEndpoint)
-      .sort(([, a], [, b]) => (b as number) - (a as number))
-      .map(([endpoint, count]) => `| **${endpoint}** | ${count} | ${Math.round(((count as number) / results.totalRequests) * 100)}% |`)
-      .join('\n')}
+  .sort(([, a], [, b]) => (b as number) - (a as number))
+  .map(
+    ([endpoint, count]) =>
+      `| **${endpoint}** | ${count} | ${Math.round(((count as number) / results.totalRequests) * 100)}% |`,
+  )
+  .join('\n')}
 
 ## Challenge Distribution
 

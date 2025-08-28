@@ -1,5 +1,11 @@
 import { describe, test, expect } from '@jest/globals';
-import { generateKeyPair, createAcmeCsr, type CsrAlgo, type EcAlgo, type RsaAlgo } from '../src/acme/csr.js';
+import {
+  generateKeyPair,
+  createAcmeCsr,
+  type CsrAlgo,
+  type EcAlgo,
+  type RsaAlgo,
+} from '../src/acme/csr.js';
 
 describe('CSR and Key Generation', () => {
   const testDomain = 'test.acme-love.com';

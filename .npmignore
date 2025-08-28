@@ -1,10 +1,50 @@
 # Source files (not needed in npm package)
 src/
 
+# Tests (source and compiled)
+__tests__/
+dist/__tests__/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+test/
+tests/
+coverage/
+
+# Source maps (remove for smaller package size)
+*.map
+
 # Development files
 nodemon.json
-tsconfig.json
+tsconfig*.json
+jest.config.js
+babel.config.js
+eslint.config.js
 .gitignore
+.eslintrc*
+.prettierrc*
+
+# Documentation (keep only essential)
+docs/
+TESTING.md
+*-SUMMARY.md
+*-RESULTS.md
+*-REPORT.md
+*-GUIDE.md
+CHANGELOG.md
+CLI-USAGE.md
+
+# Stress test accounts and temp files
+stress-test-accounts/
+tmp/
+certificates/
+account-key.json
+
+# Development scripts and examples
+scripts/
+examples/
+Makefile
 
 # Development dependencies (already in devDependencies)
 node_modules/
@@ -24,10 +64,8 @@ Thumbs.db
 *.log
 logs/
 
-# Test files
-*.test.ts
-*.spec.ts
-coverage/
-
 # Environment files
-.env* 
+.env*
+
+# Mock files
+__mocks__/ 

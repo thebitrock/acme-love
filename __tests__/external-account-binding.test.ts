@@ -10,7 +10,7 @@ describe('External Account Binding', () => {
     // Mock EAB parameters
     const eab: ExternalAccountBinding = {
       kid: 'test-kid-123',
-      hmacKey: 'dGVzdC1obWFjLWtleS0xMjM' // base64url of "test-hmac-key-123"
+      hmacKey: 'dGVzdC1obWFjLWtleS0xMjM', // base64url of "test-hmac-key-123"
     };
 
     // Create session instance to test private method
@@ -20,17 +20,17 @@ describe('External Account Binding', () => {
         newAccount: 'https://test.example.com/acme/new-account',
         newNonce: 'https://test.example.com/acme/new-nonce',
         newOrder: 'https://test.example.com/acme/new-order',
-        revokeCert: 'https://test.example.com/acme/revoke-cert'
+        revokeCert: 'https://test.example.com/acme/revoke-cert',
       }),
       getDefaultNonce: () => ({
-        withNonceRetry: async (_ns: string, fn: any) => fn('test-nonce')
+        withNonceRetry: async (_ns: string, fn: any) => fn('test-nonce'),
       }),
-      getHttp: () => ({})
+      getHttp: () => ({}),
     } as any;
 
     const session = new AcmeAccountSession(mockClient, {
       privateKey: keyPair.privateKey!,
-      publicKey: keyPair.publicKey!
+      publicKey: keyPair.publicKey!,
     });
 
     // Initialize the session to set up directory
@@ -50,9 +50,7 @@ describe('External Account Binding', () => {
 
     // Decode and verify protected header
     const protectedHeader = JSON.parse(
-      new TextDecoder().decode(
-        Uint8Array.from(atob(eabJws.protected), c => c.charCodeAt(0))
-      )
+      new TextDecoder().decode(Uint8Array.from(atob(eabJws.protected), (c) => c.charCodeAt(0))),
     );
 
     expect(protectedHeader.alg).toBe('HS256');
@@ -61,9 +59,7 @@ describe('External Account Binding', () => {
 
     // Verify payload contains JWK
     const payload = JSON.parse(
-      new TextDecoder().decode(
-        Uint8Array.from(atob(eabJws.payload), c => c.charCodeAt(0))
-      )
+      new TextDecoder().decode(Uint8Array.from(atob(eabJws.payload), (c) => c.charCodeAt(0))),
     );
 
     expect(payload.kty).toBe('EC');
@@ -76,7 +72,7 @@ describe('External Account Binding', () => {
     // This test verifies the integration but doesn't make actual network calls
     const eab: ExternalAccountBinding = {
       kid: 'test-kid-456',
-      hmacKey: 'dGVzdC1obWFjLWtleS00NTY'
+      hmacKey: 'dGVzdC1obWFjLWtleS00NTY',
     };
 
     // Just verify the EAB type can be imported and used correctly

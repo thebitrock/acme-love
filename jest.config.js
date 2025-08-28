@@ -4,41 +4,31 @@ export default {
   testEnvironment: 'node',
 
   // Test file patterns
-  testMatch: [
-    '**/__tests__/**/*.test.ts',
-    '**/?(*.)+(spec|test).ts'
-  ],
+  testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
 
   // Don't exclude anything globally - let npm scripts handle filtering
-  testPathIgnorePatterns: [
-    'node_modules/',
-    'dist/'
-  ],
+  testPathIgnorePatterns: ['node_modules/', 'dist/'],
 
   // Transform configuration for ESM + TypeScript
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
-      useESM: true
-    }]
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        useESM: true,
+      },
+    ],
   },
 
   // Module name mapping for TypeScript imports
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 
   // Coverage configuration
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-    '!src/**/*.test.ts',
-    '!src/**/*.spec.ts'
-  ],
+  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/**/*.test.ts', '!src/**/*.spec.ts'],
 
   // Transform ignore patterns - don't transform node_modules except jose
-  transformIgnorePatterns: [
-    'node_modules/(?!(jose))'
-  ],
+  transformIgnorePatterns: ['node_modules/(?!(jose))'],
 
   // Extensions to treat as ESM
   extensionsToTreatAsEsm: ['.ts'],
@@ -50,5 +40,5 @@ export default {
   clearMocks: true,
 
   // Restore mocks after each test
-  restoreMocks: true
+  restoreMocks: true,
 };

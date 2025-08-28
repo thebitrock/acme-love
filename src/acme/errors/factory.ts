@@ -28,7 +28,6 @@ import {
 } from './errors.js';
 import { ACME_ERROR, type AcmeErrorType } from './codes.js';
 
-// eslint-disable-next-line no-unused-vars
 type Ctor = new (detail?: string, status?: number, ...rest: any[]) => AcmeError;
 
 const FACTORY: Partial<Record<AcmeErrorType, Ctor>> = {
@@ -85,11 +84,13 @@ export function createErrorFromProblem(problem: unknown): AcmeError {
   let err: AcmeError;
 
   // Special handling for maintenance errors
-  if (type === ACME_ERROR.serverInternal && 
-      (detail.includes('maintenance') || 
-       detail.includes('service is down') ||
-       detail.includes('letsencrypt.status.io') ||
-       status === 503)) {
+  if (
+    type === ACME_ERROR.serverInternal &&
+    (detail.includes('maintenance') ||
+      detail.includes('service is down') ||
+      detail.includes('letsencrypt.status.io') ||
+      status === 503)
+  ) {
     err = new ServerMaintenanceError(detail, status);
   } else if (ctor === BadSignatureAlgorithmError) {
     err = new BadSignatureAlgorithmError(detail, status, p.algorithms);

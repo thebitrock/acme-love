@@ -1,49 +1,86 @@
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
 import globals from 'globals';
 import prettierRecommended from 'eslint-plugin-prettier/recommended';
 
-export default tseslint.config([
+export default [
   js.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
-  ...tseslint.configs.stylisticTypeChecked,
-  prettierRecommended,
+  // TypeScript files configuration
   {
-    files: ['src/**/*.ts'],
+    files: ['**/*.ts'],
     languageOptions: {
+      parser: tsParser,
       parserOptions: {
-        project: true,
-        tsconfigRootDir: new URL('.', import.meta.url),
+        ecmaVersion: 2022,
+        sourceType: 'module',
+        project: './tsconfig.json',
       },
       globals: {
         ...globals.node,
+        NodeJS: 'readonly',
+        RequestInit: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        crypto: 'readonly',
+        Buffer: 'readonly',
+        URL: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        setImmediate: 'readonly',
+        fetch: 'readonly',
+        atob: 'readonly',
+        btoa: 'readonly',
       },
     },
+    plugins: {
+      '@typescript-eslint': tseslint,
+    },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['warn', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        ignoreRestSiblings: true,
-      }],
-      '@typescript-eslint/no-explicit-any': 'off',
+      // Base ESLint rules
+      eqeqeq: 'error',
+      'no-undef': 'error',
+      'no-unused-vars': 'off', // Turn off for TypeScript
+      'no-useless-catch': 'error',
+      'no-case-declarations': 'error',
+      'prefer-const': 'error',
+      'no-console': 'off',
+
+      // TypeScript ESLint rules
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/ban-ts-comment': ['warn', { 'ts-ignore': 'allow-with-description' }],
-      'no-console': 'off',
     },
   },
+  // Test files configuration
   {
-    files: ['__tests__/**/*.ts'],
+    files: ['__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
     languageOptions: {
+      parser: tsParser,
       parserOptions: {
-        project: true,
-        tsconfigRootDir: new URL('.', import.meta.url),
+        ecmaVersion: 2022,
+        sourceType: 'module',
+        project: './tsconfig.json',
       },
       globals: {
         ...globals.jest,
         ...globals.node,
       },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint,
     },
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
@@ -52,6 +89,26 @@ export default tseslint.config([
       'no-console': 'off',
     },
   },
+  // JavaScript files configuration (no TypeScript parser)
+  {
+    files: ['**/*.js', '**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.jest, // Add Jest globals for mock files
+      },
+    },
+    rules: {
+      'no-console': 'off',
+      'no-undef': 'error',
+      'no-unused-vars': 'warn',
+      'prefer-const': 'error',
+      'no-case-declarations': 'error',
+    },
+  },
+  prettierRecommended,
   {
     ignores: [
       'dist/',
@@ -67,4 +124,4 @@ export default tseslint.config([
       'pnpm-lock.yaml',
     ],
   },
-]);
+];

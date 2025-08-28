@@ -102,7 +102,11 @@ export class NonceManager {
       const n = pool.pop()!;
       if (!this.isExpired(n.ts)) {
         this.pools.set(namespace, pool);
-        debugNonce('Returned cached nonce: namespace=%s, remainingInPool=%d', namespace, pool.length);
+        debugNonce(
+          'Returned cached nonce: namespace=%s, remainingInPool=%d',
+          namespace,
+          pool.length,
+        );
         return n.value;
       }
     }
@@ -135,7 +139,9 @@ export class NonceManager {
           current.splice(idx, 1);
           current.length ? this.pending.set(namespace, current) : this.pending.delete(namespace);
         }
-        waiter.reject(new Error(`Nonce request timeout after ${timeoutMs}ms for namespace: ${namespace}`));
+        waiter.reject(
+          new Error(`Nonce request timeout after ${timeoutMs}ms for namespace: ${namespace}`),
+        );
       }, timeoutMs);
 
       q.push(waiter);
@@ -178,7 +184,12 @@ export class NonceManager {
 
       this.putFromResponse(namespace, res);
 
-      debugNonce('Attempt %d: HTTP %d (pool size %d)', attempt, res.status, this.getPoolSize(namespace));
+      debugNonce(
+        'Attempt %d: HTTP %d (pool size %d)',
+        attempt,
+        res.status,
+        this.getPoolSize(namespace),
+      );
 
       // Success (2xx/3xx)
       if (res.status >= 200 && res.status < 400) {
@@ -253,7 +264,11 @@ export class NonceManager {
 
       const nonce = this.nonceExtractor(res);
       this.add(namespace, nonce);
-      debugNonce('Added nonce to pool: namespace=%s, poolSize=%d', namespace, this.getPoolSize(namespace));
+      debugNonce(
+        'Added nonce to pool: namespace=%s, poolSize=%d',
+        namespace,
+        this.getPoolSize(namespace),
+      );
       return nonce;
     }, RateLimiter.getKnownEndpoints().NEW_NONCE);
   }
@@ -336,7 +351,7 @@ export class NonceManager {
           return;
         }
 
-        const queueNeed = (this.pending.get(namespace)?.length ?? 0);
+        const queueNeed = this.pending.get(namespace)?.length ?? 0;
         const pool = this.pools.get(namespace) ?? [];
         const poolLen = pool.length;
 
@@ -399,7 +414,11 @@ export class NonceManager {
         const q = this.pending.get(namespace) ?? [];
         this.pending.delete(namespace);
         for (const w of q) {
-          w.reject(new Error(`Nonce refill timeout after ${refillTimeoutMs}ms for namespace: ${namespace}`));
+          w.reject(
+            new Error(
+              `Nonce refill timeout after ${refillTimeoutMs}ms for namespace: ${namespace}`,
+            ),
+          );
         }
         reject(new Error(`Nonce refill operation timed out after ${refillTimeoutMs}ms`));
       }, refillTimeoutMs);
