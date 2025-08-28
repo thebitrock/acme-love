@@ -1361,8 +1361,6 @@ npm run test:heavy          # Heavy tier (4 × 200 orders) ~60s
 npm run test:all            # EVERYTHING (includes stress) – slower
 ```
 
-📋 **Latest test report**: [HEAVY-STRESS-TEST-RESULTS.md](./docs/reports/HEAVY-STRESS-TEST-RESULTS.md)
-
 ## 🚨 ~~Known Issues~~ ✅ Resolved Issues
 
 ### ~~Concurrent Account Creation Deadlock~~ ✅ **RESOLVED**
