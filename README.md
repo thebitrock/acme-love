@@ -304,7 +304,7 @@ For Certificate Authorities that require External Account Binding (like ZeroSSL,
 ```ts
 import { AcmeClientCore, AcmeAccountSession, generateKeyPair } from 'acme-love';
 
-// Create client for CA that requires EAB - using provider preset (recommended) 
+// Create client for CA that requires EAB - using provider preset (recommended)
 const core = new AcmeClientCore(provider.zerossl.production);
 
 // Alternative: Create client with string URL
@@ -1174,7 +1174,7 @@ const client3 = new AcmeClientCore('https://my-custom-ca.com/acme/directory');
 ✅ **Validation**: Pre-validated directory URLs  
 ✅ **Convenience**: No need to remember complex URLs  
 ✅ **Consistency**: Standardized configuration across projects  
-✅ **Updates**: Automatic URL updates with library updates  
+✅ **Updates**: Automatic URL updates with library updates
 
 **Recommendation**: Use provider presets for standard CAs (Let's Encrypt, Google, etc.) and string URLs for custom or enterprise ACME directories.
 

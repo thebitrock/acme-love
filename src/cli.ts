@@ -161,7 +161,7 @@ function parseAlgorithm(algoStr: string): CsrAlgo {
 // Build directory choices from exported directory namespace (handles legacy namespace export shape)
 function buildDirectoryChoices() {
   const choices: { name: string; value: string }[] = [];
-  
+
   // Iterate through all providers in the provider configuration
   for (const [providerKey, providerData] of Object.entries(provider)) {
     // Iterate through environments (staging, production)
@@ -174,7 +174,7 @@ function buildDirectoryChoices() {
       });
     }
   }
-  
+
   choices.sort((a, b) => a.name.localeCompare(b.name));
   return choices;
 }
