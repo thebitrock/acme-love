@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.5.1] - 2025-08-29
+
+### Added
+
+- **Stress Test Report Enhancements**: Rich markdown report with tables, extended percentiles (P50/P75/P90/P95/P99), threshold pass/fail matrix, latency sparkline, per-account metrics, nonce efficiency stats, collapsible raw configuration.
+- **Machine-Readable Metrics**: Automatic JSON export (`*-STRESS-TEST-RESULTS.json`) alongside markdown for dashboards or CI artifact ingestion.
+- **Additional Percentiles**: Introduced P75 and P90 latency for smoother distribution insight.
+
+### Changed
+
+- **Unified Stress Harness**: Quick / Standard / Heavy tests now share centralized `runStressTest` utility with improved abstraction and instrumentation.
+- **Report Footer**: Includes Node version, package version, git commit, thresholds snapshot.
+
+### Internal
+
+- Refactored metrics & phase tracking enabling future finalize/certificate stage instrumentation.
+- Added JSON schema groundwork for multi-run trend analysis.
+
+### Notes
+
+- No public API changes; patch focuses on observability & test automation.
+
 ## [1.5.0] - 2025-08-28
 
 ### Added
