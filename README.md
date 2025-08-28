@@ -1281,22 +1281,21 @@ ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple
 ### 🔢 Consolidated Metrics (Latest Run)
 
 | Test Tier | Accounts × Orders | Total Orders | Total Time | Avg Response | P50 / P95 / P99 | Requests | Req/s | Orders/s | Success Rate | New-Nonce | Nonce Efficiency | Requests Saved |
-| --------- | ----------------- | ------------ | ---------: | -----------: | --------------: | -------: | ----: | -------: | -----------: | --------: | ---------------: | -------------: |
-| Metrics   | 1 account         | –            |       2.1s |        517ms |       – / – / – |        4 |     2 |        – |         100% |         1 |              75% |              3 |
-| Quick     | 1 × 2             | 2            |       2.1s |        287ms |       – / – / – |        5 |     2 |     ~1.0 |         100% |         1 |              80% |              4 |
-| Light     | 2 × 3             | 6            |       2.7s |        452ms |       – / – / – |       18 |     7 |     ~2.2 |         100% |         6 |              67% |             12 |
-| Standard  | 6 × 10            | 60           |       4.6s |        412ms |       – / – / – |      154 |    33 |    ~13.0 |        86%\* |        34 |              78% |            120 |
-| Heavy     | 4 × 200           | 800          |      68.9s |        271ms | 205 / 503 / 604 |     1612 |    23 |     11.6 |         100% |        12 |              99% |           1600 |
+| --------- | ----------------- | ----------: | ---------: | -----------: | --------------: | -------: | ----: | -------: | -----------: | --------: | ---------------: | -------------: |
+| Quick     | 2 × 20            |        40   |    7.17s   |        276ms | 206 / 615 / 630 |       86 |  12.0 |     5.58 |        100%  |         6 |              93% |             80 |
+| Standard  | 4 × 50            |       200   |   16.00s   |        274ms | 208 / 586 / 675 |      412 |  25.8 |    12.50 |        100%  |        12 |              97% |            400 |
+| Heavy     | 4 × 200           |       800   |   59.40s   |        263ms | 205 / 454 / 618 |     1612 |  27.1 |    13.47 |        100%  |        12 |              99% |           1600 |
 
-\*Standard run success rate (88%) includes intentionally induced / retried scenarios; Heavy run shows 100% once scaled.
+All tiers achieved 100% success; Heavy maintains sub‑270ms average latency with strong tail behavior (p99 < 620ms).
 
 ### 🧪 Interpretation
 
-- **Metrics test** validates core account operations with 75% nonce efficiency baseline.
-- **Heavy test** (800 orders) sustains 271ms average with p99 < 610ms and exceptional 99% nonce efficiency.
-- **Nonce pool** reaches maximum efficiency (only 12 new-nonce vs 1612 total requests) saving 1600 network round trips.
-- **Scaling improvements**: Moving from 2 to 800 orders reduces average latency (connection warm‑up + reuse effect).
-- **Standard test** shows 78% nonce efficiency (improvement from previous 0%) with 86% success rate including retry scenarios.
+- **Consistent Success**: All profiled tiers (40 → 800 orders) completed with 100% success rate.
+- **Stable Latency Under Scale**: Average response time improves slightly as concurrency grows (connection reuse); Heavy run avg 263ms with p95 454ms / p99 618ms.
+- **Throughput Scaling**: Requests/sec rises from 12 (Quick) to 27 (Heavy) while maintaining similar mean latency, indicating efficient batching & pool reuse.
+- **Nonce Pool Efficiency**: Heavy test required only 12 new-nonce requests for 1612 total (99% efficiency), saving 1600 round trips; Standard at 97%, Quick at 93%.
+- **Tail Behavior**: p95 stays < 620ms across tiers; narrow spread shows absence of pathological slow requests.
+- **Resource Headroom**: Minimal increase in tail latency moving from 200 to 800 orders suggests current nonce + batching strategy scales further.
 
 ### ⚙️ Key Optimizations
 
