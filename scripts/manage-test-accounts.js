@@ -31,6 +31,7 @@ async function main() {
       try {
         const keys = await testAccountManager.getOrCreateAccountKeys(arg);
         console.log(`✅ Account ${arg} created/loaded successfully`);
+        console.log(`   Public key: ${keys.publicKey.substring(0, 50)}...`);
       } catch (error) {
         console.error(`❌ Failed to create account ${arg}:`, error);
         process.exit(1);

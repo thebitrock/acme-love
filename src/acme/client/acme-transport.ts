@@ -51,7 +51,7 @@ export class AcmeTransport {
   }
 
   /** ACME signed POST (with JSON body or empty). */
-  async post<T = any>(url: string, payload?: unknown): Promise<HttpResponse<T>> {
+  async post<T = unknown>(url: string, payload?: unknown): Promise<HttpResponse<T>> {
     const namespace = this.getNamespace();
 
     return this.nonceManager.withNonceRetry(namespace, async (nonce) => {
@@ -75,7 +75,7 @@ export class AcmeTransport {
     });
   }
 
-  async postAsGet<T = any>(url: string): Promise<HttpResponse<T>> {
+  async postAsGet<T = unknown>(url: string): Promise<HttpResponse<T>> {
     return this.post<T>(url, '');
   }
 }

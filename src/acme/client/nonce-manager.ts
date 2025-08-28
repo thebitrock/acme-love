@@ -9,7 +9,7 @@ import { RateLimiter, RateLimitError } from './rate-limiter.js';
  * Minimal fetch-like function signature returning an HttpResponse
  * (your implementation can wrap undici / node fetch / custom HTTP client).
  */
-export type FetchLike = (url: string) => Promise<HttpResponse<any>>;
+export type FetchLike = (url: string) => Promise<HttpResponse<unknown>>;
 
 export interface NonceManagerOptions {
   /** Full URL of the ACME newNonce endpoint (absolute). */
@@ -99,7 +99,8 @@ export class NonceManager {
     debugNonce('Taking nonce: namespace=%s, poolSize=%d', namespace, pool.length);
 
     while (pool.length) {
-      const n = pool.pop()!;
+      const n = pool.pop();
+      if (!n) break; // Safety check
       if (!this.isExpired(n.ts)) {
         this.pools.set(namespace, pool);
         debugNonce(
@@ -154,7 +155,7 @@ export class NonceManager {
   /**
    * Harvest nonce(s) from an ACME response (Replay-Nonce header). Supports folded / multi headers.
    */
-  private putFromResponse(namespace: Namespace, res: HttpResponse<any>): void {
+  private putFromResponse(namespace: Namespace, res: HttpResponse<unknown>): void {
     const raw = res.headers['replay-nonce'] || res.headers['Replay-Nonce'];
     if (!raw) return;
 
@@ -230,7 +231,7 @@ export class NonceManager {
   }
 
   /** Extract a single Replay-Nonce header (accept arrays and pick the last). */
-  private nonceExtractor(res: HttpResponse<any>): string {
+  private nonceExtractor(res: HttpResponse<unknown>): string {
     const raw = res.headers['replay-nonce'] || res.headers['Replay-Nonce'];
     if (!raw) {
       throw new ServerInternalError('newNonce: missing Replay-Nonce header');
@@ -255,8 +256,9 @@ export class NonceManager {
         // Bubble up 503/429 details so RateLimiter can parse headers
         if (res.status === 503 || res.status === 429) {
           const error = new ServerInternalError(`newNonce failed: HTTP ${res.status}`);
-          (error as any).status = res.status;
-          (error as any).headers = res.headers;
+          const err = error as Error & { status?: number; headers?: unknown };
+          err.status = res.status;
+          err.headers = res.headers;
           throw error;
         }
         throw new ServerInternalError(`newNonce failed: HTTP ${res.status}`);
@@ -286,8 +288,9 @@ export class NonceManager {
 
     let drained = 0;
     while (q.length && pool.length) {
-      const waiter = q.shift()!;
-      const n = pool.pop()!;
+      const waiter = q.shift();
+      const n = pool.pop();
+      if (!waiter || !n) break; // Safety check
       waiter.resolve(n.value);
       drained++;
     }

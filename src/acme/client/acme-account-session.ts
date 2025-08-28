@@ -130,7 +130,7 @@ export class AcmeAccountSession {
       const ns = await this.nonceNamespace();
 
       // Include EAB in payload if provided
-      let finalPayload: any = payload;
+      let finalPayload: object = payload;
       if (eab) {
         const externalAccountBinding = await this.createExternalAccountBinding(eab);
         finalPayload = { ...payload, externalAccountBinding };
@@ -395,7 +395,7 @@ export class AcmeAccountSession {
   }
 
   /** Sign flattened JWS with kid or embedded JWK */
-  private async signJws(payload: any, url: string, nonce: string, forceJwk = false) {
+  private async signJws(payload: unknown, url: string, nonce: string, forceJwk = false) {
     const protectedHeader: jose.JWSHeaderParameters = {
       alg: 'ES256',
       url,

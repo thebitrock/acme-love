@@ -192,7 +192,7 @@ export class SimpleHttpClient {
     return result;
   }
 
-  private describeBodyForDebug(body: string | Uint8Array | Buffer | null): any {
+  private describeBodyForDebug(body: string | Uint8Array | Buffer | null): unknown {
     if (body === null) return { type: 'null' };
     if (typeof body === 'string') {
       return {

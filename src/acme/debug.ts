@@ -19,7 +19,7 @@ const createDebugger = (namespace: string) => {
     debugEnv.includes(`acme-love:${namespace}`) ||
     debugEnv.includes('*');
 
-  return (message: string, ...args: any[]) => {
+  return (message: string, ...args: unknown[]) => {
     if (shouldLog) {
       const timestamp = new Date().toISOString();
       // Simple string formatting - replace %s, %d, %j
