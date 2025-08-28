@@ -1318,11 +1318,23 @@ const core = new AcmeClientCore(directoryUrl, {
 ```
 
 ### 📈 Detailed Reports
+Comprehensive performance & reliability artifacts (human‑readable Markdown + machine‑readable JSON):
 
-- Quick: [QUICK-STRESS-TEST-RESULTS.md](./docs/reports/QUICK-STRESS-TEST-RESULTS.md)
-- Light: [LIGHT-STRESS-TEST-RESULTS.md](./docs/reports/LIGHT-STRESS-TEST-RESULTS.md)
-- Standard: [STRESS-TEST-RESULTS.md](./docs/reports/STRESS-TEST-RESULTS.md)
-- Heavy: [HEAVY-STRESS-TEST-RESULTS.md](./docs/reports/HEAVY-STRESS-TEST-RESULTS.md)
+Primary stress tiers:
+
+- Quick: [Markdown](./docs/reports/QUICK-STRESS-TEST-RESULTS.md) · [JSON](./docs/reports/QUICK-STRESS-TEST-RESULTS.json)
+- Standard: [Markdown](./docs/reports/STANDARD-STRESS-TEST-RESULTS.md) · [JSON](./docs/reports/STANDARD-STRESS-TEST-RESULTS.json)
+- Heavy: [Markdown](./docs/reports/HEAVY-STRESS-TEST-RESULTS.md) · [JSON](./docs/reports/HEAVY-STRESS-TEST-RESULTS.json)
+
+Supporting analyses:
+
+- Rate Limiting Summary: [RATE-LIMITING-SUMMARY.md](./docs/reports/RATE-LIMITING-SUMMARY.md)
+- Deadlock Resolution: [DEADLOCK-FIX-REPORT.md](./docs/reports/DEADLOCK-FIX-REPORT.md)
+- Account Management: [ACCOUNT-MANAGEMENT-SUMMARY.md](./docs/reports/ACCOUNT-MANAGEMENT-SUMMARY.md)
+- Test Suite Overview: [TEST-SUITE-REPORT.md](./docs/reports/TEST-SUITE-REPORT.md)
+- Style Guide & Automation: [STYLE-GUIDE-REPORT.md](./docs/reports/STYLE-GUIDE-REPORT.md)
+
+Each stress test report includes: latency distribution (P50/P75/P90/P95/P99), throughput, nonce efficiency, savings, threshold matrix, environment metadata (git commit, Node version), and raw config for reproducibility.
 
 ### 🏃 Running the Tests
 
