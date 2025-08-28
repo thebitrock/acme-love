@@ -338,10 +338,10 @@ export class AcmeAccountSession {
   /** Create External Account Binding JWS per RFC 8555 Section 7.3.4 */
   private async createExternalAccountBinding(eab: ExternalAccountBinding): Promise<jose.FlattenedJWS> {
     const jwk = await jose.exportJWK(this.keys.publicKey);
-    
+
     // Decode HMAC key from base64url
     const hmacKeyBytes = jose.base64url.decode(eab.hmacKey);
-    
+
     // Import HMAC key for signing
     const hmacKey = await crypto.subtle.importKey(
       'raw',

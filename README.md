@@ -526,10 +526,11 @@ try {
     const retrySeconds = error.getRetryAfterSeconds();
     console.log(`⏱️ Rate limited. Retry in ${retrySeconds} seconds`);
     console.log(`📝 Details: ${error.detail}`);
-    
+
     // Wait and retry automatically
-    if (retrySeconds && retrySeconds < 300) { // Max 5 minutes
-      await new Promise(resolve => setTimeout(resolve, retrySeconds * 1000));
+    if (retrySeconds && retrySeconds < 300) {
+      // Max 5 minutes
+      await new Promise((resolve) => setTimeout(resolve, retrySeconds * 1000));
       // Retry the operation...
     }
     return;
@@ -569,7 +570,7 @@ try {
     console.log(`❌ ACME Error: ${error.detail}`);
     console.log(`🔍 Type: ${error.type}`);
     console.log(`📊 Status: ${error.status}`);
-    
+
     // Handle subproblems for compound errors
     if (error.subproblems?.length) {
       console.log('📋 Subproblems:');
@@ -584,12 +585,14 @@ try {
 #### Complete Error Types Reference
 
 **Account & Registration Errors:**
+
 - `AccountDoesNotExistError` - Account doesn't exist, need to register
 - `ExternalAccountRequiredError` - CA requires EAB for registration
 - `InvalidContactError` - Invalid contact information (email format, etc.)
 - `UnsupportedContactError` - Unsupported contact protocol scheme
 
 **Authentication & Authorization Errors:**
+
 - `BadNonceError` - Invalid anti-replay nonce (auto-retried by NonceManager)
 - `BadPublicKeyError` - Unsupported public key algorithm
 - `BadSignatureAlgorithmError` - Unsupported signature algorithm
@@ -597,6 +600,7 @@ try {
 - `UserActionRequiredError` - Manual action required (visit instance URL)
 
 **Certificate & CSR Errors:**
+
 - `BadCSRError` - Invalid Certificate Signing Request
 - `BadRevocationReasonError` - Invalid revocation reason provided
 - `AlreadyRevokedError` - Certificate already revoked
@@ -604,6 +608,7 @@ try {
 - `RejectedIdentifierError` - Server won't issue for this identifier
 
 **Validation Errors:**
+
 - `CAAError` - CAA DNS records forbid certificate issuance
 - `ConnectionError` - Can't connect to validation target
 - `DNSError` - DNS resolution problems during validation
@@ -612,6 +617,7 @@ try {
 - `UnsupportedIdentifierError` - Unsupported identifier type
 
 **Server & Network Errors:**
+
 - `ServerInternalError` - Internal server error (500)
 - `ServerMaintenanceError` - Service under maintenance (503)
 - `RateLimitedError` - ACME rate limit exceeded with retry info
@@ -619,11 +625,13 @@ try {
 - `CompoundError` - Multiple errors (check subproblems array)
 
 **Rate Limiting Errors:**
+
 - `RateLimitError` - Internal rate limiter exceeded retry attempts
 
 #### Error Handling Patterns
 
 **Pattern 1: Graceful Degradation**
+
 ```ts
 async function createCertificateWithFallback(domain: string) {
   try {
@@ -632,55 +640,60 @@ async function createCertificateWithFallback(domain: string) {
     if (error instanceof RateLimitedError) {
       // Wait and retry once
       const retrySeconds = error.getRetryAfterSeconds();
-      if (retrySeconds && retrySeconds < 3600) { // Max 1 hour
-        await new Promise(resolve => setTimeout(resolve, retrySeconds * 1000));
+      if (retrySeconds && retrySeconds < 3600) {
+        // Max 1 hour
+        await new Promise((resolve) => setTimeout(resolve, retrySeconds * 1000));
         return await createCertificate(domain);
       }
     }
-    
+
     if (error instanceof ServerMaintenanceError) {
       // Try staging environment as fallback
       return await createCertificateStaging(domain);
     }
-    
+
     throw error; // Re-throw unhandled errors
   }
 }
 ```
 
 **Pattern 2: Retry with Exponential Backoff**
+
 ```ts
 async function robustCertificateCreation(domain: string, maxRetries = 3) {
   let attempt = 0;
-  
+
   while (attempt < maxRetries) {
     try {
       return await createCertificate(domain);
     } catch (error) {
       attempt++;
-      
+
       if (error instanceof BadNonceError && attempt < maxRetries) {
         // Exponential backoff for nonce errors
         const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
-      
+
       if (error instanceof RateLimitedError) {
         const retrySeconds = error.getRetryAfterSeconds();
-        if (retrySeconds && retrySeconds < 1800) { // Max 30 minutes
-          await new Promise(resolve => setTimeout(resolve, retrySeconds * 1000));
+        if (retrySeconds && retrySeconds < 1800) {
+          // Max 30 minutes
+          await new Promise((resolve) => setTimeout(resolve, retrySeconds * 1000));
           continue;
         }
       }
-      
+
       // Don't retry these errors
-      if (error instanceof ExternalAccountRequiredError ||
-          error instanceof BadCSRError ||
-          error instanceof RejectedIdentifierError) {
+      if (
+        error instanceof ExternalAccountRequiredError ||
+        error instanceof BadCSRError ||
+        error instanceof RejectedIdentifierError
+      ) {
         throw error;
       }
-      
+
       if (attempt >= maxRetries) throw error;
     }
   }
@@ -688,28 +701,33 @@ async function robustCertificateCreation(domain: string, maxRetries = 3) {
 ```
 
 **Pattern 3: Error Categorization**
+
 ```ts
 function categorizeError(error: unknown): 'retry' | 'reconfigure' | 'fatal' {
-  if (error instanceof RateLimitedError ||
-      error instanceof BadNonceError ||
-      error instanceof ServerMaintenanceError ||
-      error instanceof ConnectionError) {
+  if (
+    error instanceof RateLimitedError ||
+    error instanceof BadNonceError ||
+    error instanceof ServerMaintenanceError ||
+    error instanceof ConnectionError
+  ) {
     return 'retry';
   }
-  
-  if (error instanceof ExternalAccountRequiredError ||
-      error instanceof BadCSRError ||
-      error instanceof InvalidContactError ||
-      error instanceof UnsupportedContactError) {
+
+  if (
+    error instanceof ExternalAccountRequiredError ||
+    error instanceof BadCSRError ||
+    error instanceof InvalidContactError ||
+    error instanceof UnsupportedContactError
+  ) {
     return 'reconfigure';
   }
-  
+
   return 'fatal';
 }
 
 async function handleCertificateError(error: unknown) {
   const category = categorizeError(error);
-  
+
   switch (category) {
     case 'retry':
       console.log('⏳ Temporary issue - will retry automatically');
@@ -736,7 +754,7 @@ try {
     // Structured error logging
     const errorData = error.toJSON();
     console.log('ACME Error Details:', JSON.stringify(errorData, null, 2));
-    
+
     // Send to monitoring system
     await sendToMonitoring({
       event: 'acme_error',

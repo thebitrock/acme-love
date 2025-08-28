@@ -6,7 +6,7 @@ describe('External Account Binding', () => {
   it('should create EAB JWS with correct structure', async () => {
     // Generate test account keys
     const keyPair = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' });
-    
+
     // Mock EAB parameters
     const eab: ExternalAccountBinding = {
       kid: 'test-kid-123',
@@ -42,7 +42,7 @@ describe('External Account Binding', () => {
 
     // Test EAB creation
     const eabJws = await createEAB.call(session, eab);
-    
+
     expect(eabJws).toBeDefined();
     expect(eabJws.protected).toBeDefined();
     expect(eabJws.payload).toBeDefined();
@@ -73,7 +73,7 @@ describe('External Account Binding', () => {
   });
 
   it('should include EAB in account registration payload', async () => {
-    // This test verifies the integration but doesn't make actual network calls    
+    // This test verifies the integration but doesn't make actual network calls
     const eab: ExternalAccountBinding = {
       kid: 'test-kid-456',
       hmacKey: 'dGVzdC1obWFjLWtleS00NTY'

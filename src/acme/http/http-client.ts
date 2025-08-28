@@ -73,7 +73,7 @@ export class SimpleHttpClient {
     body: unknown,
     headers: Record<string, string> = {},
   ): Promise<HttpResponse<T>> {
-  headers = this.ensureUserAgent({ ...headers });
+    headers = this.ensureUserAgent({ ...headers });
     let serializedBody: string | Uint8Array | Buffer | null;
 
     if (typeof body === 'undefined') {
@@ -136,7 +136,7 @@ export class SimpleHttpClient {
   }
 
   async head(url: string, headers: Record<string, string> = {}): Promise<HttpResponse<void>> {
-  headers = this.ensureUserAgent({ ...headers });
+    headers = this.ensureUserAgent({ ...headers });
     debugHttp('HEAD %s init headers=%j', url, headers);
     const start = Date.now();
     let res;

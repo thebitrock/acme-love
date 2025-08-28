@@ -25,26 +25,29 @@ import { AcmeClientCore, AcmeAccountSession, generateKeyPair } from 'acme-love';
 const accountKeys = await generateKeyPair({
   kind: 'ec',
   namedCurve: 'P-256',
-  hash: 'SHA-256'
+  hash: 'SHA-256',
 });
 
 // Create client and session
 const client = new AcmeClientCore('https://ca.example.com/acme/directory');
 const session = new AcmeAccountSession(client, {
   privateKey: accountKeys.privateKey!,
-  publicKey: accountKeys.publicKey!
+  publicKey: accountKeys.publicKey!,
 });
 
 // Register account with EAB
 const eab = {
   kid: 'your-key-identifier',
-  hmacKey: 'your-base64url-encoded-hmac-key'
+  hmacKey: 'your-base64url-encoded-hmac-key',
 };
 
-const kid = await session.ensureRegistered({
-  contact: ['mailto:admin@example.com'],
-  termsOfServiceAgreed: true
-}, eab);
+const kid = await session.ensureRegistered(
+  {
+    contact: ['mailto:admin@example.com'],
+    termsOfServiceAgreed: true,
+  },
+  eab,
+);
 
 console.log('Account registered with kid:', kid);
 ```

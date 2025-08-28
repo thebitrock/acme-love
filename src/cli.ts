@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Helper functions for algorithm selection
 async function selectAlgorithm(purpose: 'account' | 'certificate'): Promise<CsrAlgo> {
   const purposeText = purpose === 'account' ? 'account keys' : 'certificate keys';
-  
+
   const algoType = await select({
     message: `Select cryptographic algorithm for ${purposeText}:`,
     choices: [
@@ -70,10 +70,10 @@ async function selectAdvancedOptions(): Promise<{
   if (separateAlgos) {
     console.log('\n📋 Account keys are used for ACME protocol authentication');
     const accountAlgo = await selectAlgorithm('account');
-    
+
     console.log('\n📋 Certificate keys are embedded in the final TLS certificate');
     const certAlgo = await selectAlgorithm('certificate');
-    
+
     return { accountAlgo, certAlgo, separateAlgos: true };
   } else {
     console.log('\n📋 Same algorithm will be used for both account and certificate keys');
@@ -256,7 +256,7 @@ async function handleCertCommand(options: any) {
 
   // Get cryptographic algorithms
   let accountAlgo: CsrAlgo, certAlgo: CsrAlgo, separateAlgos: boolean;
-  
+
   if (options.accountAlgo || options.certAlgo) {
     // Use command line specified algorithms
     accountAlgo = parseAlgorithm(options.accountAlgo || 'ec-p256');
@@ -279,7 +279,7 @@ async function handleCertCommand(options: any) {
     directoryUrl = options.directory;
   } else {
     // Build dynamic choices from directory object
-  const directoryChoices = buildDirectoryChoices();
+    const directoryChoices = buildDirectoryChoices();
     const envChoice = await select({
       message: 'Select ACME directory:',
       choices: [
@@ -592,7 +592,7 @@ async function handleCreateAccountKey(options: any) {
     console.log('📋 Account keys are used for ACME protocol authentication');
     algo = await selectAlgorithm('account');
   }
-  
+
   console.log(`\n🔑 Generating ${algo.kind === 'ec' ? `ECDSA ${algo.namedCurve}` : `RSA ${algo.modulusLength}`} key pair...`);
   const keyPair = await generateKeyPair(algo);
 
@@ -637,7 +637,7 @@ async function handleInteractiveMode(options: any = {}) {
 
   // If no environment is specified, ask user to choose
   if (!options.staging && !options.production && !options.directory) {
-  const directoryChoices = buildDirectoryChoices();
+    const directoryChoices = buildDirectoryChoices();
     const envChoice = await select({
       message: 'Select ACME directory:',
       choices: [
