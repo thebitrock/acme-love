@@ -60,6 +60,8 @@ jobs:
 
     env:
       NPM_CONFIG_PROVENANCE: true
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     steps:
       - name: Checkout full history
@@ -77,6 +79,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Sanity check npm auth
+        run: |
+          npm config get registry
+          npm whoami
+
       - name: Build
         run: npm run build
 
@@ -84,4 +91,3 @@ jobs:
         run: npx --no-install semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.SEMANTIC_RELEASE_BOT_NPM_TOKEN }}
