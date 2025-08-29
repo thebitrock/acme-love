@@ -71,6 +71,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
+    "lint:format": "eslint . --fix && prettier --write .",
     "seo:check": "node scripts/check-seo.mjs",
     "package:analyze": "npm run seo:check && npm run publish:dry",
     "cli": "npm run build && node dist/src/cli.js",

@@ -85,7 +85,9 @@ export default [
       'no-case-declarations': 'error',
     },
   },
+  // Disable style rules that conflict with Prettier
   eslintConfigPrettier,
+  // Enable Prettier plugin to surface formatting issues as lint errors
   prettierRecommended,
   {
     ignores: [
