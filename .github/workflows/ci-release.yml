@@ -81,8 +81,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Release (npx semantic-release)
+      - name: Release (semantic-release)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx -y semantic-release@24
+        run: npx --no-install semantic-release
