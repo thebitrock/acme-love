@@ -101,6 +101,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Previous release (see git history for details).
 
 ---
+
 \
 [1.5.2]: https://github.com/thebitrock/acme-love/releases/tag/v1.5.2
 [1.5.1]: https://github.com/thebitrock/acme-love/releases/tag/v1.5.1
