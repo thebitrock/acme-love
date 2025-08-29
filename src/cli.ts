@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 
+import { confirm, input, select } from '@inquirer/prompts';
 import { program } from 'commander';
-import { select, input, confirm } from '@inquirer/prompts';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import {
-  AcmeClientCore,
   AcmeAccountSession,
-  provider,
+  AcmeClientCore,
   createAcmeCsr,
   generateKeyPair,
+  provider,
   resolveAndValidateAcmeTxtAuthoritative,
   ServerMaintenanceError,
-  type CsrAlgo,
   type AccountKeys,
-  type ACMEOrder,
   type AcmeDirectoryEntry,
+  type ACMEOrder,
   type AcmeProvider,
+  type CsrAlgo,
 } from './index.js';
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -199,7 +199,6 @@ function handleError(error: unknown): void {
     if (
       message.includes('maintenance') ||
       message.includes('service is down') ||
-      message.includes('letsencrypt.status.io') ||
       message.includes('http 503')
     ) {
       console.error('\n🔧 Service Maintenance');
