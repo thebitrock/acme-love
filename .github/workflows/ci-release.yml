@@ -48,9 +48,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
-    environment:
-      name: Production
-
     permissions:
       contents: write
       issues: write
@@ -63,7 +60,6 @@ jobs:
 
     env:
       NPM_CONFIG_PROVENANCE: true
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     steps:
       - name: Checkout full history
@@ -85,7 +81,7 @@ jobs:
         run: npm run build
 
       - name: Release (semantic-release)
+        run: npx --no-install semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx --no-install semantic-release
