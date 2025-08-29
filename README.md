@@ -15,15 +15,18 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 
 ## 📋 Table of Contents
 
+<!-- TOC-START -->
+
 Main
+  - [📋 Table of Contents](#table-of-contents)
   - [✨ Key Features](#key-features)
   - [🚀 Quick Start](#quick-start)
-    - [CLI Installation & Usage](#cli-installation--usage)
+    - [CLI Installation & Usage](#cli-installation-usage)
     - [🎮 Interactive Mode (Easiest Way)](#interactive-mode-easiest-way)
     - [📋 Command Line Mode](#command-line-mode)
     - [🎯 Challenge Types](#challenge-types)
     - [🔐 Cryptographic Algorithms](#cryptographic-algorithms)
-    - [🛠️ Development & Local Usage](#development--local-usage)
+    - [🛠️ Development & Local Usage](#development-local-usage)
     - [📖 CLI Commands Reference](#cli-commands-reference)
   - [📚 Library Usage](#library-usage)
     - [Installation](#installation)
@@ -39,12 +42,12 @@ Main
     - [Performance Scenarios](#performance-scenarios)
     - [Debug Logging](#debug-logging)
     - [Custom Nonce Manager Logging](#custom-nonce-manager-logging)
-  - [🔍 Advanced Validators & Utilities](#advanced-validators--utilities)
+  - [🔍 Advanced Validators & Utilities](#advanced-validators-utilities)
     - [DNS Validation Functions](#dns-validation-functions)
     - [HTTP Validation Functions](#http-validation-functions)
     - [CLI Configuration Details](#cli-configuration-details)
   - [🔧 CSR Generation](#csr-generation)
-    - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms-1)
+    - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms)
   - [🏢 Supported ACME Providers](#supported-acme-providers)
   - [🔧 Client Initialization](#client-initialization)
     - [Method 1: Using Provider Presets (Recommended)](#method-1-using-provider-presets-recommended)
@@ -58,18 +61,21 @@ Main
   - [🔧 Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
   - [⚡ Requirements](#requirements)
-  - [🚀 Performance & Stress Testing](#performance--stress-testing)
+  - [🚀 Performance & Stress Testing](#performance-stress-testing)
     - [🔢 Consolidated Metrics (Latest Run)](#consolidated-metrics-latest-run)
     - [🧪 Interpretation](#interpretation)
     - [⚙️ Key Optimizations](#key-optimizations)
     - [🔍 Example High-Load Configuration](#example-high-load-configuration)
     - [📈 Detailed Reports](#detailed-reports)
     - [🏃 Running the Tests](#running-the-tests)
-  - [🚨 ~~Known Issues~~ ✅ Resolved Issues](#known-issues--resolved-issues)
+  - [🚨 ~~Known Issues~~ ✅ Resolved Issues](#known-issues-resolved-issues)
+    - [~~Concurrent Account Creation Deadlock~~ ✅ **RESOLVED**](#concurrent-account-creation-deadlock-resolved)
   - [🧪 Test Coverage](#test-coverage)
     - [🔑 Test Account Management](#test-account-management)
-  - [� License](#license)
+  - [📄 License](#license)
   - [🤝 Contributing](#contributing)
+
+<!-- TOC-END -->
 
 ## ✨ Key Features
 

@@ -73,6 +73,8 @@
     "lint:check": "eslint .",
     "lint:format": "eslint . --fix && prettier --write .",
     "seo:check": "node scripts/check-seo.mjs",
+  "toc": "node scripts/generate-toc.mjs",
+  "toc:check": "node scripts/generate-toc.mjs --check",
     "package:analyze": "npm run seo:check && npm run publish:dry",
     "cli": "npm run build && node dist/src/cli.js",
     "cli:help": "npm run build && node dist/src/cli.js --help",
