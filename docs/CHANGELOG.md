@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.5.3] - 2025-08-29
+
+### Changed
+
+- **Dependencies**: Updated `jest`, `@jest/globals`, `babel-jest` to 30.1.1 and `jose` to 6.1.0 (no code changes required; test suite green).
+
+### Notes
+
+- Patch release for dependency maintenance only; no public API or runtime behavior changes.
+
 ## [1.5.2] - 2025-08-29
 
 ### Changed
