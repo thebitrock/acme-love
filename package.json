@@ -47,7 +47,7 @@
     "test:standard": "ACME_LIGHT_STRESS_ENABLED=1 NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/standard-stress.test.ts --testTimeout=45000",
     "test:heavy": "ACME_HEAVY_STRESS_ENABLED=1 NODE_OPTIONS='--experimental-vm-modules' jest __tests__/stress/heavy-stress.test.ts --testTimeout=60000",
     "test:rate-limiting": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/rate-limiting.test.ts --testTimeout=60000",
-    "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/**/*.test.ts --testPathIgnorePatterns='e2e|stress'",
+    "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest __tests__/unit/*.test.ts --testPathIgnorePatterns='e2e|stress'",
     "test:deadlock:all": "npm run test:deadlock",
     "accounts": "NODE_OPTIONS='--experimental-vm-modules' node dist/__tests__/utils/account-manager-cli.js",
     "clean": "rm -rf dist",

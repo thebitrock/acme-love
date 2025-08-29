@@ -1,4 +1,4 @@
-import { SimpleHttpClient } from '../http/http-client.js';
+import { AcmeHttpClient } from '../http/http-client.js';
 import type { ACMEDirectory } from '../types/directory.js';
 import type { AcmeDirectoryEntry } from '../../directory.js';
 import { NonceManager, type NonceManagerOptions } from './nonce-manager.js';
@@ -12,7 +12,7 @@ export interface AcmeClientCoreOptions {
 export class AcmeClientCore {
   public readonly directoryUrl: string;
   private readonly opts: AcmeClientCoreOptions;
-  private readonly http = new SimpleHttpClient();
+  private readonly http = new AcmeHttpClient();
 
   private directory?: ACMEDirectory;
   private nonce?: NonceManager;
@@ -77,7 +77,7 @@ export class AcmeClientCore {
   }
 
   /** Raw HTTP client (POST/GET/HEAD wrappers) */
-  public getHttp(): SimpleHttpClient {
+  public getHttp(): AcmeHttpClient {
     return this.http;
   }
 

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import { NonceManager } from '../src/acme/client/nonce-manager.js';
 import { generateKeyPair, createAcmeCsr } from '../src/acme/csr.js';
-import { SimpleHttpClient } from '../src/acme/http/http-client.js';
+import { AcmeHttpClient } from '../src/acme/http/http-client.js';
 import { AcmeDirectory } from '../src/acme/client/acme-directory.js';
 import type { CsrAlgo } from '../src/acme/csr.js';
 
@@ -11,7 +11,7 @@ import type { CsrAlgo } from '../src/acme/csr.js';
 describe.skip('ACME Library Async Behavior Tests', () => {
   const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
 
-  let httpClient: SimpleHttpClient;
+  let httpClient: AcmeHttpClient;
   let directory: AcmeDirectory;
   let nonceManager: NonceManager;
 
@@ -24,7 +24,7 @@ describe.skip('ACME Library Async Behavior Tests', () => {
 
     console.log('Setting up async behavior tests...');
 
-    httpClient = new SimpleHttpClient();
+    httpClient = new AcmeHttpClient();
     directory = new AcmeDirectory(httpClient, STAGING_DIRECTORY_URL);
     const dirResult = await directory.get();
 

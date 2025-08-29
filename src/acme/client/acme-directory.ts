@@ -1,4 +1,4 @@
-import { SimpleHttpClient } from '../http/http-client.js';
+import { AcmeHttpClient } from '../http/http-client.js';
 import { ServerInternalError } from '../errors/errors.js';
 import type { ACMEDirectory } from '../types/directory.js';
 import { coalesceAsync } from 'promise-coalesce';
@@ -8,7 +8,7 @@ export class AcmeDirectory {
   private cached?: ACMEDirectory;
 
   constructor(
-    private readonly http: SimpleHttpClient,
+    private readonly http: AcmeHttpClient,
     private readonly directoryUrl: string,
   ) {}
 

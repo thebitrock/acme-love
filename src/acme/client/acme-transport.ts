@@ -1,12 +1,12 @@
 import type { ParsedResponseData } from '../http/http-client.js';
-import { SimpleHttpClient } from '../http/http-client.js';
+import { AcmeHttpClient } from '../http/http-client.js';
 import { NonceManager, type NonceManagerOptions } from './nonce-manager.js';
 import type { AcmeSigner } from './acme-signer.js';
 import type { JWSHeaderParameters } from 'jose';
 
 /**
  * Responsible for signed ACME HTTP calls and Nonce handling.
- * Encapsulates: SimpleHttpClient, NonceManager and JWS creation.
+ * Encapsulates: AcmeHttpClient, NonceManager and JWS creation.
  */
 export class AcmeTransport {
   private readonly nonceManager: NonceManager;
@@ -14,7 +14,7 @@ export class AcmeTransport {
   constructor(
     private readonly directoryBaseUrl: string,
     private readonly newNonceUrl: string,
-    private readonly http: SimpleHttpClient,
+    private readonly http: AcmeHttpClient,
     private readonly signer: AcmeSigner,
     private readonly nonceOverrides?: Partial<NonceManagerOptions>,
   ) {

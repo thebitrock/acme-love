@@ -1,40 +1,19 @@
 import { request, type Dispatcher } from 'undici';
 import { debugHttp } from '../debug.js';
-import { readFileSync } from 'fs';
+import { buildUserAgent } from '../utils.js';
 
 // Extend ResponseData with parsed body
 export interface ParsedResponseData extends Omit<Dispatcher.ResponseData, 'body'> {
   body: unknown;
 }
 
-export class SimpleHttpClient {
-  private static userAgent = SimpleHttpClient.initUserAgent();
-
-  private static initUserAgent(): string {
-    try {
-      // Use require.resolve to find package.json from any module context
-      const pkgPath = require.resolve('../../package.json');
-      if (pkgPath) {
-        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as {
-          name?: string;
-          version?: string;
-          homepage?: string;
-        };
-        const name = pkg.name || 'acme-love';
-        const version = pkg.version || '0.0.0-dev';
-        const homepage = pkg.homepage || 'https://github.com/thebitrock/acme-love';
-        return `${name}/${version} (+${homepage}; Node/${process.version.replace(/^v/, '')})`;
-      }
-    } catch (e) {
-      debugHttp('User-Agent init error: %s', (e as Error).message);
-    }
-    return 'acme-love (version-unknown)';
-  }
+export class AcmeHttpClient {
+  private static userAgent = buildUserAgent();
 
   private ensureUserAgent(headers: Record<string, string>): Record<string, string> {
     const hasUA = Object.keys(headers).some((k) => k.toLowerCase() === 'user-agent');
     if (!hasUA) {
-      headers['User-Agent'] = SimpleHttpClient.userAgent;
+      headers['User-Agent'] = AcmeHttpClient.userAgent;
     }
     return headers;
   }

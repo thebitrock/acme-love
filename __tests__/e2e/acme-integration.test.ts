@@ -3,7 +3,7 @@ import { AcmeClientCore } from '../../src/acme/client/acme-client-core.js';
 import { AcmeDirectory } from '../../src/acme/client/acme-directory.js';
 import { NonceManager } from '../../src/acme/client/nonce-manager.js';
 import { generateKeyPair, createAcmeCsr } from '../../src/acme/csr.js';
-import { SimpleHttpClient } from '../../src/acme/http/http-client.js';
+import { AcmeHttpClient } from '../../src/acme/http/http-client.js';
 import type { CsrAlgo } from '../../src/acme/csr.js';
 
 // These tests run against Let's Encrypt staging environment
@@ -15,7 +15,7 @@ describe('ACME Integration Tests (E2E)', () => {
   let directory: AcmeDirectory;
   let nonceManager: NonceManager;
   let client: AcmeClientCore;
-  let httpClient: SimpleHttpClient;
+  let httpClient: AcmeHttpClient;
 
   beforeAll(async () => {
     // Skip tests if in CI without proper test domain setup
@@ -32,7 +32,7 @@ describe('ACME Integration Tests (E2E)', () => {
     console.log('Generated account key pair');
 
     // Initialize HTTP client
-    httpClient = new SimpleHttpClient();
+    httpClient = new AcmeHttpClient();
 
     // Initialize directory
     directory = new AcmeDirectory(httpClient, STAGING_DIRECTORY_URL);
@@ -197,7 +197,7 @@ describe('ACME Integration Tests (E2E)', () => {
     }
 
     // Test with invalid directory URL
-    const invalidHttpClient = new SimpleHttpClient();
+    const invalidHttpClient = new AcmeHttpClient();
     const invalidDirectory = new AcmeDirectory(
       invalidHttpClient,
       'https://invalid-acme-server.example.com/directory',
