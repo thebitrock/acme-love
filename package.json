@@ -1,6 +1,6 @@
 {
   "name": "acme-love",
-  "version": "1.5.5",
+  "version": "0.0.0-semantic-release",
   "description": "🔐 Modern TypeScript ACME client & CLI for Let's Encrypt certificates. Supports DNS-01/HTTP-01 validation, wildcard domains, EAB (ZeroSSL/Google), nonce pooling. RFC 8555 compliant. Node.js 20+",
   "main": "dist/index.js",
   "type": "module",
@@ -123,7 +123,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thebitrock/acme-love.git",
+    "url": "https://github.com/thebitrock/acme-love.git",
     "directory": "."
   },
   "bugs": {
@@ -192,7 +192,8 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/",
-    "provenance": true
+    "provenance": true,
+    "tag": "latest"
   },
   "directories": {
     "doc": "./docs",
