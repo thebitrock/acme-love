@@ -15,67 +15,78 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 
 ## 📋 Table of Contents
 
-- [✨ Key Features](#-key-features)
-- [🚀 Quick Start](#-quick-start)
-  - [CLI Installation & Usage](#cli-installation--usage)
-  - [🎮 Interactive Mode (Easiest Way)](#-interactive-mode-easiest-way)
-  - [📋 Command Line Mode](#-command-line-mode)
-  - [🎯 Challenge Types](#-challenge-types)
-  - [🔐 Cryptographic Algorithms](#-cryptographic-algorithms)
-  - [🛠️ Development & Local Usage](#️-development--local-usage)
-  - [📖 CLI Commands Reference](#-cli-commands-reference)
-- [📚 Library Usage](#-library-usage)
-  - [Installation](#installation)
-  - [Modern ACME Client](#modern-acme-client)
-  - [External Account Binding (EAB) Support](#external-account-binding-eab-support)
-  - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms-1)
-  - [Working with Existing Accounts](#working-with-existing-accounts)
-  - [Advanced Features](#advanced-features)
-- [⚡ Nonce Management](#-nonce-management)
-  - [Global Configuration](#global-configuration)
-  - [Per-Account Overrides](#per-account-overrides)
-  - [Configuration Options](#configuration-options)
-  - [Performance Scenarios](#performance-scenarios)
-  - [Debug Logging](#debug-logging)
-  - [Custom Nonce Manager Logging](#custom-nonce-manager-logging)
-- [🔍 Advanced Validators & Utilities](#-advanced-validators--utilities)
-  - [DNS Validation Functions](#dns-validation-functions)
-  - [HTTP Validation Functions](#http-validation-functions)
-  - [CLI Configuration Details](#cli-configuration-details)
-- [🔧 CSR Generation](#-csr-generation)
-  - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms-2)
-- [🏢 Supported ACME Providers](#-supported-acme-providers)
-- [🎨 CLI Features Showcase](#-cli-features-showcase)
-  - [Beautiful Interactive Prompts](#beautiful-interactive-prompts)
-  - [Smart Error Handling](#smart-error-handling)
-  - [Automatic Validation](#automatic-validation)
-- [📖 Documentation](#-documentation)
-- [🔧 Troubleshooting](#-troubleshooting)
-  - [Common Issues](#common-issues)
-- [⚡ Requirements](#-requirements)
-- [🚀 Performance & Stress Testing](#-performance--stress-testing)
-  - [🔢 Consolidated Metrics (Latest Run)](#-consolidated-metrics-latest-run)
-  - [🧪 Interpretation](#-interpretation)
-  - [⚙️ Key Optimizations](#️-key-optimizations)
-  - [🔍 Example High-Load Configuration](#-example-high-load-configuration)
-- [🚨 ~~Known Issues~~ ✅ Resolved Issues](#-known-issues--resolved-issues)
-- [🧪 Test Coverage](#-test-coverage)
-- [📄 License](#-license)
-- [🤝 Contributing](#-contributing)
+Main
+  - [✨ Key Features](#key-features)
+  - [🚀 Quick Start](#quick-start)
+    - [CLI Installation & Usage](#cli-installation--usage)
+    - [🎮 Interactive Mode (Easiest Way)](#interactive-mode-easiest-way)
+    - [📋 Command Line Mode](#command-line-mode)
+    - [🎯 Challenge Types](#challenge-types)
+    - [🔐 Cryptographic Algorithms](#cryptographic-algorithms)
+    - [🛠️ Development & Local Usage](#development--local-usage)
+    - [📖 CLI Commands Reference](#cli-commands-reference)
+  - [📚 Library Usage](#library-usage)
+    - [Installation](#installation)
+    - [Modern ACME Client](#modern-acme-client)
+    - [External Account Binding (EAB) Support](#external-account-binding-eab-support)
+    - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms)
+    - [Working with Existing Accounts](#working-with-existing-accounts)
+    - [Advanced Features](#advanced-features)
+  - [⚡ Nonce Management](#nonce-management)
+    - [Global Configuration](#global-configuration)
+    - [Per-Account Overrides](#per-account-overrides)
+    - [Configuration Options](#configuration-options)
+    - [Performance Scenarios](#performance-scenarios)
+    - [Debug Logging](#debug-logging)
+    - [Custom Nonce Manager Logging](#custom-nonce-manager-logging)
+  - [🔍 Advanced Validators & Utilities](#advanced-validators--utilities)
+    - [DNS Validation Functions](#dns-validation-functions)
+    - [HTTP Validation Functions](#http-validation-functions)
+    - [CLI Configuration Details](#cli-configuration-details)
+  - [🔧 CSR Generation](#csr-generation)
+    - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms-1)
+  - [🏢 Supported ACME Providers](#supported-acme-providers)
+  - [🔧 Client Initialization](#client-initialization)
+    - [Method 1: Using Provider Presets (Recommended)](#method-1-using-provider-presets-recommended)
+    - [Method 2: Using String URLs](#method-2-using-string-urls)
+    - [Benefits of Provider Presets](#benefits-of-provider-presets)
+  - [🎨 CLI Features Showcase](#cli-features-showcase)
+    - [Beautiful Interactive Prompts](#beautiful-interactive-prompts)
+    - [Smart Error Handling](#smart-error-handling)
+    - [Automatic Validation](#automatic-validation)
+  - [📖 Documentation](#documentation)
+  - [🔧 Troubleshooting](#troubleshooting)
+    - [Common Issues](#common-issues)
+  - [⚡ Requirements](#requirements)
+  - [🚀 Performance & Stress Testing](#performance--stress-testing)
+    - [🔢 Consolidated Metrics (Latest Run)](#consolidated-metrics-latest-run)
+    - [🧪 Interpretation](#interpretation)
+    - [⚙️ Key Optimizations](#key-optimizations)
+    - [🔍 Example High-Load Configuration](#example-high-load-configuration)
+    - [📈 Detailed Reports](#detailed-reports)
+    - [🏃 Running the Tests](#running-the-tests)
+  - [🚨 ~~Known Issues~~ ✅ Resolved Issues](#known-issues--resolved-issues)
+  - [🧪 Test Coverage](#test-coverage)
+    - [🔑 Test Account Management](#test-account-management)
+  - [� License](#license)
+  - [🤝 Contributing](#contributing)
 
 ## ✨ Key Features
 
-| Feature                      | Description                                                   |
-| ---------------------------- | ------------------------------------------------------------- |
-| 🖥️ **Powerful CLI**          | Interactive & command-line modes with beautiful prompts       |
-| 🌐 **Multi-Environment**     | Staging, Production, and Custom ACME directories              |
-| 🔒 **Challenge Support**     | DNS-01 and HTTP-01 with automatic validation                  |
-| � **Crypto Algorithms**      | ECDSA (P-256/P-384/P-521) and RSA (2048/3072/4096) support    |
-| 🔑 **EAB Support**           | External Account Binding for commercial CAs (ZeroSSL, Google) |
-| �🛠️ **Smart Error Handling** | Maintenance detection, user-friendly error messages           |
-| ⚡ **Modern Architecture**   | ESM + TypeScript 5, WebCrypto, nonce pooling                  |
-| 🏢 **Multiple CAs**          | Let's Encrypt, Buypass, Google, ZeroSSL with EAB support      |
-| 🔧 **Developer Friendly**    | Multiple CLI access methods, auto-build, comprehensive docs   |
+| Feature                         | Description                                                           |
+| ------------------------------- | --------------------------------------------------------------------- |
+| 🖥️ **Powerful CLI**             | Interactive & non-interactive modes with polished prompts             |
+| 🌐 **Multi-Environment**        | Staging, production & custom directory endpoints                      |
+| 🔒 **Challenge Support**        | DNS-01 (wildcard-friendly) & HTTP-01 with built-in validation helpers |
+| 🔐 **Crypto Algorithms**        | ECDSA P-256 / P-384 / P-521 and RSA 2048 / 3072 / 4096                |
+| 🔑 **External Account Binding** | EAB support (ZeroSSL, Google Trust Services, etc.)                    |
+| 🛠️ **Resilient Error Handling** | RFC 8555 problem+json mapping, retry & maintenance detection          |
+| ⚡ **Optimized Core**           | Nonce pooling, FS read minimization, undici HTTP client               |
+| 🏢 **Multiple CAs**             | Presets: Let's Encrypt, Buypass, Google, ZeroSSL + custom URLs        |
+| 📦 **Typed API**                | Strong TypeScript types for orders, accounts, directory metadata      |
+| 🔍 **Diagnostics**              | Namespaced debug logging; stress & performance reports                |
+| 🧪 **Tested**                   | Unit + stress tests; concurrency & rate limit scenarios               |
+| 🔧 **Developer Friendly**       | CSR helpers, validation utilities, composable modules                 |
 
 ## 🚀 Quick Start
 
@@ -156,7 +167,7 @@ acme-love cert --challenge http-01 --domain acme-love.com --email user@acme-love
 - ✅ Automatic validation with built-in checker
 - 🔧 Requires domain to point to your web server
 
-### � Cryptographic Algorithms
+### 🔐 Cryptographic Algorithms
 
 The CLI uses **P-256 ECDSA** by default for both account and certificate keys, providing an excellent balance of security and performance. This algorithm is:
 
@@ -167,7 +178,7 @@ The CLI uses **P-256 ECDSA** by default for both account and certificate keys, p
 
 For programmatic usage via the library, you can choose from multiple algorithms including different ECDSA curves (P-256, P-384, P-521) and RSA key sizes (2048, 3072, 4096 bits). See the [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms) section for details.
 
-### �🛠️ Development & Local Usage
+### 🛠️ Development & Local Usage
 
 If you're developing or testing locally, you have multiple convenient options:
 
@@ -226,7 +237,7 @@ acme-love cert \
 
 ## 📚 Library Usage
 
-[🔝 Back to Top](#-table-of-contents)
+[🔝 Back to Top](#table-of-contents)
 
 ### Installation
 
@@ -957,7 +968,7 @@ debug('acme-love:nonce').log = customNonceLogger;
 
 📖 **Detailed documentation**: [docs/NONCE-MANAGER.md](./docs/NONCE-MANAGER.md)
 
-## � Advanced Validators & Utilities
+## 🔍 Advanced Validators & Utilities
 
 ### DNS Validation Functions
 
@@ -1032,7 +1043,7 @@ When using the CLI, ACME Love automatically handles file organization and config
 - **Key algorithm**: ECDSA P-256 (ES256)
 - **File format**: JWK for keys, PEM for certificates
 
-## �🔧 CSR Generation
+## 🔧 CSR Generation
 
 The `createAcmeCsr` helper generates everything needed for certificate finalization:
 
@@ -1274,7 +1285,7 @@ chmod 755 ./certificates/
 
 ## 🚀 Performance & Stress Testing
 
-[🔝 Back to Top](#-table-of-contents)
+[🔝 Back to Top](#table-of-contents)
 
 ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple load tiers. Below are the latest consolidated results pulled from the stress report artifacts (Quick / Standard / Heavy). They demonstrate scalability, nonce‑pool efficiency, and stability as order volume increases.
 
@@ -1374,7 +1385,7 @@ npm run test:all            # EVERYTHING (includes stress) – slower
 - Added exponential backoff with Retry-After header support
 - Optimized nonce pool management with 98% efficiency
 - Unified debug logging system with printf-style formatting
-- **Latest test results**: 4 accounts × 100 orders = 400 operations completed successfully in 33 seconds
+- **Latest test results**: 4 accounts × 200 orders = 800 operations completed successfully in 59 seconds
 
 **Current Status**:
 
@@ -1386,7 +1397,7 @@ npm run test:all            # EVERYTHING (includes stress) – slower
 
 ## 🧪 Test Coverage
 
-[🔝 Back to Top](#-table-of-contents)
+[🔝 Back to Top](#table-of-contents)
 
 ACME Love maintains comprehensive test coverage to ensure reliability and quality:
 
