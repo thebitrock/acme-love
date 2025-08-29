@@ -25,7 +25,8 @@
     "allowUnreachableCode": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "newLine": "lf"
   },
   "include": ["src/**/*", "test-acme-e2e.ts", "__tests__/**/*.ts", "examples/**/*"],
   "exclude": ["node_modules", "dist"]
