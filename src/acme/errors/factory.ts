@@ -86,10 +86,7 @@ export function createErrorFromProblem(problem: unknown): AcmeError {
   // Special handling for maintenance errors
   if (
     type === ACME_ERROR.serverInternal &&
-    (detail.includes('maintenance') ||
-      detail.includes('service is down') ||
-      detail.includes('letsencrypt.status.io') ||
-      status === 503)
+    (detail.includes('maintenance') || detail.includes('service is down') || status === 503)
   ) {
     err = new ServerMaintenanceError(detail, status);
   } else if (ctor === BadSignatureAlgorithmError) {
