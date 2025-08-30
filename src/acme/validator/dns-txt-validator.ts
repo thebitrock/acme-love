@@ -9,6 +9,12 @@ export interface ValidationResult {
   allValues: string[];
   /** Reasons if ok === false */
   reasons?: string[];
+  /** Authoritative zone discovered (may be null if unresolved) */
+  zone?: string | null;
+  /** Authoritative NS hostnames for the zone (if resolved) */
+  nsHosts?: string[];
+  /** Resolved IPs (A/AAAA) of authoritative NS (if resolved) */
+  nsIPs?: string[];
 }
 
 /** Concatenate TXT record fragments (as returned by dns.resolveTxt) */
@@ -144,19 +150,7 @@ async function maybeFollowCname(
   }
 
   // Fallback: check CNAME via system resolver (acceptable for target discovery)
-  try {
-    const { Resolver: SysResolver } = await import('dns').then((m) => ({
-      Resolver: (m as any).Resolver,
-    }));
-    const sys = new SysResolver();
-    const cname = await (sys as any).resolveCname?.(name);
-    const target = Array.isArray(cname) && cname.length > 0 ? cname[0] : null;
-    if (target) {
-      return resolveTxtWithResolver(resolver, target.replace(/\.$/, ''));
-    }
-  } catch {
-    // ignore
-  }
+  // CNAME fallback currently omitted.
   // If we got here, just try TXT once more (will throw on failure)
   return resolveTxtWithResolver(resolver, name);
 }
@@ -180,6 +174,9 @@ export async function resolveAndValidateAcmeTxtAuthoritative(
       ok: false,
       allValues: [],
       reasons: [`Failed to find zone with NS for ${name}`],
+      zone: null,
+      nsHosts: [],
+      nsIPs: [],
     };
   }
 
@@ -191,6 +188,9 @@ export async function resolveAndValidateAcmeTxtAuthoritative(
       ok: false,
       allValues: [],
       reasons: [`Failed to resolve NS for ${zone}: ${String(e)}`],
+      zone,
+      nsHosts: [],
+      nsIPs: [],
     };
   }
 
@@ -200,12 +200,14 @@ export async function resolveAndValidateAcmeTxtAuthoritative(
       ok: false,
       allValues: [],
       reasons: [`No IPs for NS of ${zone} (hosts: ${nsHosts.join(', ')})`],
+      zone,
+      nsHosts,
+      nsIPs: [],
     };
   }
 
   // Create a dedicated resolver pinned to authoritative IPs
   const resolver = new Resolver();
-  console.log('Using authoritative DNS servers:', nsIPs);
   resolver.setServers(nsIPs);
 
   // Optional per-query timeout
@@ -237,10 +239,14 @@ export async function resolveAndValidateAcmeTxtAuthoritative(
       ok: false,
       allValues: [],
       reasons: [`Failed to resolve TXT at authoritative servers for ${name}: ${String(e)}`],
+      zone,
+      nsHosts,
+      nsIPs,
     };
   }
 
-  return validateAcmeTxtSet(records, expected);
+  const base = validateAcmeTxtSet(records, expected);
+  return { ...base, zone, nsHosts, nsIPs };
 }
 
 /**

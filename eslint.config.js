@@ -93,6 +93,7 @@ export default [
     ignores: [
       'scripts/',
       'dist/',
+      'docs/',
       'node_modules/',
       'coverage/',
       'coverage/**/*',

@@ -1,8 +1,8 @@
 import type { webcrypto } from 'crypto';
 
 export interface ACMEAccount {
-  privateKey: webcrypto.CryptoKey | Uint8Array<ArrayBufferLike>;
-  publicKey: webcrypto.CryptoKey | Uint8Array<ArrayBufferLike>;
+  privateKey: webcrypto.CryptoKey | Uint8Array; // raw bytes fallback
+  publicKey: webcrypto.CryptoKey | Uint8Array; // raw bytes fallback
   keyId?: string;
 }
 

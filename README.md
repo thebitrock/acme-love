@@ -232,7 +232,6 @@ See [CLI-USAGE.md](./docs/CLI-USAGE.md) for detailed development setup.
 | -------------------- | ------------------------------ | ------------------------------------ | ------------------------------------------ |
 | `cert`               | Obtain SSL certificate         | `--account-algo`, `--cert-algo`      | `--eab-kid`, `--eab-hmac-key`              |
 | `create-account-key` | Generate ACME account key      | `--algo`                             | -                                          |
-| `status`             | Check certificate status       | -                                    | -                                          |
 | `interactive`        | Interactive certificate wizard | Full interactive algorithm selection | Prompts for EAB when custom directory used |
 
 **Algorithm Values**: `ec-p256` (default), `ec-p384`, `ec-p521`, `rsa-2048`, `rsa-3072`, `rsa-4096`

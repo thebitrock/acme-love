@@ -82,16 +82,6 @@ acme-love interactive
 acme-love i
 ```
 
-#### 5. Check certificate status
-
-```bash
-# Check local certificate
-acme-love status -c ./certificates/acme-love.com.crt
-
-# Check domain (in development)
-acme-love status -d acme-love.com
-```
-
 ### Parameters for cert command
 
 | Parameter               | Description                         | Example                               |

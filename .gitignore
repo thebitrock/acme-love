@@ -94,3 +94,4 @@ certificates/
 # Test accounts and keys (should not be committed)
 test-accounts/
 stress-test-accounts/
+/account-key.json

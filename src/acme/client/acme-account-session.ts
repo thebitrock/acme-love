@@ -139,11 +139,7 @@ export class AcmeAccountSession {
   }
 
   private async nonceNamespace(): Promise<string> {
-    const host = new URL(this.client.directoryUrl).host;
-    // const id = this.kid ?? (await this.thumb());
-    // return NonceManager.makeNamespace(host, id);
-    // return NonceManager.makeNamespace(host);
-    return host;
+    return new URL(this.client.directoryUrl).host;
   }
 
   /** Ensure account is registered; sets this.kid on success (idempotent & coalesced) */
@@ -240,7 +236,6 @@ export class AcmeAccountSession {
 
   /** Generic challenge solver that handles the common flow */
   private async solveChallenge(order: ACMEOrder, handler: ChallengeHandler): Promise<ACMEOrder> {
-    console.log('SOLVE CHALLENGE', order);
     if (order.status === 'valid' || order.status === 'ready') {
       return order;
     }
@@ -272,8 +267,6 @@ export class AcmeAccountSession {
 
       await handler.setChallenge(challengePreparation);
       await handler.waitFor(challengePreparation);
-
-      console.log(challenge);
       await this.completeChallenge(challenge);
     }
 
@@ -384,7 +377,6 @@ export class AcmeAccountSession {
 
   /** Download certificate (PEM chain) for a valid order */
   public async downloadCertificate(order: ACMEOrder): Promise<string> {
-    console.log(order);
     if (!order.certificate) throw new Error('No certificate URL on order');
     const nm = this.requireNonce();
     const ns = await this.nonceNamespace();
