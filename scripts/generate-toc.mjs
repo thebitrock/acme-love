@@ -82,9 +82,9 @@ function buildTOC(lines) {
     // Remove stray variation selectors or zero-width chars at start
     linkText = linkText.replace(/^[\ufe0f\u200d\u200c]+/, '');
     if (level === 2) {
-      out.push(`  - [${linkText}](#${slug})`);
+      out.push(`- [${linkText}](#${slug})`);
     } else if (level === 3) {
-      out.push(`    - [${linkText}](#${slug})`);
+      out.push(`  - [${linkText}](#${slug})`);
     }
   }
   return { toc: out.join('\n'), headingSlugs, headingSlugPairs };
