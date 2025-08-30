@@ -8,7 +8,7 @@ describe('ACME Heavy Stress Test - 4 Accounts × 200 Orders', () => {
     accounts: 4,
     ordersPerAccount: 200,
     directoryUrl: 'https://acme-staging-v02.api.letsencrypt.org/directory',
-    batchSize: 10,
+    batchSize: 50,
     reportFile: 'HEAVY-STRESS-TEST-RESULTS.md',
     envSkipVar: 'ACME_HEAVY_STRESS_ENABLED',
     noncePoolSizePerAccount: 20,

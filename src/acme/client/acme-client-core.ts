@@ -68,7 +68,7 @@ export class AcmeClientCore {
 
     // default NonceManager instance (can be overridden per-account)
     this.nonce = new NonceManager({
-      newNonceUrl: this.directory!.newNonce,
+      newNonceUrl: this.directory?.newNonce,
       fetch: (url) => this.http.head(url),
       ...this.opts.nonce,
     });

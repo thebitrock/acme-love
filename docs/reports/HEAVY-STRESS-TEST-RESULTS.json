@@ -1,9 +1,8 @@
 {
   "meta": {
-    "generatedAt": "2025-08-28T23:13:22.111Z",
+    "generatedAt": "2025-08-30T16:11:38.983Z",
     "testType": "Heavy Load Stress Test",
-    "gitCommit": "unknown",
-    "packageVersion": "1.5.0",
+    "packageVersion": "1.6.3",
     "nodeVersion": "v22.18.0"
   },
   "config": {
@@ -11,7 +10,7 @@
     "TOTAL_ACCOUNTS": 4,
     "ORDERS_PER_ACCOUNT": 200,
     "TOTAL_ORDERS": 800,
-    "batchSize": 10,
+    "batchSize": 50,
     "thresholds": {
       "minSuccessRate": 0.8,
       "maxAvgResponseTimeMs": 5000,
@@ -21,59 +20,59 @@
   },
   "metrics": {
     "totals": {
-      "totalTimeMs": 59399,
-      "accountCreationTimeMs": 680,
-      "orderProcessingTimeMs": 58707,
-      "totalRequests": 1612,
-      "ordersPerSecond": 13.46869370506928,
-      "requestsPerSecond": 27.139417815714598,
+      "totalTimeMs": 32792,
+      "accountCreationTimeMs": 1008,
+      "orderProcessingTimeMs": 31773,
+      "totalRequests": 1652,
+      "ordersPerSecond": 24.397682220189083,
+      "requestsPerSecond": 50.38121378469046,
       "successRate": 1,
       "errorRate": 0
     },
     "latency": {
-      "averageMs": 263.0074441687345,
-      "p50": 205,
-      "p75": 308,
-      "p90": 403,
-      "p95": 454,
-      "p99": 618
+      "averageMs": 494.0665859564165,
+      "p50": 246,
+      "p75": 733,
+      "p90": 1102,
+      "p95": 1338,
+      "p99": 1554
     },
     "distribution": {
       "byMethod": {
-        "HEAD": 12,
+        "HEAD": 52,
         "POST": 1600
       },
       "byEndpoint": {
-        "new-nonce": 12,
+        "new-nonce": 52,
         "new-order": 800,
         "authorization": 800
       },
       "byAccount": {
-        "0": 403,
-        "1": 403,
-        "2": 403,
-        "3": 403
+        "0": 413,
+        "1": 413,
+        "2": 413,
+        "3": 413
       }
     },
     "nonce": {
-      "newNonceRequests": 12,
+      "newNonceRequests": 52,
       "savedRequestsEstimate": 1600,
-      "efficiency": 0.9925558312655087
+      "efficiency": 0.9685230024213075
     },
     "phases": [
       {
         "phase": "Account Creation",
-        "durationMs": 681,
+        "durationMs": 1010,
         "requests": 0,
         "errors": 0,
         "avgResponseMs": 0
       },
       {
         "phase": "Order Creation",
-        "durationMs": 58708,
-        "requests": 1612,
+        "durationMs": 31773,
+        "requests": 1652,
         "errors": 0,
-        "avgResponseMs": 263.0074441687345
+        "avgResponseMs": 494.0665859564165
       },
       {
         "phase": "Nonce Analysis",
@@ -93,7 +92,7 @@
     },
     {
       "metric": "Avg Response Time",
-      "actual": "263 ms",
+      "actual": "494 ms",
       "target": "<= 5000 ms",
       "pass": true
     },
@@ -105,7 +104,7 @@
     },
     {
       "metric": "Requests / Sec",
-      "actual": "27.14",
+      "actual": "50.38",
       "target": ">= 1",
       "pass": true
     }

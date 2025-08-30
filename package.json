@@ -155,7 +155,6 @@
     "debug": "^4.4.1",
     "jose": "^6.1.0",
     "ora": "^8.2.0",
-    "promise-coalesce": "^1.1.2",
     "undici": "^7.15.0"
   },
   "devDependencies": {

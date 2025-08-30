@@ -1,6 +1,5 @@
 import * as jose from 'jose';
 import { createHash } from 'crypto';
-import { coalesceAsync } from 'promise-coalesce';
 
 import type { webcrypto } from 'crypto';
 import type { AcmeClientCore } from './acme-client-core.js';
@@ -127,22 +126,13 @@ export class AcmeAccountSession {
     }
   }
 
-  /** Export JWK and compute thumbprint (stable namespace when kid is not yet assigned) */
-  private async jwk(): Promise<jose.JWK> {
-    return await jose.exportJWK(this.keys.publicKey);
-  }
-  private async thumb(): Promise<string> {
-    // RFC 7638 canonical thumbprint
-    const jwk = await this.jwk();
-    // jose.calculateJwkThumbprint already canonicalizes; keep it if available, else manual:
-    return await jose.calculateJwkThumbprint(jwk, 'sha256');
-  }
+  // (Removed jwk()/thumb() helpers after dropping cross-instance coalescing logic)
 
   private async nonceNamespace(): Promise<string> {
     return new URL(this.client.directoryUrl).host;
   }
 
-  /** Ensure account is registered; sets this.kid on success (idempotent & coalesced) */
+  /** Ensure account is registered; sets this.kid on success (idempotent for a single instance) */
   public async ensureRegistered(
     payload = { contact: [] as string[], termsOfServiceAgreed: true },
     eab?: ExternalAccountBinding,
@@ -151,40 +141,33 @@ export class AcmeAccountSession {
     if (this.kid) return this.kid;
 
     const dir = this.requireDirectory();
-    const id = await this.thumb();
+    const nm = this.requireNonce();
+    const ns = await this.nonceNamespace();
 
-    return await coalesceAsync(`acct:${this.client.directoryUrl}:${id}`, async () => {
-      if (this.kid) return this.kid;
+    // Include EAB in payload if provided
+    let finalPayload: object = payload;
+    if (eab) {
+      const externalAccountBinding = await this.createExternalAccountBinding(eab);
+      finalPayload = { ...payload, externalAccountBinding };
+    }
 
-      const nm = this.requireNonce();
-      const ns = await this.nonceNamespace();
-
-      // Include EAB in payload if provided
-      let finalPayload: object = payload;
-      if (eab) {
-        const externalAccountBinding = await this.createExternalAccountBinding(eab);
-        finalPayload = { ...payload, externalAccountBinding };
-      }
-
-      const res = await nm.withNonceRetry(ns, async (nonce) => {
-        const jws = await this.signJws(finalPayload, dir.newAccount, nonce, /*forceJwk*/ true);
-        return this.client.getHttp().post(dir.newAccount, jws, {
-          'Content-Type': 'application/jose+json',
-          Accept: 'application/json',
-        });
+    const res = await nm.withNonceRetry(ns, async (nonce) => {
+      const jws = await this.signJws(finalPayload, dir.newAccount, nonce, /*forceJwk*/ true);
+      return this.client.getHttp().post(dir.newAccount, jws, {
+        'Content-Type': 'application/jose+json',
+        Accept: 'application/json',
       });
-
-      if (res.statusCode >= 400) throw createErrorFromProblem(res.body);
-
-      const location = res.headers?.location || res.headers?.Location;
-
-      const resourceUrl = ((res.body as Record<string, unknown>)?.url ||
-        (location && (Array.isArray(location) ? location[0] : location))) as string;
-
-      if (!resourceUrl) throw new Error('newAccount: missing account location (kid)');
-      this.kid = String(resourceUrl);
-      return this.kid;
     });
+
+    if (res.statusCode >= 400) throw createErrorFromProblem(res.body);
+
+    const location = res.headers?.location || res.headers?.Location;
+    const resourceUrl = ((res.body as Record<string, unknown>)?.url ||
+      (location && (Array.isArray(location) ? location[0] : location))) as string;
+
+    if (!resourceUrl) throw new Error('newAccount: missing account location (kid)');
+    this.kid = String(resourceUrl);
+    return this.kid;
   }
 
   private prefillUrl(response: ParsedResponseData): ParsedResponseData {

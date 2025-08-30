@@ -8,7 +8,7 @@ describe('ACME Standard Stress Test - 4 Accounts × 50 Orders', () => {
     accounts: 4,
     ordersPerAccount: 50,
     directoryUrl: 'https://acme-staging-v02.api.letsencrypt.org/directory',
-    batchSize: 10,
+    batchSize: 50,
     reportFile: 'STANDARD-STRESS-TEST-RESULTS.md',
     envSkipVar: 'ACME_LIGHT_STRESS_ENABLED',
     noncePoolSizePerAccount: 15,

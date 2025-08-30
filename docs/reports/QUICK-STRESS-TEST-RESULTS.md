@@ -6,7 +6,7 @@
 
 | Field               | Value                    |
 | ------------------- | ------------------------ |
-| Date                | 2025-08-28T23:09:07.152Z |
+| Date                | 2025-08-30T16:12:49.518Z |
 | Test Type           | Quick Stress Test        |
 | Accounts            | 2                        |
 | Orders / Account    | 20                       |
@@ -16,25 +16,24 @@
 | Target              | Let's Encrypt Staging    |
 | Algorithm           | EC P-256                 |
 | Node Version        | v22.18.0                 |
-| Package Version     | v1.5.0                   |
-| Git Commit          | unknown                  |
+| Package Version     | v1.6.3                   |
 
 ## ⚙️ Performance Summary
 
 | Metric           | Value        |
 | ---------------- | ------------ |
-| Total Time       | 7s (7170 ms) |
-| Account Creation | 680 ms       |
-| Order Processing | 6471 ms      |
-| Total Requests   | 86           |
-| Orders / Sec     | 5.58         |
-| Requests / Sec   | 12.00        |
-| Avg Response     | 276 ms       |
-| P50              | 206 ms       |
-| P75              | 264 ms       |
-| P90              | 603 ms       |
-| P95              | 615 ms       |
-| P99              | 630 ms       |
+| Total Time       | 6s (6155 ms) |
+| Account Creation | 1992 ms      |
+| Order Processing | 4142 ms      |
+| Total Requests   | 93           |
+| Orders / Sec     | 6.50         |
+| Requests / Sec   | 15.11        |
+| Avg Response     | 346 ms       |
+| P50              | 239 ms       |
+| P75              | 586 ms       |
+| P90              | 723 ms       |
+| P95              | 741 ms       |
+| P99              | 821 ms       |
 | Error Count      | 0            |
 | Error Rate       | 0.00%        |
 
@@ -42,7 +41,7 @@
 
 ```
 Latency ms trend:
-▁▇▇▇▁▇▁▁▁▁▁▁▇▁▁▂▁▁▂▃▃▁▁▁▁▂▁▁▁▁▂▁▁▁▂▂▁▁▁▂▂▁▁
+▁▇▆▁▆▁▁▇▂▁▁▁▁▆▅▁▁▁▁▁▁▁▁▁▁▅▁▁▁▁▁▁▁▁▁▁▅▁▁▁▁▁▁▁▁▁▇
 ```
 
 ### ✅ Threshold Validation
@@ -50,63 +49,63 @@ Latency ms trend:
 | Metric            | Actual | Threshold  | Status  |
 | ----------------- | ------ | ---------- | ------- |
 | Success Rate      | 100.0% | >= 70.0%   | ✅ Pass |
-| Avg Response Time | 276 ms | <= 4000 ms | ✅ Pass |
+| Avg Response Time | 346 ms | <= 4000 ms | ✅ Pass |
 | Error Rate        | 0.00%  | <= 30.00%  | ✅ Pass |
-| Requests / Sec    | 12.00  | >= 1       | ✅ Pass |
+| Requests / Sec    | 15.11  | >= 1       | ✅ Pass |
 
 ### 📊 Request Distribution
 
 | Method | Count | Percent |
 | ------ | ----- | ------- |
-| POST   | 80    | 93.0%   |
-| HEAD   | 6     | 7.0%    |
+| POST   | 80    | 86.0%   |
+| HEAD   | 13    | 14.0%   |
 
 ### 🔝 Top Endpoints
 
 | Endpoint      | Requests | Percent |
 | ------------- | -------- | ------- |
-| new-order     | 40       | 46.5%   |
-| authorization | 40       | 46.5%   |
-| new-nonce     | 6        | 7.0%    |
+| new-order     | 40       | 43.0%   |
+| authorization | 40       | 43.0%   |
+| new-nonce     | 13       | 14.0%   |
 
 ### 🧩 Endpoint Breakdown (Let's Encrypt Staging)
 
 | Endpoint      | Requests | Percent |
 | ------------- | -------- | ------- |
-| new-order     | 40       | 46.5%   |
-| authorization | 40       | 46.5%   |
-| new-nonce     | 6        | 7.0%    |
+| new-order     | 40       | 43.0%   |
+| authorization | 40       | 43.0%   |
+| new-nonce     | 13       | 14.0%   |
 
 ### 👥 Per-Account Performance
 
 | Account | Requests | Percent of Total |
 | ------- | -------- | ---------------- |
-| 1       | 43       | 50.0%            |
-| 2       | 43       | 50.0%            |
+| 1       | 46       | 49.5%            |
+| 2       | 47       | 50.5%            |
 
 ### 🔐 Nonce Manager Performance
 
 | Metric                     | Value    |
 | -------------------------- | -------- |
-| Total New-Nonce Requests   | 6        |
+| Total New-Nonce Requests   | 13       |
 | Requests Saved (Heuristic) | 80       |
-| Pool Efficiency            | 93%      |
+| Pool Efficiency            | 86%      |
 | Final Pool State           | 0 nonces |
 
 ### ⏱️ Phase Breakdown
 
 | Phase            | Duration (s) | Requests | Errors | Avg Resp (ms) |
 | ---------------- | ------------ | -------- | ------ | ------------- |
-| Account Creation | 1            | 0        | 0      | 0             |
-| Order Creation   | 6            | 86       | 0      | 276           |
+| Account Creation | 2            | 0        | 0      | 0             |
+| Order Creation   | 4            | 93       | 0      | 346           |
 | Nonce Analysis   | 0            | 0        | 0      | 0             |
 
 ### ⭐ Key Performance Indicators
 
 - ✅ Processed **40/40** orders (100.00%)
-- ✅ Sustained **12.00 req/s** & **5.58 orders/s**
-- ✅ Maintained **276 ms** avg response (P95 615 ms, P99 630 ms)
-- ✅ Nonce pooling avoided **80** extra requests (93% efficiency)
+- ✅ Sustained **15.11 req/s** & **6.50 orders/s**
+- ✅ Maintained **346 ms** avg response (P95 741 ms, P99 821 ms)
+- ✅ Nonce pooling avoided **80** extra requests (86% efficiency)
 - ✅ Zero errors observed
 
 ### 🧾 Stress Test Validation
@@ -121,7 +120,7 @@ This quick stress test demonstrates that ACME Love handled **2 accounts** issuin
   "TOTAL_ACCOUNTS": 2,
   "ORDERS_PER_ACCOUNT": 20,
   "TOTAL_ORDERS": 40,
-  "batchSize": 5,
+  "batchSize": 40,
   "thresholds": {
     "minSuccessRate": 0.7,
     "maxAvgResponseTimeMs": 4000,
@@ -133,4 +132,4 @@ This quick stress test demonstrates that ACME Love handled **2 accounts** issuin
 
 </details>
 
-_Generated by ACME Love v1.5.0 (unknown) quick stress test stress test_
+_Generated by ACME Love v1.6.3 quick stress test stress test_

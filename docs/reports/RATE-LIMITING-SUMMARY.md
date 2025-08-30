@@ -157,8 +157,8 @@ DEBUG="acme-love:nonce" node app.js
 
 ### ✅ COMPLETELY RESOLVED
 
-- Removed promise-coalesce library (source of deadlock)
-- Direct async operations without coalescing
+- Simplified internal logic (removed external coalescing helper)
+- Direct async operations without global coalescing
 - All tests pass stably
 - Performance improved by 54%
 

@@ -8,7 +8,7 @@ describe('ACME Quick Stress Test - 2 Accounts × 20 Orders', () => {
     accounts: 2,
     ordersPerAccount: 20,
     directoryUrl: 'https://acme-staging-v02.api.letsencrypt.org/directory',
-    batchSize: 5,
+    batchSize: 40,
     reportFile: 'QUICK-STRESS-TEST-RESULTS.md',
     noncePoolSizePerAccount: 10,
     thresholds: {

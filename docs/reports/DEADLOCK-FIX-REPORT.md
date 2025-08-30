@@ -19,7 +19,7 @@ Successfully identified and resolved a critical deadlock in ACME concurrent oper
 
 **Technical Details**:
 
-1. **Promise-Coalesce Library Issue**: The `coalesceAsync` function from `promise-coalesce` library was creating race conditions
+1. External promise coalescing helper introduced race conditions
 2. **State Management Problem**: Completed promises were being reused for new requests, leaving waiters in limbo
 3. **Recursive Refill Issue**: Complex coalescing logic was preventing proper refill operations
 
@@ -34,7 +34,7 @@ Request 2: Reuses completed promise → Never triggers new refill → Waits fore
 
 ### 1. Removed External Coalescing Dependency
 
-- **Before**: Used `promise-coalesce` library with complex state management
+- **Before**: Used an external coalescing helper with complex state management
 - **After**: Implemented simple, direct refill operations without coalescing
 
 ### 2. Simplified Refill Logic
@@ -109,7 +109,7 @@ private async runRefill(namespace: Namespace): Promise<void> {
 
 ### Maintainability
 
-- Removed external dependency (`promise-coalesce`)
+- Removed external coalescing dependency
 - Simplified logic flow
 - Better code readability and debugging
 
@@ -167,6 +167,6 @@ The library is now production-ready for high-concurrency ACME workloads.
 
 ---
 
-_Fix implemented: August 27, 2025_  
-_Tests passing: All critical scenarios validated_  
+_Fix implemented: August 27, 2025_
+_Tests passing: All critical scenarios validated_
 _Status: Ready for production deployment_
