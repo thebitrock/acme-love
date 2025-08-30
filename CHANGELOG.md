@@ -1,3 +1,9 @@
+## [1.6.2](https://github.com/thebitrock/acme-love/compare/v1.6.1...v1.6.2) (2025-08-30)
+
+### Bug Fixes
+
+- ensure consistent removal of HTML tags in githubSlug function ([f855005](https://github.com/thebitrock/acme-love/commit/f8550055dacf714b5f067cfa97926bd3e9a5fcd1))
+
 ## [1.6.1](https://github.com/thebitrock/acme-love/compare/v1.6.0...v1.6.1) (2025-08-30)
 
 ### Bug Fixes
