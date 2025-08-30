@@ -1,3 +1,9 @@
+## [1.6.0](https://github.com/thebitrock/acme-love/compare/v1.5.9...v1.6.0) (2025-08-30)
+
+### Features
+
+- Implement certificate issuance command with interactive prompts ([6873917](https://github.com/thebitrock/acme-love/commit/687391725413994ff8308d190c0912d836f3e862))
+
 ## [1.5.9](https://github.com/thebitrock/acme-love/compare/v1.5.8...v1.5.9) (2025-08-30)
 
 ### Bug Fixes
