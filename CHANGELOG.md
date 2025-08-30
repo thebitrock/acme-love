@@ -1,3 +1,11 @@
+## [1.6.3](https://github.com/thebitrock/acme-love/compare/v1.6.2...v1.6.3) (2025-08-30)
+
+### Bug Fixes
+
+- add a blank line for better readability in README.md ([ea778b9](https://github.com/thebitrock/acme-love/commit/ea778b9e253195c42a610abee0fa190d5c09a3a5))
+- update macOS version in CI workflow matrix ([95bef1f](https://github.com/thebitrock/acme-love/commit/95bef1ffbc99c3700836e1245cbc786fc478f065))
+- update macOS version in CI workflow matrix from 16 to 15 ([400148c](https://github.com/thebitrock/acme-love/commit/400148cf330fcd19039e57b6e7b666bf2016ae09))
+
 ## [1.6.2](https://github.com/thebitrock/acme-love/compare/v1.6.1...v1.6.2) (2025-08-30)
 
 ### Bug Fixes
