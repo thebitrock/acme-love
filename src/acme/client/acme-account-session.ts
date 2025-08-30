@@ -126,8 +126,6 @@ export class AcmeAccountSession {
     }
   }
 
-  // (Removed jwk()/thumb() helpers after dropping cross-instance coalescing logic)
-
   private async nonceNamespace(): Promise<string> {
     return new URL(this.client.directoryUrl).host;
   }

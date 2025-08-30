@@ -71,8 +71,6 @@ Main
   - [Example High-Load Configuration](#example-high-load-configuration)
   - [Detailed Reports](#detailed-reports)
   - [Running the Tests](#running-the-tests)
-- [~~Known Issues~~ ✅ Resolved Issues](#known-issues--resolved-issues)
-  - [~~Concurrent Account Creation Deadlock~~ ✅ **RESOLVED**](#concurrent-account-creation-deadlock--resolved)
 - [Test Coverage](#test-coverage)
   - [Test Account Management](#test-account-management)
 - [License](#license)
@@ -1445,13 +1443,6 @@ Primary stress tiers:
 - Standard: [Markdown](./docs/reports/STANDARD-STRESS-TEST-RESULTS.md) · [JSON](./docs/reports/STANDARD-STRESS-TEST-RESULTS.json)
 - Heavy: [Markdown](./docs/reports/HEAVY-STRESS-TEST-RESULTS.md) · [JSON](./docs/reports/HEAVY-STRESS-TEST-RESULTS.json)
 
-Supporting analyses:
-
-- Rate Limiting Summary: [RATE-LIMITING-SUMMARY.md](./docs/reports/RATE-LIMITING-SUMMARY.md)
-- Deadlock Resolution: [DEADLOCK-FIX-REPORT.md](./docs/reports/DEADLOCK-FIX-REPORT.md)
-- Account Management: [ACCOUNT-MANAGEMENT-SUMMARY.md](./docs/reports/ACCOUNT-MANAGEMENT-SUMMARY.md)
-- Test Suite Overview: [TEST-SUITE-REPORT.md](./docs/reports/TEST-SUITE-REPORT.md)
-- Style Guide & Automation: [STYLE-GUIDE-REPORT.md](./docs/reports/STYLE-GUIDE-REPORT.md)
 
 Each stress test report includes: latency distribution (P50/P75/P90/P95/P99), throughput, nonce efficiency, savings, threshold matrix, environment metadata (git commit, Node version), and raw config for reproducibility.
 
@@ -1459,14 +1450,26 @@ Each stress test report includes: latency distribution (P50/P75/P90/P95/P99), th
 
 ### 🏃 Running the Tests
 
-Current test scripts (see `package.json`):
+**Test Types**
+
+- 🔬 **Unit Tests**: Mock-based testing of individual components
+- 🌐 **Integration Tests**: Real requests to Let's Encrypt staging
+- ⚡ **Async Behavior Tests**: Concurrent operations and memory leak prevention
+- 🔄 **E2E Tests**: Full workflow testing with staging environment
+- 🚀 **Stress Tests**: High-volume production scenario validation (run separately)
 
 ```bash
-# Core (fast) test suites
-npm test                    # Unit + integration (excludes stress & rate-limiting)
+
+# Run standard test suite (fast, excludes stress tests)
+npm test
+
+# Run specific test types
 npm run test:unit           # Unit tests only (skips e2e & stress)
 npm run test:e2e            # End-to-end tests (Let's Encrypt staging)
 npm run test:e2e:ci         # E2E for CI (requires ACME_E2E_ENABLED=1)
+
+# Run with coverage report
+npm run test:coverage
 
 # Focused component tests
 npm run test:nonce-manager  # Nonce manager focused tests (in-band)
@@ -1478,19 +1481,10 @@ npm run test:quick          # Quick tier (2 × 20 orders) ~7s
 npm run test:standard       # Standard tier (4 × 50 orders) ~16s
 npm run test:heavy          # Heavy tier (4 × 200 orders) ~60s
 
+npm run test:deadlock       # Deadlock detection
 # Full suite
 npm run test:all            # EVERYTHING (includes stress) – slower
 ```
-
-<a id="known-issues--resolved-issues"></a>
-
-## 🚨 ~~Known Issues~~ ✅ Resolved Issues
-
-<a id="concurrent-account-creation-deadlock--resolved"></a>
-
-### ~~Concurrent Account Creation Deadlock~~ ✅ **RESOLVED**
-
-**Previous Issue**: Deadlock detected in concurrent ACME account creation operations.
 
 **✅ Resolution**:
 
@@ -1498,7 +1492,7 @@ npm run test:all            # EVERYTHING (includes stress) – slower
 - Added exponential backoff with Retry-After header support
 - Optimized nonce pool management with 98% efficiency
 - Unified debug logging system with printf-style formatting
-- **Latest test results**: 4 accounts × 200 orders = 800 operations completed successfully in 59 seconds
+- **Latest test results**: 4 accounts × 200 orders = 800 operations completed successfully in 32 seconds
 
 **Current Status**:
 
@@ -1518,47 +1512,15 @@ ACME Love maintains comprehensive test coverage to ensure reliability and qualit
 
 **Test Statistics**
 
-- ✅ **42 Tests** across 5 test suites
+- ✅ **60 Tests** across 18 test suites
 - ✅ **100% Passing** test rate
 - 📊 **Core Components Coverage:**
   - `csr.ts`: **94.11%** (cryptographic operations)
-  - `nonce-manager.ts`: **69.46%** (pooling & concurrent access)
+  - `nonce-manager.ts`: **68.03%** (pooling & concurrent access)
   - `acme-directory.ts`: **83.33%** (directory operations)
-  - `acme-client-core.ts`: **68.75%** (core client functionality)
-
-**Test Types**
-
-- 🔬 **Unit Tests**: Mock-based testing of individual components
-- 🌐 **Integration Tests**: Real requests to Let's Encrypt staging
-- ⚡ **Async Behavior Tests**: Concurrent operations and memory leak prevention
-- 🔄 **E2E Tests**: Full workflow testing with staging environment
-- 🚀 **Stress Tests**: High-volume production scenario validation (run separately)
-
-```bash
-# Run standard test suite (fast, excludes stress tests)
-npm test
-
-# Run with coverage report
-npm run test:coverage
-
-# Run all tests including stress tests (takes several minutes)
-npm run test:all
-
-# Run specific test types
-npm run test:unit       # Unit tests only
-npm run test:e2e        # Integration tests with Let's Encrypt staging
-
-# Stress test commands (run individually, requires staging access)
-npm run test:quick        # Quick tier
-npm run test:standard     # Standard tier
-npm run test:heavy        # Heavy tier
-npm run test:deadlock     # Deadlock detection
-npm run test:rate-limiting # Rate limiting behavior
-```
+  - `acme-client-core.ts`: **93.75%** (core client functionality)
 
 **Note**: Stress tests are excluded from the default `npm test` command to keep CI/CD pipelines fast. They should be run manually or in dedicated test environments.
-
-📋 **Detailed testing guide**: [TESTING.md](./docs/TESTING.md)
 
 <a id="test-account-management"></a>
 
