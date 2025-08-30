@@ -32,7 +32,7 @@ function githubSlug(original) {
   text = text.replace(/^[\p{Emoji_Presentation}\p{Emoji}\p{Extended_Pictographic}]+\s*/u, '');
   // 4. Lowercase
   text = text.toLowerCase();
-  // 5. Remove HTML tags if any
+  // 5. Remove HTML tags if any (repeat until none remain)
   let prevText;
   do {
     prevText = text;
