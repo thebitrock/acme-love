@@ -1,6 +1,6 @@
 {
   "name": "acme-love",
-  "version": "1.6.3",
+  "version": "1.7.0",
   "description": "🔐 Modern TypeScript ACME client & CLI for Let's Encrypt certificates. Supports DNS-01/HTTP-01 validation, wildcard domains, EAB (ZeroSSL/Google), nonce pooling. RFC 8555 compliant. Node.js 20+",
   "main": "dist/index.js",
   "type": "module",

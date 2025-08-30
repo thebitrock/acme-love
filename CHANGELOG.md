@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/thebitrock/acme-love/compare/v1.6.3...v1.7.0) (2025-08-30)
+
+### Features
+
+- Update stress test results and reports for version 1.6.3 ([4f69c97](https://github.com/thebitrock/acme-love/commit/4f69c97c6d2ec5468ae5ee1b98ee08eda2fa46b4))
+
 ## [1.6.3](https://github.com/thebitrock/acme-love/compare/v1.6.2...v1.6.3) (2025-08-30)
 
 ### Bug Fixes
