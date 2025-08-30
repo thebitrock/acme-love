@@ -7,7 +7,7 @@ This directory contains comprehensive documentation for the ACME Love library.
 - **[PUBLISHING.md](PUBLISHING.md)** - Publishing guide for npm
 - **[PUBLISH-AUTOMATION.md](PUBLISH-AUTOMATION.md)** - Automated publishing setup
 - **[TESTING.md](TESTING.md)** - Testing guide and best practices
-- **[CLI-USAGE.md](CLI-USAGE.md)** - CLI development setup and usage
+- **[CLI.md](CLI.md)** - Complete CLI documentation and usage guide
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
 - **[RATE-LIMIT-GUIDE.md](RATE-LIMIT-GUIDE.md)** - Rate limiting best practices
 
@@ -15,8 +15,6 @@ This directory contains comprehensive documentation for the ACME Love library.
 
 - **[EAB.md](EAB.md)** - External Account Binding documentation
 - **[NONCE-MANAGER.md](NONCE-MANAGER.md)** - Nonce management system
-- **[CLI.md](CLI.md)** - CLI command reference (Russian)
-- **[CLI-EN.md](CLI-EN.md)** - CLI command reference (English)
 
 ## 📊 Reports
 

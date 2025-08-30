@@ -20,63 +20,62 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 <!-- TOC-START -->
 
 Main
-
-- [Table of Contents](#table-of-contents)
-- [Key Features](#key-features)
-- [Quick Start](#quick-start)
-  - [CLI Installation & Usage](#cli-installation-usage)
-  - [Interactive Mode (Easiest Way)](#interactive-mode-easiest-way)
-  - [Command Line Mode](#command-line-mode)
-  - [Challenge Types](#challenge-types)
-  - [Cryptographic Algorithms](#cryptographic-algorithms)
-  - [ Development & Local Usage](#development-local-usage)
-  - [CLI Commands Reference](#cli-commands-reference)
-- [Library Usage](#library-usage)
-  - [Installation](#installation)
-  - [Modern ACME Client](#modern-acme-client)
-  - [External Account Binding (EAB) Support](#external-account-binding-eab-support)
-  - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms)
-  - [Working with Existing Accounts](#working-with-existing-accounts)
-  - [Advanced Features](#advanced-features)
-- [Nonce Management](#nonce-management)
-  - [Global Configuration](#global-configuration)
-  - [Per-Account Overrides](#per-account-overrides)
-  - [Configuration Options](#configuration-options)
-  - [Performance Scenarios](#performance-scenarios)
-  - [Debug Logging](#debug-logging)
-  - [Custom Nonce Manager Logging](#custom-nonce-manager-logging)
-- [Advanced Validators & Utilities](#advanced-validators-utilities)
-  - [DNS Validation Functions](#dns-validation-functions)
-  - [HTTP Validation Functions](#http-validation-functions)
-  - [CLI Configuration Details](#cli-configuration-details)
-- [CSR Generation](#csr-generation)
-  - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms-1)
-- [Supported ACME Providers](#supported-acme-providers)
-- [Client Initialization](#client-initialization)
-  - [Method 1: Using Provider Presets (Recommended)](#method-1-using-provider-presets-recommended)
-  - [Method 2: Using String URLs](#method-2-using-string-urls)
-  - [Benefits of Provider Presets](#benefits-of-provider-presets)
-- [CLI Features Showcase](#cli-features-showcase)
-  - [Beautiful Interactive Prompts](#beautiful-interactive-prompts)
-  - [Smart Error Handling](#smart-error-handling)
-  - [Automatic Validation](#automatic-validation)
-- [Documentation](#documentation)
-- [Troubleshooting](#troubleshooting)
-  - [Common Issues](#common-issues)
-- [Requirements](#requirements)
-- [Performance & Stress Testing](#performance-stress-testing)
-  - [Consolidated Metrics (Latest Run)](#consolidated-metrics-latest-run)
-  - [Interpretation](#interpretation)
-  - [ Key Optimizations](#key-optimizations)
-  - [Example High-Load Configuration](#example-high-load-configuration)
-  - [Detailed Reports](#detailed-reports)
-  - [Running the Tests](#running-the-tests)
-- [~~Known Issues~~ ✅ Resolved Issues](#known-issues--resolved-issues)
-  - [~~Concurrent Account Creation Deadlock~~ ✅ **RESOLVED**](#concurrent-account-creation-deadlock--resolved)
-- [Test Coverage](#test-coverage)
-  - [Test Account Management](#test-account-management)
-- [License](#license)
-- [Contributing](#contributing)
+  - [Table of Contents](#table-of-contents)
+  - [Key Features](#key-features)
+  - [Quick Start](#quick-start)
+    - [CLI Installation & Usage](#cli-installation-usage)
+    - [Interactive Mode (Easiest Way)](#interactive-mode-easiest-way)
+    - [Command Line Mode](#command-line-mode)
+    - [Challenge Types](#challenge-types)
+    - [Cryptographic Algorithms](#cryptographic-algorithms)
+    - [ Development & Local Usage](#development-local-usage)
+    - [CLI Commands Reference](#cli-commands-reference)
+  - [Library Usage](#library-usage)
+    - [Installation](#installation)
+    - [Modern ACME Client](#modern-acme-client)
+    - [External Account Binding (EAB) Support](#external-account-binding-eab-support)
+    - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms)
+    - [Working with Existing Accounts](#working-with-existing-accounts)
+    - [Advanced Features](#advanced-features)
+  - [Nonce Management](#nonce-management)
+    - [Global Configuration](#global-configuration)
+    - [Per-Account Overrides](#per-account-overrides)
+    - [Configuration Options](#configuration-options)
+    - [Performance Scenarios](#performance-scenarios)
+    - [Debug Logging](#debug-logging)
+    - [Custom Nonce Manager Logging](#custom-nonce-manager-logging)
+  - [Advanced Validators & Utilities](#advanced-validators-utilities)
+    - [DNS Validation Functions](#dns-validation-functions)
+    - [HTTP Validation Functions](#http-validation-functions)
+    - [CLI Configuration Details](#cli-configuration-details)
+  - [CSR Generation](#csr-generation)
+    - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms-1)
+  - [Supported ACME Providers](#supported-acme-providers)
+  - [Client Initialization](#client-initialization)
+    - [Method 1: Using Provider Presets (Recommended)](#method-1-using-provider-presets-recommended)
+    - [Method 2: Using String URLs](#method-2-using-string-urls)
+    - [Benefits of Provider Presets](#benefits-of-provider-presets)
+  - [CLI Features Showcase](#cli-features-showcase)
+    - [Beautiful Interactive Prompts](#beautiful-interactive-prompts)
+    - [Smart Error Handling](#smart-error-handling)
+    - [Automatic Validation](#automatic-validation)
+  - [Documentation](#documentation)
+  - [Troubleshooting](#troubleshooting)
+    - [Common Issues](#common-issues)
+  - [Requirements](#requirements)
+  - [Performance & Stress Testing](#performance-stress-testing)
+    - [Consolidated Metrics (Latest Run)](#consolidated-metrics-latest-run)
+    - [Interpretation](#interpretation)
+    - [ Key Optimizations](#key-optimizations)
+    - [Example High-Load Configuration](#example-high-load-configuration)
+    - [Detailed Reports](#detailed-reports)
+    - [Running the Tests](#running-the-tests)
+  - [~~Known Issues~~ ✅ Resolved Issues](#known-issues--resolved-issues)
+    - [~~Concurrent Account Creation Deadlock~~ ✅ **RESOLVED**](#concurrent-account-creation-deadlock--resolved)
+  - [Test Coverage](#test-coverage)
+    - [Test Account Management](#test-account-management)
+  - [License](#license)
+  - [Contributing](#contributing)
 
 <!-- TOC-END -->
 
@@ -106,6 +105,8 @@ Main
 <a id="cli-installation-usage"></a>
 
 ### CLI Installation & Usage
+
+> 📖 **Full CLI Documentation**: See [CLI.md](./docs/CLI.md) for complete usage guide, examples, and advanced features.
 
 ```bash
 # Global installation (recommended)
@@ -222,7 +223,7 @@ make interactive
 make staging
 ```
 
-See [CLI-USAGE.md](./docs/CLI-USAGE.md) for detailed development setup.
+See [CLI.md](./docs/CLI.md) for complete CLI documentation and usage examples.
 
 <a id="cli-commands-reference"></a>
 
@@ -1300,7 +1301,7 @@ const client3 = new AcmeClientCore('https://my-custom-ca.com/acme/directory');
 
 ## 📖 Documentation
 
-- [CLI Usage Guide](./docs/CLI-USAGE.md) - Development setup and usage examples
+- [CLI Documentation](./docs/CLI.md) - Complete CLI usage guide and examples
 - [API Documentation](./docs/) - Library API reference
 - [Examples](./examples/) - Code examples and use cases
 
