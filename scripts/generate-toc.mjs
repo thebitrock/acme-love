@@ -33,7 +33,11 @@ function githubSlug(original) {
   // 4. Lowercase
   text = text.toLowerCase();
   // 5. Remove HTML tags if any
-  text = text.replace(/<[^>]*>/g, '');
+  let prevText;
+  do {
+    prevText = text;
+    text = text.replace(/<[^>]*>/g, '');
+  } while (text !== prevText);
   // 6. Remove punctuation (match github-slugger punctuation class) but keep spaces & hyphens
   text = text.replace(/[\u2000-\u206F\u2E00-\u2E7F'"!#\$%&()*+,./:;<=>?@\[\\\]^`{|}~]/g, '');
   // 7. Replace remaining whitespace with hyphens (do NOT collapse multiple hyphens; GitHub keeps them)
