@@ -1,3 +1,9 @@
+## [1.5.8](https://github.com/thebitrock/acme-love/compare/v1.5.7...v1.5.8) (2025-08-30)
+
+### Bug Fixes
+
+- update waitOrder calls to accept order objects instead of URLs and improve error handling in challenge processing ([d3a1feb](https://github.com/thebitrock/acme-love/commit/d3a1febd9175b062726e60c116d10283fbf57c76))
+
 ## [1.5.7](https://github.com/thebitrock/acme-love/compare/v1.5.6...v1.5.7) (2025-08-29)
 
 ### Bug Fixes
