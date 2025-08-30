@@ -1,3 +1,9 @@
+## [1.5.9](https://github.com/thebitrock/acme-love/compare/v1.5.8...v1.5.9) (2025-08-30)
+
+### Bug Fixes
+
+- enhance TOC generation script for improved slug handling and internal anchor validation ([c18069d](https://github.com/thebitrock/acme-love/commit/c18069dd5eb75306fb570ad389462928b7e89844))
+
 ## [1.5.8](https://github.com/thebitrock/acme-love/compare/v1.5.7...v1.5.8) (2025-08-30)
 
 ### Bug Fixes
