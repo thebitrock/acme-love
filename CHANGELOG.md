@@ -1,3 +1,9 @@
+## [1.6.1](https://github.com/thebitrock/acme-love/compare/v1.6.0...v1.6.1) (2025-08-30)
+
+### Bug Fixes
+
+- Incomplete multi-character sanitization ([0fd16ae](https://github.com/thebitrock/acme-love/commit/0fd16ae76b4b9461eb132bdc0a91c8373f985f82))
+
 ## [1.6.0](https://github.com/thebitrock/acme-love/compare/v1.5.9...v1.6.0) (2025-08-30)
 
 ### Features
