@@ -635,7 +635,7 @@ async function handleCertCommand(options: CliOptions) {
   const finalized = await acct.finalize(ready, derBase64Url);
 
   console.log('⏳ Waiting for certificate...');
-  const valid = await acct.waitOrder(finalized.url, ['valid']);
+  const valid = await acct.waitOrder(finalized, ['valid']);
 
   console.log('📜 Downloading certificate...');
   const certificate = await acct.downloadCertificate(valid);

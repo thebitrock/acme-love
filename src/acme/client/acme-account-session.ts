@@ -6,6 +6,7 @@ import type { webcrypto } from 'crypto';
 import type { AcmeClientCore } from './acme-client-core.js';
 import { NonceManager, type NonceManagerOptions } from './nonce-manager.js';
 import type { ACMEOrder, ACMEChallenge, ACMEAuthorization } from '../types/order.js';
+import { debugChallenge } from '../debug.js';
 import { createErrorFromProblem } from '../errors/factory.js';
 import type { ACMEDirectory } from '../types/directory.js';
 import type { ParsedResponseData } from '../http/http-client.js';
@@ -55,6 +56,29 @@ interface ChallengeHandler {
   waitFor: (challenge: ChallengePreparation) => Promise<void>;
 }
 
+type ChallengeWithPossibleError = ACMEChallenge & { error?: unknown };
+
+function throwIfChallengeErrors(authz: ACMEAuthorization): void {
+  if (!authz.challenges) return;
+  for (const chRaw of authz.challenges as ChallengeWithPossibleError[]) {
+    if (chRaw.error && chRaw.status !== 'valid') {
+      debugChallenge(
+        'challenge error detected type=%s raw=%j',
+        typeof chRaw.error === 'object' && chRaw.error && 'type' in chRaw.error
+          ? (chRaw.error as { type?: unknown }).type
+          : undefined,
+        chRaw.error,
+      );
+      const mapped = createErrorFromProblem(chRaw.error);
+      debugChallenge('mapped challenge error name=%s detail=%s', mapped.name, mapped.detail);
+      throw mapped;
+    }
+    if (chRaw.status === 'invalid') {
+      throw new Error(`Challenge ${chRaw.type} is invalid without error detail`);
+    }
+  }
+}
+
 export class AcmeAccountSession {
   private readonly client: AcmeClientCore;
   private readonly keys: AccountKeys;
@@ -74,6 +98,16 @@ export class AcmeAccountSession {
   }
 
   private readonly nonceOverrides: Partial<NonceManagerOptions>;
+
+  private requireDirectory(): ACMEDirectory {
+    if (!this.directory) throw new Error('ACME directory not initialized yet');
+    return this.directory;
+  }
+
+  private requireNonce(): NonceManager {
+    if (!this.nonce) throw new Error('NonceManager not initialized yet');
+    return this.nonce;
+  }
 
   /** Initialize directory + NonceManager for this session (respects per-account overrides) */
   private async ensureInit(): Promise<void> {
@@ -120,13 +154,13 @@ export class AcmeAccountSession {
     await this.ensureInit();
     if (this.kid) return this.kid;
 
-    const dir = this.directory!;
+    const dir = this.requireDirectory();
     const id = await this.thumb();
 
     return await coalesceAsync(`acct:${this.client.directoryUrl}:${id}`, async () => {
       if (this.kid) return this.kid;
 
-      const nm = this.nonce!;
+      const nm = this.requireNonce();
       const ns = await this.nonceNamespace();
 
       // Include EAB in payload if provided
@@ -153,7 +187,7 @@ export class AcmeAccountSession {
 
       if (!resourceUrl) throw new Error('newAccount: missing account location (kid)');
       this.kid = String(resourceUrl);
-      return this.kid!;
+      return this.kid;
     });
   }
 
@@ -184,8 +218,8 @@ export class AcmeAccountSession {
   /** Create a new order for given DNS identifiers */
   public async newOrder(domains: string[]): Promise<ACMEOrder> {
     await this.ensureRegistered();
-    const dir = this.directory!;
-    const nm = this.nonce!;
+    const dir = this.requireDirectory();
+    const nm = this.requireNonce();
     const ns = await this.nonceNamespace();
 
     const payload = { identifiers: domains.map((d) => ({ type: 'dns', value: d })) };
@@ -206,12 +240,22 @@ export class AcmeAccountSession {
 
   /** Generic challenge solver that handles the common flow */
   private async solveChallenge(order: ACMEOrder, handler: ChallengeHandler): Promise<ACMEOrder> {
+    console.log('SOLVE CHALLENGE', order);
+    if (order.status === 'valid' || order.status === 'ready') {
+      return order;
+    }
+
     const authzUrl = order.authorizations[0];
     if (!authzUrl) throw new Error('No authz URL');
 
     const authorizations: ACMEAuthorization[] = await Promise.all(
       order.authorizations.map((url) => this.fetch<ACMEAuthorization>(url)),
     );
+
+    // Early detection of challenge-level errors (e.g., compound validation errors)
+    for (const authz of authorizations) {
+      throwIfChallengeErrors(authz);
+    }
 
     for (const authorization of authorizations) {
       const challenge: ACMEChallenge | undefined = authorization.challenges?.find(
@@ -229,10 +273,11 @@ export class AcmeAccountSession {
       await handler.setChallenge(challengePreparation);
       await handler.waitFor(challengePreparation);
 
+      console.log(challenge);
       await this.completeChallenge(challenge);
     }
 
-    return await this.waitOrder(order.url, ['ready', 'valid']);
+    return await this.waitOrder(order, ['ready', 'valid']);
   }
 
   async solveDns01(
@@ -282,7 +327,11 @@ export class AcmeAccountSession {
 
   /** Complete a specific challenge (payload includes keyAuthorization) */
   public async completeChallenge(ch: ACMEChallenge): Promise<void> {
-    const nm = this.nonce!;
+    if (ch.status === 'valid') {
+      return;
+    }
+
+    const nm = this.requireNonce();
     const ns = await this.nonceNamespace();
     const res = await nm.withNonceRetry(ns, async (nonce) => {
       const jws = await this.signJws(
@@ -299,9 +348,13 @@ export class AcmeAccountSession {
   }
 
   /** Wait until order status becomes one of target (or 'invalid') */
-  public async waitOrder(url: string, target: Array<ACMEOrder['status']>): Promise<ACMEOrder> {
+  public async waitOrder(order: ACMEOrder, target: Array<ACMEOrder['status']>): Promise<ACMEOrder> {
+    if (order.status === 'valid' || target.includes(order.status)) {
+      return order;
+    }
+
     for (;;) {
-      const o = await this.fetch<ACMEOrder>(url);
+      const o = await this.fetch<ACMEOrder>(order.url);
       if (target.includes(o.status) || o.status === 'invalid') return o;
       await new Promise((r) => setTimeout(r, 3000));
     }
@@ -309,17 +362,21 @@ export class AcmeAccountSession {
 
   /** Finalize order with CSR (base64url DER) */
   public async finalize(order: ACMEOrder, csrDerBase64Url: string): Promise<ACMEOrder> {
-    const nm = this.nonce!;
+    if (order.status === 'valid') {
+      return order;
+    }
+
+    const nm = this.requireNonce();
     const ns = await this.nonceNamespace();
 
     const res = await nm.withNonceRetry(ns, async (nonce) => {
       const jws = await this.signJws({ csr: csrDerBase64Url }, order.finalize, nonce);
-      const response = this.client.getHttp().post(order.finalize, jws, {
+      const response = await this.client.getHttp().post(order.finalize, jws, {
         'Content-Type': 'application/jose+json',
         Accept: 'application/json',
       });
 
-      return this.prefillUrl(await response);
+      return this.prefillUrl(response);
     });
     if (res.statusCode >= 400) throw createErrorFromProblem(res.body);
     return res.body as ACMEOrder;
@@ -327,13 +384,16 @@ export class AcmeAccountSession {
 
   /** Download certificate (PEM chain) for a valid order */
   public async downloadCertificate(order: ACMEOrder): Promise<string> {
+    console.log(order);
     if (!order.certificate) throw new Error('No certificate URL on order');
-    const nm = this.nonce!;
+    const nm = this.requireNonce();
     const ns = await this.nonceNamespace();
 
     const res = await nm.withNonceRetry(ns, async (nonce) => {
-      const jws = await this.signJws('', order.certificate!, nonce);
-      return this.client.getHttp().post(order.certificate!, jws, {
+      const certUrl = order.certificate;
+      if (!certUrl) throw new Error('No certificate URL on order');
+      const jws = await this.signJws('', certUrl, nonce);
+      return this.client.getHttp().post(certUrl, jws, {
         'Content-Type': 'application/jose+json',
         Accept: 'application/pem-certificate-chain',
       });
@@ -344,7 +404,7 @@ export class AcmeAccountSession {
 
   /** Helper: POST-as-GET (authenticated resource fetch) */
   public async fetch<T>(url: string): Promise<T> {
-    const nm = this.nonce!;
+    const nm = this.requireNonce();
     const ns = await this.nonceNamespace();
 
     const res = await nm.withNonceRetry(ns, async (nonce) => {
@@ -389,7 +449,7 @@ export class AcmeAccountSession {
     const protectedHeader: jose.JWSHeaderParameters = {
       alg: 'HS256',
       kid: eab.kid,
-      url: this.directory!.newAccount,
+      url: this.requireDirectory().newAccount,
     };
 
     return await new jose.FlattenedSign(encodePayload(jwk))

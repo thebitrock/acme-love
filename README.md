@@ -309,7 +309,7 @@ const ready = await acct.solveDns01(order, {
 // 6. Generate CSR and finalize
 const { derBase64Url, keys: csrKeys } = await createAcmeCsr(['acme-love.com'], algo);
 const finalized = await acct.finalize(ready, derBase64Url);
-const valid = await acct.waitOrder(finalized.url, ['valid']);
+const valid = await acct.waitOrder(finalized, ['valid']);
 const certificate = await acct.downloadCertificate(valid);
 
 console.log('Certificate obtained!', certificate);

@@ -164,6 +164,13 @@ export class CompoundError extends AcmeError {
     super(detail, status);
     this.type = ACME_ERROR.compound;
   }
+
+  override toString(): string {
+    const header = `${this.constructor.name}: ${this.detail}`;
+    if (!this.subproblems || this.subproblems.length === 0) return header;
+    const lines = this.subproblems.map((s, i) => `  ${i + 1}. [${s.type}] ${s.detail}`);
+    return header + '\n' + lines.join('\n');
+  }
 }
 
 /**

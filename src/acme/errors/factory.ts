@@ -28,6 +28,8 @@ import {
 } from './errors.js';
 import { ACME_ERROR, type AcmeErrorType } from './codes.js';
 
+// We intentionally accept rest args for specific specialized error ctors
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Ctor = new (detail?: string, status?: number, ...rest: any[]) => AcmeError;
 
 const FACTORY: Partial<Record<AcmeErrorType, Ctor>> = {
@@ -66,6 +68,7 @@ export function createErrorFromProblem(problem: unknown): AcmeError {
   type Problem = {
     type?: string;
     detail?: string;
+    title?: string;
     status?: number;
     instance?: string;
     algorithms?: string[] | undefined;
@@ -76,11 +79,21 @@ export function createErrorFromProblem(problem: unknown): AcmeError {
   const p = problem as Problem;
 
   const type: string = p.type ?? ACME_ERROR.serverInternal;
-  const detail: string = p.detail ?? 'Unknown error';
+  let effectiveType = type;
+  const detail: string = p.detail ?? p.title ?? 'Unknown error';
+  // Fallback mapping (A): some CAs return detail 'Errors during validation' with missing/incorrect type
+  if (
+    (!p.type || p.type === ACME_ERROR.serverInternal) &&
+    detail === 'Errors during validation' &&
+    Array.isArray(p.subproblems) &&
+    p.subproblems.length > 0
+  ) {
+    effectiveType = ACME_ERROR.compound;
+  }
   const status: number | undefined = p.status;
   const instance: string | undefined = p.instance;
 
-  const ctor = FACTORY[type as AcmeErrorType] ?? AcmeError;
+  const ctor = FACTORY[effectiveType as AcmeErrorType] ?? AcmeError;
   let err: AcmeError;
 
   // Special handling for maintenance errors
@@ -101,7 +114,7 @@ export function createErrorFromProblem(problem: unknown): AcmeError {
     err = new ctor(detail, status);
 
     if (err instanceof AcmeError && ctor === AcmeError) {
-      err.type = type;
+      err.type = effectiveType;
       err.instance = instance;
     }
   }
@@ -110,6 +123,13 @@ export function createErrorFromProblem(problem: unknown): AcmeError {
     for (const sub of p.subproblems) {
       err.addSubproblem(createErrorFromProblem(sub));
     }
+  }
+
+  // Reinforce proper error name (in case of prototype issues across realms)
+  try {
+    err.name = err.constructor.name;
+  } catch {
+    /* ignore */
   }
 
   return err;

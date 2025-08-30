@@ -26,17 +26,18 @@ export class AcmeHttpClient {
     try {
       const res = await request(url, { method: 'GET', headers });
       debugHttp(
-        'GET %s response status=%d durationMs=%d content-type=%s',
+        'GET %s response status=%d durationMs=%d content-type=%s headers=%j',
         url,
         res.statusCode,
         Date.now() - start,
         res.headers['content-type'],
+        res.headers,
       );
 
       let data: unknown;
       try {
         data = await res.body.json();
-        debugHttp('GET %s parsed json ok', url);
+        debugHttp('GET %s response data=%j', url, data);
       } catch (e) {
         debugHttp('GET %s json parse failed: %s', url, (e as Error).message);
         throw e;
@@ -87,11 +88,12 @@ export class AcmeHttpClient {
         body: serializedBody,
       });
       debugHttp(
-        'POST %s response status=%d durationMs=%d content-type=%s',
+        'POST %s response status=%d durationMs=%d content-type=%s headers=%j',
         url,
         res.statusCode,
         Date.now() - start,
         res.headers['content-type'],
+        res.headers,
       );
 
       const rawCt = res.headers['content-type'];
@@ -101,15 +103,32 @@ export class AcmeHttpClient {
       try {
         if (ct.includes('application/json') || ct.includes('application/problem+json')) {
           data = await res.body.json();
-          debugHttp('POST %s parsed json', url);
+          // For JSON we log full body after parse below
         } else if (ct.startsWith('text/') || ct.includes('application/pem-certificate-chain')) {
           data = await res.body.text();
-          debugHttp('POST %s read text len=%d', url, typeof data === 'string' ? data.length : 0);
+          // For text we log full body after read below
         } else {
           const buf = await res.body.arrayBuffer();
           data = Buffer.from(buf);
-          debugHttp('POST %s read binary len=%d', url, (data as Buffer).length);
+          // For binary we log summary + body (Buffer JSON form) below
         }
+        let dataLen = -1;
+        if (typeof data === 'string') {
+          dataLen = data.length;
+        } else if (data instanceof Uint8Array) {
+          dataLen = data.length;
+        } else if (Array.isArray(data)) {
+          dataLen = data.length;
+        } else if (
+          data !== null &&
+          typeof data === 'object' &&
+          // Use type assertion safe check for a numeric length field
+          'length' in data &&
+          typeof (data as { length?: unknown }).length === 'number'
+        ) {
+          dataLen = (data as { length: number }).length;
+        }
+        debugHttp('POST %s response body len=%d body=%j', url, dataLen, data);
       } catch (e) {
         debugHttp('POST %s body parse error: %s', url, (e as Error).message);
         throw e;
@@ -137,10 +156,11 @@ export class AcmeHttpClient {
     try {
       const res = await request(url, { method: 'HEAD', headers });
       debugHttp(
-        'HEAD %s response status=%d durationMs=%d',
+        'HEAD %s response status=%d durationMs=%d headers=%j',
         url,
         res.statusCode,
         Date.now() - start,
+        res.headers,
       );
 
       // Return undici response format but with undefined body for HEAD
