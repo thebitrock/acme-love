@@ -61,7 +61,7 @@ function buildTOC(lines) {
     }
   }
   const out = [];
-  out.push('Main');
+  out.push('Main\n');
   // Track duplicate slugs to emulate GitHub's "-1", "-2" suffix behavior
   const slugCounts = new Map();
   const headingSlugs = []; // collect for validation phase
