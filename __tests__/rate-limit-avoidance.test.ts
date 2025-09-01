@@ -35,6 +35,35 @@ async function realFetch(url: string) {
   }
 }
 
+// Helper: wait until nonce manager finishes any in-flight prefetch/refill activity.
+// We can't access internal private fields, so we rely on getStats() reporting no
+// prefetching and a stable pool size for a couple of consecutive checks.
+async function waitForNonceManagerIdle(
+  nm: NonceManager,
+  namespace: string,
+  {
+    settleChecks = 2,
+    intervalMs = 50,
+    timeoutMs = 2_000,
+  }: { settleChecks?: number; intervalMs?: number; timeoutMs?: number } = {},
+): Promise<void> {
+  let stableCount = 0;
+  let lastPoolSize = -1;
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const { poolSize, prefetching } = nm.getStats(namespace);
+    if (!prefetching && poolSize === lastPoolSize) {
+      stableCount++;
+      if (stableCount >= settleChecks) return;
+    } else {
+      stableCount = 0;
+      lastPoolSize = poolSize;
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  // If we time out we just proceed; this is a best-effort guard against late logs.
+}
+
 describe("Real Let's Encrypt Rate Limit Avoidance", () => {
   const STAGING_NEW_NONCE_URL = 'https://acme-staging-v02.api.letsencrypt.org/acme/new-nonce';
 
@@ -320,6 +349,9 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
       expect(callCount).toBe(2); // First call failed, second succeeded
 
       console.log('✓ Rate limit retry logic working correctly');
+
+  // Ensure any background prefetch triggered by low water mark finishes before test ends
+  await waitForNonceManagerIdle(mockNonceManager, namespace);
     }, 30000);
 
     test('should work with production rate limiter settings', async () => {
