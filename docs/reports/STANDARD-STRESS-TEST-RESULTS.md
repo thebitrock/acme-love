@@ -3,96 +3,107 @@
 > High-level performance & reliability snapshot for ACME protocol operations under configured load.
 
 ## 🧪 Test Configuration
-| Field | Value |
-|-------|-------|
-| Date | 2025-08-31T23:30:27.312Z |
-| Test Type | Standard Load Stress Test |
-| Accounts | 4 |
-| Orders / Account | 50 |
-| Total Target Orders | 200 |
-| Received Challenges | 200 |
-| Success Rate | 100.00% |
-| Target | Let's Encrypt Staging |
-| Algorithm | EC P-256 |
-| Node Version | v22.18.0 |
-| Package Version | v1.7.0 |
+
+| Field               | Value                     |
+| ------------------- | ------------------------- |
+| Date                | 2025-08-31T23:30:27.312Z  |
+| Test Type           | Standard Load Stress Test |
+| Accounts            | 4                         |
+| Orders / Account    | 50                        |
+| Total Target Orders | 200                       |
+| Received Challenges | 200                       |
+| Success Rate        | 100.00%                   |
+| Target              | Let's Encrypt Staging     |
+| Algorithm           | EC P-256                  |
+| Node Version        | v22.18.0                  |
+| Package Version     | v1.7.0                    |
 
 ## ⚙️ Performance Summary
-| Metric | Value |
-|--------|-------|
-| Total Time | 11s (10581 ms) |
-| Account Creation | 2034 ms |
-| Order Processing | 8525 ms |
-| Total Requests | 454 |
-| Orders / Sec | 18.90 |
-| Requests / Sec | 42.91 |
-| Avg Response | 465 ms |
-| P50 | 255 ms |
-| P75 | 600 ms |
-| P90 | 992 ms |
-| P95 | 1255 ms |
-| P99 | 1494 ms |
-| Error Count | 0 |
-| Error Rate | 0.00% |
+
+| Metric           | Value          |
+| ---------------- | -------------- |
+| Total Time       | 11s (10581 ms) |
+| Account Creation | 2034 ms        |
+| Order Processing | 8525 ms        |
+| Total Requests   | 454            |
+| Orders / Sec     | 18.90          |
+| Requests / Sec   | 42.91          |
+| Avg Response     | 465 ms         |
+| P50              | 255 ms         |
+| P75              | 600 ms         |
+| P90              | 992 ms         |
+| P95              | 1255 ms        |
+| P99              | 1494 ms        |
+| Error Count      | 0              |
+| Error Rate       | 0.00%          |
 
 ### ⏱️ Latency Sparkline
+
 ```
 Latency ms trend:
 ▂▂▁▂▁▂▁▁▂▁▁▁▁▁▂▄▁▁▁▁▁▁▁▂▁▃▄▁▅▆▁▁▁▁▁▃▄▄▁▁▇▁
 ```
 
 ### ✅ Threshold Validation
-| Metric | Actual | Threshold | Status |
-|--------|--------|-----------|--------|
-| Success Rate | 100.0% | >= 75.0% | ✅ Pass |
+
+| Metric            | Actual | Threshold  | Status  |
+| ----------------- | ------ | ---------- | ------- |
+| Success Rate      | 100.0% | >= 75.0%   | ✅ Pass |
 | Avg Response Time | 465 ms | <= 5000 ms | ✅ Pass |
-| Error Rate | 0.00% | <= 20.00% | ✅ Pass |
-| Requests / Sec | 42.91 | >= 1 | ✅ Pass |
+| Error Rate        | 0.00%  | <= 20.00%  | ✅ Pass |
+| Requests / Sec    | 42.91  | >= 1       | ✅ Pass |
 
 ### 📊 Request Distribution
+
 | Method | Count | Percent |
-|--------|-------|---------|
-| POST | 400 | 88.1% |
-| HEAD | 54 | 11.9% |
+| ------ | ----- | ------- |
+| POST   | 400   | 88.1%   |
+| HEAD   | 54    | 11.9%   |
 
 ### 🔝 Top Endpoints
-| Endpoint | Requests | Percent |
-|----------|----------|---------|
-| new-order | 200 | 44.1% |
-| authorization | 200 | 44.1% |
-| new-nonce | 54 | 11.9% |
+
+| Endpoint      | Requests | Percent |
+| ------------- | -------- | ------- |
+| new-order     | 200      | 44.1%   |
+| authorization | 200      | 44.1%   |
+| new-nonce     | 54       | 11.9%   |
 
 ### 🧩 Endpoint Breakdown (Let's Encrypt Staging)
-| Endpoint | Requests | Percent |
-|----------|----------|---------|
-| new-order | 200 | 44.1% |
-| authorization | 200 | 44.1% |
-| new-nonce | 54 | 11.9% |
+
+| Endpoint      | Requests | Percent |
+| ------------- | -------- | ------- |
+| new-order     | 200      | 44.1%   |
+| authorization | 200      | 44.1%   |
+| new-nonce     | 54       | 11.9%   |
 
 ### 👥 Per-Account Performance
+
 | Account | Requests | Percent of Total |
-|---------|----------|------------------|
-| 1 | 114 | 25.1% |
-| 2 | 112 | 24.7% |
-| 3 | 114 | 25.1% |
-| 4 | 114 | 25.1% |
+| ------- | -------- | ---------------- |
+| 1       | 114      | 25.1%            |
+| 2       | 112      | 24.7%            |
+| 3       | 114      | 25.1%            |
+| 4       | 114      | 25.1%            |
 
 ### 🔐 Nonce Manager Performance
-| Metric | Value |
-|--------|-------|
-| Total New-Nonce Requests | 54 |
-| Requests Saved (Heuristic) | 400 |
-| Pool Efficiency | 88% |
-| Final Pool State | 0 nonces |
+
+| Metric                     | Value    |
+| -------------------------- | -------- |
+| Total New-Nonce Requests   | 54       |
+| Requests Saved (Heuristic) | 400      |
+| Pool Efficiency            | 88%      |
+| Final Pool State           | 0 nonces |
 
 ### ⏱️ Phase Breakdown
-| Phase | Duration (s) | Requests | Errors | Avg Resp (ms) |
-|-------|--------------|----------|--------|---------------|
-| Account Creation | 2 | 0 | 0 | 0 |
-| Order Creation | 9 | 454 | 0 | 465 |
-| Nonce Analysis | 0 | 0 | 0 | 0 |
+
+| Phase            | Duration (s) | Requests | Errors | Avg Resp (ms) |
+| ---------------- | ------------ | -------- | ------ | ------------- |
+| Account Creation | 2            | 0        | 0      | 0             |
+| Order Creation   | 9            | 454      | 0      | 465           |
+| Nonce Analysis   | 0            | 0        | 0      | 0             |
 
 ### ⭐ Key Performance Indicators
+
 - ✅ Processed **200/200** orders (100.00%)
 - ✅ Sustained **42.91 req/s** & **18.90 orders/s**
 - ✅ Maintained **465 ms** avg response (P95 1255 ms, P99 1494 ms)
@@ -100,6 +111,7 @@ Latency ms trend:
 - ✅ Zero errors observed
 
 ### 🧾 Stress Test Validation
+
 This standard load stress test demonstrates that ACME Love handled **4 accounts** issuing **200 orders** while meeting defined SLA thresholds.
 
 <details><summary>Raw Configuration & Thresholds</summary>

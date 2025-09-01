@@ -280,13 +280,7 @@ npm install acme-love
 ### Modern ACME Client
 
 ```ts
-import {
-  AcmeClient,
-  AcmeAccount,
-  provider,
-  generateKeyPair,
-  createAcmeCsr,
-} from 'acme-love';
+import { AcmeClient, AcmeAccount, provider, generateKeyPair, createAcmeCsr } from 'acme-love';
 
 // 1. Create ACME client - using provider preset (recommended)
 const client = new AcmeClient(provider.letsencrypt.staging, {
@@ -460,15 +454,15 @@ const rsa4096Algo = { kind: 'rsa', modulusLength: 4096, hash: 'SHA-384' };
 
 **Important**: You can use different algorithms for account keys and certificate keys independently. Account keys are used for ACME protocol authentication, while certificate keys are embedded in the final TLS certificate.
 
-**TypeScript Types**: The library exports `EcAlgo`, `RsaAlgo`, and `CsrAlgo` types for type-safe algorithm specification:
+**TypeScript Types**: The library exports `AcmeEcAlgorithm`, `AcmeRsaAlgorithm`, and their union `AcmeCertificateAlgorithm` for type-safe algorithm specification:
 
 ```ts
-import type { CsrAlgo, EcAlgo, RsaAlgo } from 'acme-love';
+import type { AcmeEcAlgorithm, AcmeRsaAlgorithm, AcmeCertificateAlgorithm } from 'acme-love';
 
 // Type-safe algorithm definitions
-const ecAlgo: EcAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
-const rsaAlgo: RsaAlgo = { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' };
-const algo: CsrAlgo = ecAlgo; // Union type of EcAlgo | RsaAlgo
+const ecAlgo: AcmeEcAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+const rsaAlgo: AcmeRsaAlgorithm = { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' };
+const algo: AcmeCertificateAlgorithm = ecAlgo; // Union type
 ```
 
 #### Example: Different Algorithms for Account and Certificate
@@ -1119,31 +1113,31 @@ const { pem, derBase64Url, keys } = await createAcmeCsr(
 ACME Love supports modern cryptographic algorithms via WebCrypto API:
 
 ```ts
-import { generateKeyPair, type CsrAlgo } from 'acme-love';
+import { generateKeyPair, type AcmeCertificateAlgorithm } from 'acme-love';
 
 // ECDSA with P-256 curve (Recommended - smaller keys, faster)
-const ecAlgo: CsrAlgo = {
+const ecAlgo: AcmeCertificateAlgorithm = {
   kind: 'ec',
   namedCurve: 'P-256',
   hash: 'SHA-256',
 };
 
 // ECDSA with P-384 curve (Higher security)
-const ec384Algo: CsrAlgo = {
+const ec384Algo: AcmeCertificateAlgorithm = {
   kind: 'ec',
   namedCurve: 'P-384',
   hash: 'SHA-384',
 };
 
 // RSA 2048-bit (Widely compatible, larger keys)
-const rsaAlgo: CsrAlgo = {
+const rsaAlgo: AcmeCertificateAlgorithm = {
   kind: 'rsa',
   modulusLength: 2048,
   hash: 'SHA-256',
 };
 
 // RSA 4096-bit (Maximum security, slower)
-const rsa4096Algo: CsrAlgo = {
+const rsa4096Algo: AcmeCertificateAlgorithm = {
   kind: 'rsa',
   modulusLength: 4096,
   hash: 'SHA-256',

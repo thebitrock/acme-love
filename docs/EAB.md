@@ -31,15 +31,19 @@ const accountKeys = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', has
 
 // Create client and account with EAB
 const client = new AcmeClient(provider.zerossl.production);
-const account = new AcmeAccount(client, {
-  privateKey: accountKeys.privateKey,
-  publicKey: accountKeys.publicKey,
-}, {
-  externalAccountBinding: {
-    kid: 'your-key-identifier',
-    hmacKey: 'your-base64url-encoded-hmac-key',
+const account = new AcmeAccount(
+  client,
+  {
+    privateKey: accountKeys.privateKey,
+    publicKey: accountKeys.publicKey,
   },
-});
+  {
+    externalAccountBinding: {
+      kid: 'your-key-identifier',
+      hmacKey: 'your-base64url-encoded-hmac-key',
+    },
+  },
+);
 
 // Register account (EAB is handled automatically)
 const registration = await account.register({

@@ -28,8 +28,9 @@ if (jest.unstable_mockModule) {
 
 // Dynamically import after mock registration
 async function loadClient() {
-  const mod = await import('../../src/acme/http/http-client.js');
-  return mod.AcmeHttpClient;
+  // Import from public entrypoint to ensure surface stability
+  const { AcmeHttpClient } = await import('../../src/index.js');
+  return AcmeHttpClient;
 }
 
 describe('AcmeHttpClient', () => {

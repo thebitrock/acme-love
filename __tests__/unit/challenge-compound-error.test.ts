@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { AcmeAccount, type AccountKeys } from '../../src/lib/core/acme-account.js';
-import { CompoundError, IncorrectResponseError } from '../../src/lib/errors/errors.js';
-import { generateKeyPair } from '../../src/lib/crypto/csr.js';
+// Updated to import from public entrypoint
+import {
+  AcmeAccount,
+  type AccountKeys,
+  CompoundError,
+  IncorrectResponseError,
+  generateKeyPair,
+} from '../../src/index.js';
 
 // Authorization response fixture (simplified) based on provided sample
 const AUTHZ_FIXTURE = {

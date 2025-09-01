@@ -1,11 +1,13 @@
 import { confirm, select } from '@inquirer/prompts';
-import type { CsrAlgo } from '../../index.js';
+import type { AcmeCertificateAlgorithm } from '../../index.js';
 
 /**
  * Prompt the user to select a cryptographic algorithm.
  * @param purpose Whether the key is for the ACME account or the end certificate.
  */
-export async function selectAlgorithm(purpose: 'account' | 'certificate'): Promise<CsrAlgo> {
+export async function selectAlgorithm(
+  purpose: 'account' | 'certificate',
+): Promise<AcmeCertificateAlgorithm> {
   const purposeText = purpose === 'account' ? 'account keys' : 'certificate keys';
   const algoType = await select({
     message: `Select cryptographic algorithm for ${purposeText}:`,
@@ -26,8 +28,8 @@ export async function selectAlgorithm(purpose: 'account' | 'certificate'): Promi
  * Returns defaults when advanced mode is declined.
  */
 export async function selectAdvancedOptions(): Promise<{
-  accountAlgo: CsrAlgo;
-  certAlgo: CsrAlgo;
+  accountAlgo: AcmeCertificateAlgorithm;
+  certAlgo: AcmeCertificateAlgorithm;
   separateAlgos: boolean;
 }> {
   const useAdvanced = await confirm({
@@ -35,7 +37,11 @@ export async function selectAdvancedOptions(): Promise<{
     default: false,
   });
   if (!useAdvanced) {
-    const defaultAlgo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+    const defaultAlgo: AcmeCertificateAlgorithm = {
+      kind: 'ec',
+      namedCurve: 'P-256',
+      hash: 'SHA-256',
+    };
     return { accountAlgo: defaultAlgo, certAlgo: defaultAlgo, separateAlgos: false };
   }
   const separateAlgos = await confirm({
@@ -53,7 +59,7 @@ export async function selectAdvancedOptions(): Promise<{
 }
 
 /** Parse a short algorithm code (e.g. ec-p256) into a CSR algorithm descriptor. */
-export function parseAlgorithm(algoStr: string): CsrAlgo {
+export function parseAlgorithm(algoStr: string): AcmeCertificateAlgorithm {
   switch (algoStr) {
     case 'ec-p256':
       return { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };

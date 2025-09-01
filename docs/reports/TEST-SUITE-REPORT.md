@@ -116,7 +116,7 @@ await nonceManager.take(namespace);
 ### Algorithm Testing
 
 ```typescript
-const algorithms: CsrAlgo[] = [
+const algorithms: AcmeCertificateAlgorithm[] = [
   { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' },
   { kind: 'ec', namedCurve: 'P-384', hash: 'SHA-384' },
   { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' },

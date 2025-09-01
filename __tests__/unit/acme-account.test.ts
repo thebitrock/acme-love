@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import * as jose from 'jose';
-import { AcmeAccount, type AccountKeys } from '../../src/lib/core/acme-account.js';
-import { AcmeClient } from '../../src/lib/core/acme-client.js';
+// Updated to import from public entrypoint
+import { AcmeAccount, type AccountKeys, AcmeClient } from '../../src/index.js';
 
 describe('AcmeAccount', () => {
   let client: AcmeClient;

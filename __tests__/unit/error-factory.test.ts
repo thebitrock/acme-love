@@ -1,12 +1,13 @@
 import { describe, it, expect } from '@jest/globals';
-import { createErrorFromProblem } from '../../src/acme/errors/factory.js';
+// Updated to import from public entrypoint
 import {
+  createErrorFromProblem,
   BadSignatureAlgorithmError,
   RateLimitedError,
   ServerMaintenanceError,
   AcmeError,
-} from '../../src/acme/errors/errors.js';
-import { ACME_ERROR } from '../../src/acme/errors/codes.js';
+  ACME_ERROR,
+} from '../../src/index.js';
 
 describe('createErrorFromProblem', () => {
   it('creates specific error type', () => {
