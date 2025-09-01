@@ -1,3 +1,9 @@
+## [1.7.1](https://github.com/thebitrock/acme-love/compare/v1.7.0...v1.7.1) (2025-09-01)
+
+### Bug Fixes
+
+- improve comment formatting for clarity in rate limit avoidance tests ([54c3353](https://github.com/thebitrock/acme-love/commit/54c33532a9bdc074fba1d654d3f6017bd55b61e6))
+
 ## [1.7.0](https://github.com/thebitrock/acme-love/compare/v1.6.3...v1.7.0) (2025-08-30)
 
 ### Features
