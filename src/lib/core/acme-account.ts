@@ -56,6 +56,19 @@ export interface ExternalAccountBinding {
 }
 
 /**
+ * Payload for ACME account registration.
+ *
+ * termsOfServiceAgreed is a required literal true (cannot be false) to ensure
+ * explicit acknowledgement at call sites.
+ */
+export interface AcmeAccountRegistrationPayload {
+  /** One or more contact email addresses (may include or omit mailto:) */
+  contact: string[] | string;
+  /** Explicit ToS agreement (must be true) */
+  termsOfServiceAgreed: true;
+}
+
+/**
  * Configuration options for ACME account operations
  */
 export interface AcmeAccountOptions {
@@ -129,14 +142,20 @@ export class AcmeAccount {
    * @param termsOfServiceAgreed - Whether user agrees to ToS
    * @returns Account URL and other registration details
    */
-  async register(
-    contact: string[] = [],
-    termsOfServiceAgreed = false,
-  ): Promise<{ accountUrl: string; account: any }> {
+  async register({ contact, termsOfServiceAgreed }: AcmeAccountRegistrationPayload): Promise<{
+    accountUrl: string;
+    account: Record<string, unknown>;
+  }> {
     const directory = await this.getDirectory();
-
-    const payload: any = {
-      contact: contact.map((email) => (email.startsWith('mailto:') ? email : `mailto:${email}`)),
+    const contactsArray = Array.isArray(contact) ? contact : [contact];
+    const payload: {
+      contact: string[];
+      termsOfServiceAgreed: true;
+      externalAccountBinding?: string;
+    } = {
+      contact: contactsArray.map((email) =>
+        email.startsWith('mailto:') ? email : `mailto:${email}`,
+      ),
       termsOfServiceAgreed,
     };
 
@@ -164,7 +183,7 @@ export class AcmeAccount {
 
     return {
       accountUrl,
-      account: response.body,
+      account: response.body as Record<string, unknown>,
     };
   }
 
@@ -199,14 +218,14 @@ export class AcmeAccount {
    */
   private async signedPost(
     url: string,
-    payload: any,
+    payload: string | Record<string, unknown> | Uint8Array | null | undefined,
     forceJwk = false,
   ): Promise<ParsedResponseData> {
     const nonceManager = await this.ensureNonceManager();
     const namespace = new URL(this.client.directoryUrl).host;
 
     return nonceManager.withNonceRetry(namespace, async (nonce) => {
-      const protectedHeader: any = {
+      const protectedHeader: Record<string, unknown> = {
         alg: 'ES256', // Assuming ES256, should be determined by key type
         nonce,
         url,
@@ -240,7 +259,7 @@ export class AcmeAccount {
   /**
    * Get account information
    */
-  async getAccount(): Promise<any> {
+  async getAccount(): Promise<Record<string, unknown>> {
     if (!this.kid) {
       throw new Error('Account not registered. Call register() first.');
     }
@@ -251,7 +270,7 @@ export class AcmeAccount {
       throw createErrorFromProblem(response.body);
     }
 
-    return response.body;
+  return response.body as Record<string, unknown>;
   }
 
   /**
@@ -383,16 +402,16 @@ export class AcmeAccount {
     let currentOrder = order;
     let attempts = 0;
     const maxAttempts = 60; // 5 minutes max with 5s intervals
-    
+
     while (!targetStatuses.includes(currentOrder.status) && attempts < maxAttempts) {
       await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
-      
+
       // Fetch updated order status
       const response = await this.signedPost(currentOrder.url || '', '');
       if (response.statusCode !== 200) {
         throw createErrorFromProblem(response.body);
       }
-      
+
       currentOrder = response.body as AcmeOrder;
       attempts++;
     }

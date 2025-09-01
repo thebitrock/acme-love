@@ -42,10 +42,10 @@ const account = new AcmeAccount(client, {
 });
 
 // Register account (EAB is handled automatically)
-const registration = await account.register(
-  ['mailto:admin@example.com'],
-  true, // termsOfServiceAgreed
-);
+const registration = await account.register({
+  contact: 'admin@example.com',
+  termsOfServiceAgreed: true,
+});
 
 console.log('Account registered with kid:', registration.accountUrl);
 ```

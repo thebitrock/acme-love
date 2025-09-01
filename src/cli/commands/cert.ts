@@ -151,10 +151,10 @@ export async function handleCertCommand(options: CertCommandOptions) {
   }
   // Register account if needed
   if (!kid) {
-    const registered = await acct.register(
-      [`mailto:${email}`],
-      true, // termsOfServiceAgreed
-    );
+    const registered = await acct.register({
+      contact: [`mailto:${email}`],
+      termsOfServiceAgreed: true,
+    });
     kid = registered.accountUrl;
     console.log(symbols.success + ' Account registered');
   } else {

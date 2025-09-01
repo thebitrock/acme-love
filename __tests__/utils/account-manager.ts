@@ -199,10 +199,10 @@ export class TestAccountManager {
 
     // Ensure account is registered and get/save kid
     try {
-      const registrationResult = await account.register(
-        [`mailto:${existing?.email || `stress-test-${id}-${Date.now()}@acme-love.com`}`],
-        true,
-      );
+      const registrationResult = await account.register({
+        contact: [`mailto:${existing?.email || `stress-test-${id}-${Date.now()}@acme-love.com`}`],
+        termsOfServiceAgreed: true,
+      });
       const registrationKid = registrationResult.accountUrl;
 
       // If this is a new registration or we didn't have kid before, save it

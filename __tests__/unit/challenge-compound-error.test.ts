@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { AcmeAccount, type AccountKeys } from '../../src/lib/core/acme-account.js';
-import { AcmeClient } from '../../src/lib/core/acme-client.js';
 import { CompoundError, IncorrectResponseError } from '../../src/lib/errors/errors.js';
 import { generateKeyPair } from '../../src/lib/crypto/csr.js';
 

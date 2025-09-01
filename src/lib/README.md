@@ -54,7 +54,7 @@ const directory = await client.getDirectory();
 
 // Account management
 const account = new AcmeAccount(client, keys);
-await account.register(['admin@example.com'], true);
+await account.register({ contact: 'admin@example.com', termsOfServiceAgreed: true });
 
 // Certificate workflow
 const order = await account.createOrder(['example.com']);

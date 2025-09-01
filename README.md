@@ -310,10 +310,10 @@ const accountKeys = {
 const account = new AcmeAccount(client, accountKeys);
 
 // 4. Register account
-const registration = await account.register(
-  ['mailto:admin@acme-love.com'], 
-  true, // termsOfServiceAgreed
-);
+const registration = await account.register({
+  contact: 'admin@acme-love.com', // string or array
+  termsOfServiceAgreed: true,
+});
 
 // 5. Create order and solve challenges
 const order = await account.createOrder(['acme-love.com']);
@@ -371,10 +371,10 @@ const account = new AcmeAccount(client, accountKeys, {
 });
 
 // Register account (EAB is handled automatically)
-const registration = await account.register(
-  ['mailto:admin@acme-love.com'],
-  true, // termsOfServiceAgreed
-);
+const registration = await account.register({
+  contact: 'admin@acme-love.com',
+  termsOfServiceAgreed: true,
+});
 
 // Continue with normal certificate issuance...
 const order = await account.createOrder(['acme-love.com']);
@@ -498,10 +498,10 @@ When you already have a registered ACME account, you can reuse it by providing t
 ```ts
 // First time: Register new account and save the registration details
 const account = new AcmeAccount(client, accountKeys);
-const registration = await account.register(
-  ['mailto:admin@acme-love.com'],
-  true, // termsOfServiceAgreed
-);
+const registration = await account.register({
+  contact: 'admin@acme-love.com',
+  termsOfServiceAgreed: true,
+});
 
 // Save the account URL (kid) for future use
 const accountUrl = registration.accountUrl;
