@@ -3,14 +3,14 @@ import chalk from 'chalk';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import {
-  AcmeAccountSession,
-  AcmeClientCore,
+  AcmeClient,
+  AcmeAccount,
   createAcmeCsr,
   generateKeyPair,
   resolveAndValidateAcmeTxtAuthoritative,
+  type AcmeCertificateAlgorithm,
   type AccountKeys,
-  type ACMEOrder,
-  type CsrAlgo,
+  type AcmeOrder,
 } from '../../index.js';
 import { createSpinner, heading, kv, symbols, render } from '../logger.js';
 import { parseAlgorithm, selectAdvancedOptions } from '../utils/algorithms.js';
@@ -50,7 +50,9 @@ export async function handleCertCommand(options: CertCommandOptions) {
   }
 
   // Algorithms
-  let accountAlgo: CsrAlgo, certAlgo: CsrAlgo, separateAlgos: boolean;
+  let accountAlgo: AcmeCertificateAlgorithm,
+    certAlgo: AcmeCertificateAlgorithm,
+    separateAlgos: boolean;
   if (options.accountAlgo || options.certAlgo) {
     accountAlgo = parseAlgorithm(options.accountAlgo || 'ec-p256');
     certAlgo = parseAlgorithm(options.certAlgo || 'ec-p256');
@@ -95,7 +97,7 @@ export async function handleCertCommand(options: CertCommandOptions) {
   kv('Output Dir', outputDir);
   kv('Account Key', accountKeyPath);
 
-  const core = new AcmeClientCore(directoryUrl, { nonce: { maxPool: 64 } });
+  const client = new AcmeClient(directoryUrl, { nonce: { maxPool: 64 } });
   let accountKeys: AccountKeys;
   let kid: string | undefined;
 
@@ -131,23 +133,36 @@ export async function handleCertCommand(options: CertCommandOptions) {
     );
   }
 
-  const acct = new AcmeAccountSession(core, accountKeys, {
-    nonceOverrides: { maxPool: 64 },
+    const acct = new AcmeAccount(client, accountKeys, {
     ...(kid && { kid }),
+    nonce: { maxPool: 64 },
+    ...(options.eabKid &&
+      options.eabHmacKey && {
+        externalAccountBinding: {
+          kid: options.eabKid,
+          hmacKey: options.eabHmacKey,
+        },
+      }),
   });
-  let eab: { kid: string; hmacKey: string } | undefined;
+
+  // Handle External Account Binding if needed
   if (options.eabKid && options.eabHmacKey) {
-    eab = { kid: options.eabKid, hmacKey: options.eabHmacKey };
     console.log(symbols.info + ' Using External Account Binding');
   }
-  const registeredKid = await acct.ensureRegistered(
-    { contact: [`mailto:${email}`], termsOfServiceAgreed: true },
-    eab,
-  );
-  console.log(symbols.success + ' Account ready');
+  // Register account if needed
+  if (!kid) {
+    const registered = await acct.register(
+      [`mailto:${email}`],
+      true, // termsOfServiceAgreed
+    );
+    kid = registered.accountUrl;
+    console.log(symbols.success + ' Account registered');
+  } else {
+    console.log(symbols.success + ' Account ready');
+  }
 
   const spinOrder = createSpinner().start('Creating certificate order...');
-  const order = await acct.newOrder([domain]);
+  const order = await acct.createOrder([domain]);
   spinOrder.succeed('Order created');
 
   const ready = await solveChallenge(acct, order, challengeType as string);
@@ -177,9 +192,10 @@ export async function handleCertCommand(options: CertCommandOptions) {
   if (!privateKeyPem) throw new Error('Failed to export key');
   const privateKeyPemString = `-----BEGIN PRIVATE KEY-----\n${privateKeyPem}\n-----END PRIVATE KEY-----`;
 
-  if (registeredKid && !kid) {
+  // Save account KID if we just registered
+  if (!options.accountKey && kid) {
     const accountData = JSON.parse(readFileSync(accountKeyPath, 'utf-8'));
-    accountData.kid = registeredKid;
+    accountData.kid = kid;
     writeFileSync(accountKeyPath, JSON.stringify(accountData, null, 2));
   }
 
@@ -195,17 +211,17 @@ export async function handleCertCommand(options: CertCommandOptions) {
 
 /** Select appropriate challenge solver function. */
 async function solveChallenge(
-  acct: AcmeAccountSession,
-  order: ACMEOrder,
+  acct: AcmeAccount,
+  order: AcmeOrder,
   challengeType: string,
-): Promise<ACMEOrder> {
+): Promise<AcmeOrder> {
   if (challengeType === 'dns-01') return solveDns01(acct, order);
   if (challengeType === 'http-01') return solveHttp01(acct, order);
   throw new Error(`Unsupported challenge type: ${challengeType}`);
 }
 
 /** Manual DNS-01 challenge solving with polling for TXT record propagation. */
-async function solveDns01(acct: AcmeAccountSession, order: ACMEOrder): Promise<ACMEOrder> {
+async function solveDns01(acct: AcmeAccount, order: AcmeOrder): Promise<AcmeOrder> {
   const spin = createSpinner().start('Solving DNS-01 challenge');
   let settled = false; // tracks whether callbacks handled spinner success/fail
   const ready = await (async () => {
@@ -337,7 +353,7 @@ async function solveDns01(acct: AcmeAccountSession, order: ACMEOrder): Promise<A
 }
 
 /** Manual HTTP-01 challenge solving with repeated HTTP validation attempts. */
-async function solveHttp01(acct: AcmeAccountSession, order: ACMEOrder): Promise<ACMEOrder> {
+async function solveHttp01(acct: AcmeAccount, order: AcmeOrder): Promise<AcmeOrder> {
   const spin = createSpinner().start('Solving HTTP-01 challenge');
   const ready = await acct.solveHttp01(order, {
     setHttp: async (prep) => {

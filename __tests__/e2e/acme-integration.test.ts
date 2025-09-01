@@ -1,10 +1,10 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
-import { AcmeClientCore } from '../../src/acme/client/acme-client-core.js';
-import { AcmeDirectory } from '../../src/acme/client/acme-directory.js';
-import { NonceManager } from '../../src/acme/client/nonce-manager.js';
-import { generateKeyPair, createAcmeCsr } from '../../src/acme/csr.js';
-import { AcmeHttpClient } from '../../src/acme/http/http-client.js';
-import type { CsrAlgo } from '../../src/acme/csr.js';
+import { AcmeClient } from '../../src/lib/core/acme-client.js';
+import type { AcmeDirectory } from '../../src/lib/types/directory.js';
+import { NonceManager } from '../../src/lib/managers/nonce-manager.js';
+import { generateKeyPair, createAcmeCsr } from '../../src/lib/crypto/csr.js';
+import { AcmeHttpClient } from '../../src/lib/transport/http-client.js';
+import type { AcmeCertificateAlgorithm } from '../../src/lib/crypto/csr.js';
 
 // These tests run against Let's Encrypt staging environment
 // They require real network access and may take some time
@@ -14,8 +14,7 @@ describe('ACME Integration Tests (E2E)', () => {
 
   let directory: AcmeDirectory;
   let nonceManager: NonceManager;
-  let client: AcmeClientCore;
-  let httpClient: AcmeHttpClient;
+  let client: AcmeClient;
 
   beforeAll(async () => {
     // Skip tests if in CI without proper test domain setup
@@ -27,27 +26,20 @@ describe('ACME Integration Tests (E2E)', () => {
     console.log('Setting up ACME integration test...');
 
     // Generate account key pair for testing
-    const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+    const algo: AcmeCertificateAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
     await generateKeyPair(algo);
     console.log('Generated account key pair');
 
-    // Initialize HTTP client
-    httpClient = new AcmeHttpClient();
+    // Initialize client
+    client = new AcmeClient(STAGING_DIRECTORY_URL);
 
-    // Initialize directory
-    directory = new AcmeDirectory(httpClient, STAGING_DIRECTORY_URL);
-    const dirResult = await directory.get();
+    // Initialize directory via client
+    directory = await client.getDirectory();
     console.log("Loaded ACME directory from Let's Encrypt staging");
 
-    // Initialize nonce manager
-    nonceManager = new NonceManager({
-      newNonceUrl: dirResult.newNonce,
-      fetch: httpClient.head.bind(httpClient),
-    });
+    // Get nonce manager from client
+    nonceManager = client.getDefaultNonce();
     console.log('Initialized nonce manager');
-
-    // Initialize client core
-    client = new AcmeClientCore(STAGING_DIRECTORY_URL);
 
     console.log('ACME integration test setup complete');
   }, 30000); // Allow 30 seconds for setup
@@ -64,32 +56,31 @@ describe('ACME Integration Tests (E2E)', () => {
 
     expect(directory).toBeDefined();
 
-    const dir = await directory.get();
-    expect(dir).toBeDefined();
-    expect(dir.newNonce).toContain('https://acme-staging-v02.api.letsencrypt.org');
-    expect(dir.newAccount).toContain('https://acme-staging-v02.api.letsencrypt.org');
-    expect(dir.newOrder).toContain('https://acme-staging-v02.api.letsencrypt.org');
+    // directory уже получен через client.getDirectory() в beforeAll
+    expect(directory.newNonce).toContain('https://acme-staging-v02.api.letsencrypt.org');
+    expect(directory.newAccount).toContain('https://acme-staging-v02.api.letsencrypt.org');
+    expect(directory.newOrder).toContain('https://acme-staging-v02.api.letsencrypt.org');
 
     console.log('Directory endpoints verified:', {
-      newNonce: dir.newNonce,
-      newAccount: dir.newAccount,
-      newOrder: dir.newOrder,
+      newNonce: directory.newNonce,
+      newAccount: directory.newAccount,
+      newOrder: directory.newOrder,
     });
   }, 10000);
 
-  test.skip('should successfully fetch nonces from staging server', async () => {
+  test('should successfully fetch nonces from staging server', async () => {
     if (process.env.CI && !process.env.ACME_E2E_ENABLED) {
       return;
     }
 
     expect(nonceManager).toBeDefined();
 
-    const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
+    const namespace = STAGING_DIRECTORY_URL; // В новом API просто используем строку
 
     // Fetch multiple nonces to test the functionality
     const nonces: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const nonce = await nonceManager.take(namespace);
+      const nonce = await nonceManager.get(namespace); // Используем get() вместо take()
       expect(nonce).toBeDefined();
       expect(typeof nonce).toBe('string');
       expect(nonce.length).toBeGreaterThan(10);
@@ -109,12 +100,12 @@ describe('ACME Integration Tests (E2E)', () => {
 
     expect(nonceManager).toBeDefined();
 
-    const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
+    const namespace = STAGING_DIRECTORY_URL; // В новом API просто используем строку
 
     // Make multiple concurrent requests
     const promises: Promise<string>[] = [];
     for (let i = 0; i < 5; i++) {
-      promises.push(nonceManager.take(namespace));
+      promises.push(nonceManager.get(namespace)); // Используем get() вместо take()
     }
 
     const nonces = await Promise.all(promises);
@@ -140,7 +131,7 @@ describe('ACME Integration Tests (E2E)', () => {
     const testDomain = 'test-e2e.acme-love.com'; // Use acme-love.com for testing (won't be validated)
 
     // Test different key algorithms
-    const algorithms: CsrAlgo[] = [
+    const algorithms: AcmeCertificateAlgorithm[] = [
       { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' },
       { kind: 'ec', namedCurve: 'P-384', hash: 'SHA-384' },
       { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' },
@@ -191,29 +182,25 @@ describe('ACME Integration Tests (E2E)', () => {
     console.log('Default nonce manager is properly configured');
   }, 10000);
 
-  test.skip('should handle network errors gracefully', async () => {
+  test('should handle network errors gracefully', async () => {
     if (process.env.CI && !process.env.ACME_E2E_ENABLED) {
       return;
     }
 
-    // Test with invalid directory URL
-    const invalidHttpClient = new AcmeHttpClient();
-    const invalidDirectory = new AcmeDirectory(
-      invalidHttpClient,
-      'https://invalid-acme-server.example.com/directory',
-    );
+    // Test with invalid directory URL using AcmeClient
+    const invalidClient = new AcmeClient('https://invalid-acme-server.example.com/directory');
 
-    await expect(invalidDirectory.get()).rejects.toThrow();
+    await expect(invalidClient.getDirectory()).rejects.toThrow();
     console.log('Invalid directory URL handled correctly');
 
     // Test nonce manager with invalid URL
     const invalidNonceManager = new NonceManager({
       newNonceUrl: 'https://invalid-acme-server.acme-love.com/new-nonce',
-      fetch: invalidHttpClient.head.bind(invalidHttpClient),
+      fetch: (url) => new AcmeHttpClient().head(url),
     });
 
-    const namespace = NonceManager.makeNamespace('https://invalid-acme-server.acme-love.com');
-    await expect(invalidNonceManager.take(namespace)).rejects.toThrow();
+    const namespace = 'https://invalid-acme-server.acme-love.com'; // В новом API просто используем строку
+    await expect(invalidNonceManager.get(namespace)).rejects.toThrow(); // Используем get() вместо take()
     console.log('Invalid nonce URL handled correctly');
   }, 15000);
 
@@ -222,28 +209,28 @@ describe('ACME Integration Tests (E2E)', () => {
       return;
     }
 
-    const dir = await directory.get();
+    // directory уже получен через client.getDirectory() в beforeAll
 
     // Validate all required ACME directory endpoints
-    expect(dir.newNonce).toBeDefined();
-    expect(dir.newAccount).toBeDefined();
-    expect(dir.newOrder).toBeDefined();
-    expect(dir.revokeCert).toBeDefined();
-    expect(dir.keyChange).toBeDefined();
+    expect(directory.newNonce).toBeDefined();
+    expect(directory.newAccount).toBeDefined();
+    expect(directory.newOrder).toBeDefined();
+    expect(directory.revokeCert).toBeDefined();
+    expect(directory.keyChange).toBeDefined();
 
     // Validate meta information
-    expect(dir.meta).toBeDefined();
-    if (dir.meta) {
-      expect(dir.meta.termsOfService).toBeDefined();
+    expect(directory.meta).toBeDefined();
+    if (directory.meta) {
+      expect(directory.meta.termsOfService).toBeDefined();
     }
 
     console.log('ACME directory structure validation:', {
-      newNonce: !!dir.newNonce,
-      newAccount: !!dir.newAccount,
-      newOrder: !!dir.newOrder,
-      revokeCert: !!dir.revokeCert,
-      keyChange: !!dir.keyChange,
-      termsOfService: !!dir.meta?.termsOfService,
+      newNonce: !!directory.newNonce,
+      newAccount: !!directory.newAccount,
+      newOrder: !!directory.newOrder,
+      revokeCert: !!directory.revokeCert,
+      keyChange: !!directory.keyChange,
+      termsOfService: !!directory.meta?.termsOfService,
     });
   }, 10000);
 });

@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generatedAt": "2025-08-30T16:16:34.362Z",
+    "generatedAt": "2025-08-31T23:30:27.321Z",
     "testType": "Standard Load Stress Test",
-    "packageVersion": "1.6.3",
+    "packageVersion": "1.7.0",
     "nodeVersion": "v22.18.0"
   },
   "config": {
@@ -20,63 +20,63 @@
   },
   "metrics": {
     "totals": {
-      "totalTimeMs": 10947,
-      "accountCreationTimeMs": 992,
-      "orderProcessingTimeMs": 9931,
-      "totalRequests": 450,
-      "ordersPerSecond": 18.274853801169588,
-      "requestsPerSecond": 41.118421052631575,
+      "totalTimeMs": 10581,
+      "accountCreationTimeMs": 2034,
+      "orderProcessingTimeMs": 8525,
+      "totalRequests": 454,
+      "ordersPerSecond": 18.90359168241966,
+      "requestsPerSecond": 42.911153119092624,
       "successRate": 1,
       "errorRate": 0
     },
     "latency": {
-      "averageMs": 450.6377777777778,
-      "p50": 250,
-      "p75": 626,
-      "p90": 947,
-      "p95": 1283,
-      "p99": 1630
+      "averageMs": 464.6409691629956,
+      "p50": 255,
+      "p75": 600,
+      "p90": 992,
+      "p95": 1255,
+      "p99": 1494
     },
     "distribution": {
       "byMethod": {
-        "HEAD": 50,
+        "HEAD": 54,
         "POST": 400
       },
       "byEndpoint": {
-        "new-nonce": 50,
+        "new-nonce": 54,
         "new-order": 200,
         "authorization": 200
       },
       "byAccount": {
-        "0": 112,
+        "0": 114,
         "1": 112,
-        "2": 113,
-        "3": 113
+        "2": 114,
+        "3": 114
       }
     },
     "nonce": {
-      "newNonceRequests": 50,
+      "newNonceRequests": 54,
       "savedRequestsEstimate": 400,
-      "efficiency": 0.8888888888888888
+      "efficiency": 0.8810572687224669
     },
     "phases": [
       {
         "phase": "Account Creation",
-        "durationMs": 992,
+        "durationMs": 2034,
         "requests": 0,
         "errors": 0,
         "avgResponseMs": 0
       },
       {
         "phase": "Order Creation",
-        "durationMs": 9933,
-        "requests": 450,
+        "durationMs": 8526,
+        "requests": 454,
         "errors": 0,
-        "avgResponseMs": 450.6377777777778
+        "avgResponseMs": 464.6409691629956
       },
       {
         "phase": "Nonce Analysis",
-        "durationMs": 2,
+        "durationMs": 1,
         "requests": 0,
         "errors": 0,
         "avgResponseMs": 0
@@ -92,7 +92,7 @@
     },
     {
       "metric": "Avg Response Time",
-      "actual": "451 ms",
+      "actual": "465 ms",
       "target": "<= 5000 ms",
       "pass": true
     },
@@ -104,7 +104,7 @@
     },
     {
       "metric": "Requests / Sec",
-      "actual": "41.12",
+      "actual": "42.91",
       "target": ">= 1",
       "pass": true
     }

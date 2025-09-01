@@ -3,7 +3,7 @@
  */
 
 import { jest } from '@jest/globals';
-import { RateLimiter } from '../src/acme/client/rate-limiter.js';
+import { RateLimiter } from '../src/lib/managers/rate-limiter.js';
 
 describe('Debug Rate Limiter', () => {
   test('should handle simple rate limit case', async () => {
@@ -27,11 +27,13 @@ describe('Debug Rate Limiter', () => {
     console.log('Starting rate limit test...');
 
     try {
-      await rateLimiter.executeWithRateLimit(mockFn, '/test-endpoint');
+      await rateLimiter.executeWithRetry(mockFn, '/test-endpoint');
       console.log('Unexpected success');
     } catch (error: any) {
       console.log(`Caught expected error: ${error.constructor.name}: ${error.message}`);
+      // In the new API, RateLimitError is returned after retry exhaustion
       expect(error.constructor.name).toBe('RateLimitError');
+      expect(error.message).toContain('Rate limit exceeded for /test-endpoint after 2 attempts');
     }
 
     console.log(`Mock function was called ${callCount} times`);

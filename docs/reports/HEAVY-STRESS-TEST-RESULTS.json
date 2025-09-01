@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generatedAt": "2025-08-30T16:11:38.983Z",
+    "generatedAt": "2025-08-31T23:33:21.358Z",
     "testType": "Heavy Load Stress Test",
-    "packageVersion": "1.6.3",
+    "packageVersion": "1.7.0",
     "nodeVersion": "v22.18.0"
   },
   "config": {
@@ -20,59 +20,59 @@
   },
   "metrics": {
     "totals": {
-      "totalTimeMs": 32792,
-      "accountCreationTimeMs": 1008,
-      "orderProcessingTimeMs": 31773,
-      "totalRequests": 1652,
-      "ordersPerSecond": 24.397682220189083,
-      "requestsPerSecond": 50.38121378469046,
+      "totalTimeMs": 34988,
+      "accountCreationTimeMs": 1865,
+      "orderProcessingTimeMs": 33111,
+      "totalRequests": 1660,
+      "ordersPerSecond": 22.866289372892016,
+      "requestsPerSecond": 47.44755044875093,
       "successRate": 1,
       "errorRate": 0
     },
     "latency": {
-      "averageMs": 494.0665859564165,
+      "averageMs": 507.9698795180723,
       "p50": 246,
-      "p75": 733,
-      "p90": 1102,
-      "p95": 1338,
-      "p99": 1554
+      "p75": 745,
+      "p90": 1202,
+      "p95": 1501,
+      "p99": 1752
     },
     "distribution": {
       "byMethod": {
-        "HEAD": 52,
-        "POST": 1600
+        "POST": 1600,
+        "HEAD": 60
       },
       "byEndpoint": {
-        "new-nonce": 52,
         "new-order": 800,
+        "new-nonce": 60,
         "authorization": 800
       },
       "byAccount": {
-        "0": 413,
-        "1": 413,
-        "2": 413,
-        "3": 413
+        "0": 415,
+        "1": 415,
+        "2": 415,
+        "3": 415
       }
     },
     "nonce": {
-      "newNonceRequests": 52,
+      "newNonceRequests": 60,
       "savedRequestsEstimate": 1600,
-      "efficiency": 0.9685230024213075
+      "efficiency": 0.963855421686747
     },
     "phases": [
       {
         "phase": "Account Creation",
-        "durationMs": 1010,
+        "durationMs": 1866,
         "requests": 0,
         "errors": 0,
         "avgResponseMs": 0
       },
       {
         "phase": "Order Creation",
-        "durationMs": 31773,
-        "requests": 1652,
+        "durationMs": 33112,
+        "requests": 1660,
         "errors": 0,
-        "avgResponseMs": 494.0665859564165
+        "avgResponseMs": 507.9698795180723
       },
       {
         "phase": "Nonce Analysis",
@@ -92,7 +92,7 @@
     },
     {
       "metric": "Avg Response Time",
-      "actual": "494 ms",
+      "actual": "508 ms",
       "target": "<= 5000 ms",
       "pass": true
     },
@@ -104,7 +104,7 @@
     },
     {
       "metric": "Requests / Sec",
-      "actual": "50.38",
+      "actual": "47.45",
       "target": ">= 1",
       "pass": true
     }

@@ -1,5 +1,4 @@
-import { AcmeClientCore } from '../src/acme/client/acme-client-core.js';
-import { NonceManager } from '../src/acme/client/nonce-manager.js';
+import { AcmeClient } from '../src/lib/core/acme-client.js';
 import { afterAll } from '@jest/globals';
 import { cleanupTestResources } from './test-utils.js';
 
@@ -9,7 +8,7 @@ describe('Simple Nonce Test', () => {
   it('should fetch a single nonce without deadlock', async () => {
     console.log('🧪 Testing single nonce fetch...');
 
-    const client = new AcmeClientCore(STAGING_DIRECTORY_URL);
+    const client = new AcmeClient(STAGING_DIRECTORY_URL);
 
     // Initialize directory
     console.log('   Initializing directory...');
@@ -17,13 +16,13 @@ describe('Simple Nonce Test', () => {
     console.log('   Directory initialized ✅');
 
     const nonceManager = client.getDefaultNonce();
-    const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
+    const namespace = STAGING_DIRECTORY_URL; // In the new API we simply use the string
 
     console.log('   Fetching single nonce...');
     const start = Date.now();
 
     try {
-      const nonce = await nonceManager.take(namespace);
+      const nonce = await nonceManager.get(namespace); // Using get() instead of take()
       const duration = Date.now() - start;
       console.log(`   ✅ Single nonce fetched in ${duration}ms: ${nonce.substring(0, 10)}...`);
 
@@ -36,14 +35,14 @@ describe('Simple Nonce Test', () => {
     }
   }, 30000);
 
-  it.skip('should fetch multiple sequential nonces', async () => {
+  it('should fetch multiple sequential nonces', async () => {
     console.log('🧪 Testing sequential nonce fetches...');
 
-    const client = new AcmeClientCore(STAGING_DIRECTORY_URL);
+    const client = new AcmeClient(STAGING_DIRECTORY_URL);
     await client.getDirectory();
 
     const nonceManager = client.getDefaultNonce();
-    const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
+    const namespace = STAGING_DIRECTORY_URL; // In the new API we simply use a string
 
     const nonces = [];
     for (let i = 0; i < 3; i++) {
@@ -51,7 +50,7 @@ describe('Simple Nonce Test', () => {
       const start = Date.now();
 
       try {
-        const nonce = await nonceManager.take(namespace);
+        const nonce = await nonceManager.get(namespace); // Используем get() вместо take()
         const duration = Date.now() - start;
         console.log(`   ✅ Nonce ${i + 1} fetched in ${duration}ms: ${nonce.substring(0, 10)}...`);
         nonces.push(nonce);
@@ -72,26 +71,26 @@ describe('Simple Nonce Test', () => {
   it('should handle concurrent nonce requests (small scale)', async () => {
     console.log('🧪 Testing small scale concurrent nonce fetches...');
 
-    const client = new AcmeClientCore(STAGING_DIRECTORY_URL);
+    const client = new AcmeClient(STAGING_DIRECTORY_URL);
     await client.getDirectory();
 
     const nonceManager = client.getDefaultNonce();
-    const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
+    const namespace = STAGING_DIRECTORY_URL; // В новом API просто используем строку
 
     console.log('   Starting 3 concurrent requests...');
     const start = Date.now();
 
     const promises = Array.from({ length: 3 }, (_, i) => {
       return nonceManager
-        .take(namespace)
-        .then((nonce) => {
+        .get(namespace) // Используем get() вместо take()
+        .then((nonce: string) => {
           const duration = Date.now() - start;
           console.log(
             `   ✅ Concurrent nonce ${i + 1} fetched in ${duration}ms: ${nonce.substring(0, 10)}...`,
           );
           return nonce;
         })
-        .catch((error) => {
+        .catch((error: Error) => {
           const duration = Date.now() - start;
           console.error(`   ❌ Concurrent nonce ${i + 1} failed after ${duration}ms: ${error}`);
           throw error;
@@ -115,8 +114,8 @@ describe('Simple Nonce Test', () => {
     }
   }, 60000);
 
-  afterAll(() => {
+  afterAll(async () => {
     // Comprehensive cleanup
-    cleanupTestResources();
+    await cleanupTestResources();
   });
 });

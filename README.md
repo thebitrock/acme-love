@@ -258,7 +258,7 @@ acme-love cert \
   --eab-hmac-key "your-eab-hmac-key"
 
 # Note: For known CAs, you can also use predefined providers in the library:
-# AcmeClientCore(provider.zerossl.production) or AcmeClientCore(provider.google.production)
+# AcmeClient(provider.zerossl.production) or AcmeClient(provider.google.production)
 ```
 
 <a id="library-usage"></a>
@@ -281,24 +281,24 @@ npm install acme-love
 
 ```ts
 import {
-  AcmeClientCore,
-  AcmeAccountSession,
+  AcmeClient,
+  AcmeAccount,
   provider,
-  createAcmeCsr,
   generateKeyPair,
+  createAcmeCsr,
 } from 'acme-love';
 
-// 1. Create client core with nonce pooling - using provider preset (recommended)
-const core = new AcmeClientCore(provider.letsencrypt.staging, {
+// 1. Create ACME client - using provider preset (recommended)
+const client = new AcmeClient(provider.letsencrypt.staging, {
   nonce: { maxPool: 64 },
 });
 
-// Alternative: Create client core with string URL
-// const core = new AcmeClientCore(provider.letsencrypt.staging.directoryUrl, {
+// Alternative: Create client with string URL
+// const client = new AcmeClient(provider.letsencrypt.staging.directoryUrl, {
 //   nonce: { maxPool: 64 },
 // });
 
-// 2. Generate account keys (ES256 recommended)
+// 2. Generate account keys (P-256 ECDSA recommended)
 const algo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
 const keyPair = await generateKeyPair(algo);
 const accountKeys = {
@@ -306,20 +306,20 @@ const accountKeys = {
   publicKey: keyPair.publicKey,
 };
 
-// 3. Create account session
-const acct = new AcmeAccountSession(core, accountKeys);
+// 3. Create account
+const account = new AcmeAccount(client, accountKeys);
 
 // 4. Register account
-await acct.ensureRegistered({
-  contact: ['mailto:admin@acme-love.com'],
-  termsOfServiceAgreed: true,
-});
+const registration = await account.register(
+  ['mailto:admin@acme-love.com'], 
+  true, // termsOfServiceAgreed
+);
 
 // 5. Create order and solve challenges
-const order = await acct.newOrder(['acme-love.com']);
+const order = await account.createOrder(['acme-love.com']);
 
 // DNS-01 challenge
-const ready = await acct.solveDns01(order, {
+const ready = await account.solveDns01(order, {
   setDns: async (preparation) => {
     console.log(`Create TXT record: ${preparation.target} = ${preparation.value}`);
     // Set DNS record via your DNS provider API
@@ -333,9 +333,9 @@ const ready = await acct.solveDns01(order, {
 
 // 6. Generate CSR and finalize
 const { derBase64Url, keys: csrKeys } = await createAcmeCsr(['acme-love.com'], algo);
-const finalized = await acct.finalize(ready, derBase64Url);
-const valid = await acct.waitOrder(finalized, ['valid']);
-const certificate = await acct.downloadCertificate(valid);
+const finalized = await account.finalize(ready, derBase64Url);
+const valid = await account.waitOrder(finalized, ['valid']);
+const certificate = await account.downloadCertificate(valid);
 
 console.log('Certificate obtained!', certificate);
 ```
@@ -347,13 +347,13 @@ console.log('Certificate obtained!', certificate);
 For Certificate Authorities that require External Account Binding (like ZeroSSL, Google Trust Services), provide EAB credentials during account registration:
 
 ```ts
-import { AcmeClientCore, AcmeAccountSession, generateKeyPair } from 'acme-love';
+import { AcmeClient, AcmeAccount, generateKeyPair, provider } from 'acme-love';
 
 // Create client for CA that requires EAB - using provider preset (recommended)
-const core = new AcmeClientCore(provider.zerossl.production);
+const client = new AcmeClient(provider.zerossl.production);
 
 // Alternative: Create client with string URL
-// const core = new AcmeClientCore('https://acme.zerossl.com/v2/DV90');
+// const client = new AcmeClient('https://acme.zerossl.com/v2/DV90');
 
 // Generate account keys
 const keyPair = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' });
@@ -362,25 +362,22 @@ const accountKeys = {
   publicKey: keyPair.publicKey!,
 };
 
-// Create account session
-const acct = new AcmeAccountSession(core, accountKeys);
-
-// Register account with EAB
-const eab = {
-  kid: 'your-key-identifier-from-ca', // Provided by your CA
-  hmacKey: 'your-base64url-hmac-key-from-ca', // Provided by your CA
-};
-
-const kid = await acct.ensureRegistered(
-  {
-    contact: ['mailto:admin@acme-love.com'],
-    termsOfServiceAgreed: true,
+// Create account with EAB
+const account = new AcmeAccount(client, accountKeys, {
+  externalAccountBinding: {
+    kid: 'your-key-identifier-from-ca', // Provided by your CA
+    hmacKey: 'your-base64url-hmac-key-from-ca', // Provided by your CA
   },
-  eab,
+});
+
+// Register account (EAB is handled automatically)
+const registration = await account.register(
+  ['mailto:admin@acme-love.com'],
+  true, // termsOfServiceAgreed
 );
 
 // Continue with normal certificate issuance...
-const order = await acct.newOrder(['acme-love.com']);
+const order = await account.createOrder(['acme-love.com']);
 // ... rest of the flow
 ```
 
@@ -404,17 +401,11 @@ const order = await acct.newOrder(['acme-love.com']);
 # ZeroSSL example
 acme-love cert \
   --domain acme-love.com \
-  --email admin@acme-love.com \
-  --directory https://acme.zerossl.com/v2/DV90 \
-  --eab-kid "your-zerossl-key-id" \
   --eab-hmac-key "your-zerossl-hmac-key"
 
 # Google Trust Services example
 acme-love cert \
   --domain acme-love.com \
-  --email admin@acme-love.com \
-  --directory https://dv.acme-v02.api.pki.goog/directory \
-  --eab-kid "your-google-key-id" \
   --eab-hmac-key "your-google-hmac-key"
 ```
 
@@ -505,16 +496,20 @@ const certAlgo = { kind: 'rsa', modulusLength: 4096, hash: 'SHA-256' }; // RSA f
 When you already have a registered ACME account, you can reuse it by providing the `kid` (Key ID) to avoid creating duplicate registrations:
 
 ```ts
-// First time: Register new account and save the kid
-const acct = new AcmeAccountSession(core, accountKeys);
-const kid = await acct.ensureRegistered({
-  contact: ['mailto:admin@acme-love.com'],
-  termsOfServiceAgreed: true,
-});
+// First time: Register new account and save the registration details
+const account = new AcmeAccount(client, accountKeys);
+const registration = await account.register(
+  ['mailto:admin@acme-love.com'],
+  true, // termsOfServiceAgreed
+);
+
+// Save the account URL (kid) for future use
+const accountUrl = registration.accountUrl;
 
 // Save account info for future use
+// Save account information for reuse
 const accountInfo = {
-  kid,
+  accountUrl, // This is the kid
   privateKey: await crypto.subtle.exportKey('jwk', accountKeys.privateKey),
   publicKey: await crypto.subtle.exportKey('jwk', accountKeys.publicKey),
 };
@@ -541,13 +536,13 @@ const accountKeys = {
   ),
 };
 
-// Create session with existing kid
-const acct = new AcmeAccountSession(core, accountKeys, {
-  kid: savedAccount.kid, // Use existing account
+// Create account with existing account URL (kid)
+const account = new AcmeAccount(client, accountKeys, {
+  kid: savedAccount.accountUrl, // Use existing account URL
 });
 
-// No need to call ensureRegistered() - account already exists
-const order = await acct.newOrder(['acme-love.com']);
+// No need to call register() - account already exists
+const order = await account.createOrder(['acme-love.com']);
 ```
 
 <a id="advanced-features"></a>
@@ -573,7 +568,7 @@ import {
 } from 'acme-love';
 
 try {
-  await acct.newOrder(['acme-love.com']);
+  await account.createOrder(['acme-love.com']);
 } catch (error) {
   // Server maintenance detection
   if (error instanceof ServerMaintenanceError) {
@@ -617,7 +612,7 @@ try {
   // EAB requirement
   if (error instanceof ExternalAccountRequiredError) {
     console.log('🔑 This CA requires External Account Binding (EAB)');
-    console.log('💡 Use --eab-kid and --eab-hmac-key options');
+    console.log('💡 Use --eab-hmac-key option or provide EAB credentials');
   }
 
   // Rate limiter errors (from internal rate limiting system)
@@ -810,7 +805,7 @@ All ACME errors support JSON serialization for logging and debugging:
 
 ```ts
 try {
-  await acct.newOrder(['acme-love.com']);
+  await acct.createOrder(['acme-love.com']);
 } catch (error) {
   if (error instanceof AcmeError) {
     // Structured error logging
@@ -891,7 +886,7 @@ ACME Love includes a sophisticated **NonceManager** that optimizes nonce handlin
 Set default nonce behavior for all accounts:
 
 ```ts
-const core = new AcmeClientCore(provider.letsencrypt.production, {
+const client = new AcmeClient(provider.letsencrypt.production, {
   nonce: {
     maxPool: 64, // Cache up to 64 nonces
     prefetchLowWater: 12, // Start prefetch when < 12 remain
@@ -909,7 +904,7 @@ const core = new AcmeClientCore(provider.letsencrypt.production, {
 Fine-tune nonce behavior for specific accounts:
 
 ```ts
-const acct = new AcmeAccountSession(core, accountKeys, {
+const account = new AcmeAccount(client, accountKeys, {
   nonceOverrides: {
     maxPool: 128, // Higher throughput for this account
     prefetchLowWater: 20,
@@ -996,13 +991,6 @@ if (isDebugEnabled()) {
 In previous versions, NonceManager accepted a custom `log` function for debugging. This has been replaced with the unified debug system. If you need custom logging behavior for nonce operations, you can intercept the debug output:
 
 ```ts
-// Previous approach (deprecated):
-// const client = new AcmeClientCore(url, {
-//   nonce: {
-//     log: (...args) => logger.info('[nonce]', ...args)
-//   }
-// });
-
 // New unified approach:
 import debug from 'debug';
 
@@ -1218,22 +1206,22 @@ Use `--eab-kid` and `--eab-hmac-key` CLI options or the `eab` parameter in `ensu
 
 ## 🔧 Client Initialization
 
-ACME Love supports two convenient ways to initialize the `AcmeClientCore`:
+ACME Love supports two convenient ways to initialize the `AcmeClient`:
 
 <a id="method-1-using-provider-presets-recommended"></a>
 
 ### Method 1: Using Provider Presets (Recommended)
 
 ```ts
-import { AcmeClientCore, provider } from 'acme-love';
+import { AcmeClient, provider } from 'acme-love';
 
 // Using predefined provider entries (recommended)
-const client = new AcmeClientCore(provider.letsencrypt.staging);
-const client2 = new AcmeClientCore(provider.google.production);
-const client3 = new AcmeClientCore(provider.zerossl.production);
+const client = new AcmeClient(provider.letsencrypt.staging);
+const client2 = new AcmeClient(provider.google.production);
+const client3 = new AcmeClient(provider.zerossl.production);
 
 // With configuration options
-const client4 = new AcmeClientCore(provider.letsencrypt.production, {
+const client4 = new AcmeClient(provider.letsencrypt.production, {
   nonce: { maxPool: 64 },
 });
 ```
@@ -1243,14 +1231,14 @@ const client4 = new AcmeClientCore(provider.letsencrypt.production, {
 ### Method 2: Using String URLs
 
 ```ts
-import { AcmeClientCore } from 'acme-love';
+import { AcmeClient } from 'acme-love';
 
 // Using string URLs directly
-const client = new AcmeClientCore('https://acme-staging-v02.api.letsencrypt.org/directory');
-const client2 = new AcmeClientCore('https://dv.acme-v02.api.pki.goog/directory');
+const client = new AcmeClient('https://acme-staging-v02.api.letsencrypt.org/directory');
+const client2 = new AcmeClient('https://dv.acme-v02.api.pki.goog/directory');
 
 // Custom ACME directory
-const client3 = new AcmeClientCore('https://my-custom-ca.com/acme/directory');
+const client3 = new AcmeClient('https://my-custom-ca.com/acme/directory');
 ```
 
 <a id="benefits-of-provider-presets"></a>
@@ -1421,7 +1409,7 @@ All tiers achieved 100% success. Heavy test maintains <500ms average latency and
 ### 🔍 Example High-Load Configuration
 
 ```typescript
-const core = new AcmeClientCore(directoryUrl, {
+const client = new AcmeClient(directoryUrl, {
   nonce: {
     maxPool: 64,
     prefetchLowWater: 8,
@@ -1442,7 +1430,6 @@ Primary stress tiers:
 - Quick: [Markdown](./docs/reports/QUICK-STRESS-TEST-RESULTS.md) · [JSON](./docs/reports/QUICK-STRESS-TEST-RESULTS.json)
 - Standard: [Markdown](./docs/reports/STANDARD-STRESS-TEST-RESULTS.md) · [JSON](./docs/reports/STANDARD-STRESS-TEST-RESULTS.json)
 - Heavy: [Markdown](./docs/reports/HEAVY-STRESS-TEST-RESULTS.md) · [JSON](./docs/reports/HEAVY-STRESS-TEST-RESULTS.json)
-
 
 Each stress test report includes: latency distribution (P50/P75/P90/P95/P99), throughput, nonce efficiency, savings, threshold matrix, environment metadata (git commit, Node version), and raw config for reproducibility.
 

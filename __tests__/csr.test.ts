@@ -2,17 +2,17 @@ import { describe, test, expect } from '@jest/globals';
 import {
   generateKeyPair,
   createAcmeCsr,
-  type CsrAlgo,
-  type EcAlgo,
-  type RsaAlgo,
-} from '../src/acme/csr.js';
+  type AcmeCertificateAlgorithm,
+  type AcmeEcAlgorithm,
+  type AcmeRsaAlgorithm,
+} from '../src/lib/crypto/csr.js';
 
 describe('CSR and Key Generation', () => {
   const testDomain = 'test.acme-love.com';
 
   describe('ECDSA Key Generation', () => {
     test('should generate P-256 ECDSA keys', async () => {
-      const algo: EcAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+      const algo: AcmeEcAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
       const keyPair = await generateKeyPair(algo);
 
       expect(keyPair.privateKey).toBeDefined();
@@ -25,7 +25,7 @@ describe('CSR and Key Generation', () => {
     });
 
     test('should generate P-384 ECDSA keys', async () => {
-      const algo: EcAlgo = { kind: 'ec', namedCurve: 'P-384', hash: 'SHA-384' };
+      const algo: AcmeEcAlgorithm = { kind: 'ec', namedCurve: 'P-384', hash: 'SHA-384' };
       const keyPair = await generateKeyPair(algo);
 
       expect(keyPair.privateKey).toBeDefined();
@@ -37,7 +37,7 @@ describe('CSR and Key Generation', () => {
     });
 
     test('should generate P-521 ECDSA keys', async () => {
-      const algo: EcAlgo = { kind: 'ec', namedCurve: 'P-521', hash: 'SHA-512' };
+      const algo: AcmeEcAlgorithm = { kind: 'ec', namedCurve: 'P-521', hash: 'SHA-512' };
       const keyPair = await generateKeyPair(algo);
 
       expect(keyPair.privateKey).toBeDefined();
@@ -51,7 +51,7 @@ describe('CSR and Key Generation', () => {
 
   describe('RSA Key Generation', () => {
     test('should generate RSA 2048 keys', async () => {
-      const algo: RsaAlgo = { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' };
+      const algo: AcmeRsaAlgorithm = { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' };
       const keyPair = await generateKeyPair(algo);
 
       expect(keyPair.privateKey).toBeDefined();
@@ -65,7 +65,7 @@ describe('CSR and Key Generation', () => {
     });
 
     test('should generate RSA 3072 keys', async () => {
-      const algo: RsaAlgo = { kind: 'rsa', modulusLength: 3072, hash: 'SHA-256' };
+      const algo: AcmeRsaAlgorithm = { kind: 'rsa', modulusLength: 3072, hash: 'SHA-256' };
       const keyPair = await generateKeyPair(algo);
 
       expect(keyPair.privateKey).toBeDefined();
@@ -79,7 +79,7 @@ describe('CSR and Key Generation', () => {
     });
 
     test('should generate RSA 4096 keys', async () => {
-      const algo: RsaAlgo = { kind: 'rsa', modulusLength: 4096, hash: 'SHA-384' };
+      const algo: AcmeRsaAlgorithm = { kind: 'rsa', modulusLength: 4096, hash: 'SHA-384' };
       const keyPair = await generateKeyPair(algo);
 
       expect(keyPair.privateKey).toBeDefined();
@@ -95,7 +95,7 @@ describe('CSR and Key Generation', () => {
 
   describe('CSR Generation', () => {
     test('should create CSR with ECDSA P-256', async () => {
-      const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+      const algo: AcmeCertificateAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
       const result = await createAcmeCsr([testDomain], algo);
 
       expect(result.der).toBeInstanceOf(Buffer);
@@ -112,7 +112,7 @@ describe('CSR and Key Generation', () => {
     });
 
     test('should create CSR with RSA 2048', async () => {
-      const algo: CsrAlgo = { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' };
+      const algo: AcmeCertificateAlgorithm = { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' };
       const result = await createAcmeCsr([testDomain], algo);
 
       expect(result.der).toBeInstanceOf(Buffer);
@@ -124,7 +124,7 @@ describe('CSR and Key Generation', () => {
 
     test('should create CSR with multiple domains', async () => {
       const domains = ['test.acme-love.com', 'www.test.acme-love.com', 'api.test.acme-love.com'];
-      const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+      const algo: AcmeCertificateAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
       const result = await createAcmeCsr(domains, algo);
 
       expect(result.der).toBeInstanceOf(Buffer);
@@ -139,7 +139,7 @@ describe('CSR and Key Generation', () => {
     test('should create CSR with custom common name', async () => {
       const domains = ['www.acme-love.com', 'acme-love.com'];
       const customCN = 'acme-love.com';
-      const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+      const algo: AcmeCertificateAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
 
       const result = await createAcmeCsr(domains, algo, customCN);
 
@@ -149,7 +149,7 @@ describe('CSR and Key Generation', () => {
     });
 
     test('should accept pre-generated keys', async () => {
-      const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+      const algo: AcmeCertificateAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
       const keyPair = await generateKeyPair(algo);
 
       const result = await createAcmeCsr([testDomain], algo, testDomain, keyPair);
@@ -163,10 +163,10 @@ describe('CSR and Key Generation', () => {
 
   describe('Algorithm Validation', () => {
     test('should work with all supported ECDSA curves', async () => {
-      const curves: Array<EcAlgo['namedCurve']> = ['P-256', 'P-384', 'P-521'];
+      const curves: Array<AcmeEcAlgorithm['namedCurve']> = ['P-256', 'P-384', 'P-521'];
 
       for (const curve of curves) {
-        const algo: EcAlgo = { kind: 'ec', namedCurve: curve, hash: 'SHA-256' };
+        const algo: AcmeEcAlgorithm = { kind: 'ec', namedCurve: curve, hash: 'SHA-256' };
         const keyPair = await generateKeyPair(algo);
         expect(keyPair.privateKey).toBeDefined();
         expect(keyPair.publicKey).toBeDefined();
@@ -174,10 +174,10 @@ describe('CSR and Key Generation', () => {
     });
 
     test('should work with all supported RSA key sizes', async () => {
-      const sizes: Array<RsaAlgo['modulusLength']> = [2048, 3072, 4096];
+      const sizes: Array<AcmeRsaAlgorithm['modulusLength']> = [2048, 3072, 4096];
 
       for (const size of sizes) {
-        const algo: RsaAlgo = { kind: 'rsa', modulusLength: size, hash: 'SHA-256' };
+        const algo: AcmeRsaAlgorithm = { kind: 'rsa', modulusLength: size, hash: 'SHA-256' };
         const keyPair = await generateKeyPair(algo);
         expect(keyPair.privateKey).toBeDefined();
         expect(keyPair.publicKey).toBeDefined();

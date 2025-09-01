@@ -341,8 +341,8 @@ export async function runStressTest(config: StressTestConfig) {
           try {
             const randomString = Math.random().toString(36).substring(2, 10).toLowerCase();
             const domain = `${randomString}-acme-love.com`;
-            const order = await acct.newOrder([domain]);
-            const authz = await acct.fetch<any>(order.authorizations[0]);
+            const order = await acct.createOrder([domain]);
+            const authz = await acct.getAuthorization(order.authorizations[0]);
             const httpChallenge = authz.challenges.find((c: any) => c.type === 'http-01');
             if (!httpChallenge) throw new Error('No HTTP-01 challenge');
             await acct.keyAuthorization(httpChallenge.token);

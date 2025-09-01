@@ -1,9 +1,9 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { exportPKCS8, exportSPKI, importPKCS8, importSPKI } from 'jose';
-import { generateKeyPair } from '../../src/acme/csr.js';
-import { AcmeClientCore } from '../../src/acme/client/acme-client-core.js';
-import { AcmeAccountSession } from '../../src/acme/client/acme-account-session.js';
+import { generateKeyPair } from '../../src/lib/crypto/csr.js';
+import { AcmeClient } from '../../src/lib/core/acme-client.js';
+import { AcmeAccount } from '../../src/lib/core/acme-account.js';
 
 export interface TestAccount {
   id: string;
@@ -145,7 +145,7 @@ export class TestAccountManager {
     directoryUrl: string,
     email?: string,
     options?: any,
-  ): Promise<AcmeAccountSession> {
+  ): Promise<AcmeAccount> {
     // Try to load existing account
     const existing = await this.loadAccount(id);
     let accountKeys: AccountKeys;
@@ -189,16 +189,21 @@ export class TestAccountManager {
     }
 
     // Create ACME session
-    const core = new AcmeClientCore(directoryUrl, options);
+    const client = new AcmeClient(directoryUrl, options);
+    
+    // Initialize directory first (required for NonceManager in new API)
+    await client.getDirectory();
+    
     const sessionOptions = kid ? { kid } : {};
-    const session = new AcmeAccountSession(core, accountKeys, sessionOptions);
+    const account = new AcmeAccount(client, accountKeys, sessionOptions);
 
     // Ensure account is registered and get/save kid
     try {
-      const registrationKid = await session.ensureRegistered({
-        contact: [`mailto:${existing?.email || `stress-test-${id}-${Date.now()}@acme-love.com`}`],
-        termsOfServiceAgreed: true,
-      });
+      const registrationResult = await account.register(
+        [`mailto:${existing?.email || `stress-test-${id}-${Date.now()}@acme-love.com`}`],
+        true,
+      );
+      const registrationKid = registrationResult.accountUrl;
 
       // If this is a new registration or we didn't have kid before, save it
       if (!existing?.kid && registrationKid) {
@@ -224,7 +229,7 @@ export class TestAccountManager {
       throw error;
     }
 
-    return session;
+    return account;
   }
 }
 

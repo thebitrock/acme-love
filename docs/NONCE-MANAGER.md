@@ -31,7 +31,7 @@ For N sequential operations this doubles network latency. Parallel operations fi
 ## Quick Start
 
 ```ts
-import { NonceManager } from './acme/client/nonce-manager.js';
+import { NonceManager } from 'acme-love';
 import { httpGet } from './http-wrapper.js'; // must return { status, headers, data }
 
 const nm = new NonceManager({

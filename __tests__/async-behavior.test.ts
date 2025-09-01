@@ -1,17 +1,16 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
-import { NonceManager } from '../src/acme/client/nonce-manager.js';
-import { generateKeyPair, createAcmeCsr } from '../src/acme/csr.js';
-import { AcmeHttpClient } from '../src/acme/http/http-client.js';
-import { AcmeDirectory } from '../src/acme/client/acme-directory.js';
-import type { CsrAlgo } from '../src/acme/csr.js';
+import { AcmeClient } from '../src/lib/core/acme-client.js';
+import { NonceManager } from '../src/lib/managers/nonce-manager.js';
+import { generateKeyPair, createAcmeCsr } from '../src/lib/crypto/csr.js';
+import type { AcmeDirectory } from '../src/lib/types/directory.js';
+import type { AcmeCertificateAlgorithm } from '../src/lib/crypto/csr.js';
+import { cleanupTestResources } from './test-utils.js';
+
+const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
 
 // Tests for asynchronous behavior and concurrent access patterns
-// Temporarily skipping entire async behavior test suite due to flaky nonce refill timeouts
-// TODO: Investigate NonceManager refill timing under high concurrency and re-enable
-describe.skip('ACME Library Async Behavior Tests', () => {
-  const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
-
-  let httpClient: AcmeHttpClient;
+describe('ACME Library Async Behavior Tests', () => {
+  let acmeClient: AcmeClient;
   let directory: AcmeDirectory;
   let nonceManager: NonceManager;
 
@@ -24,13 +23,13 @@ describe.skip('ACME Library Async Behavior Tests', () => {
 
     console.log('Setting up async behavior tests...');
 
-    httpClient = new AcmeHttpClient();
-    directory = new AcmeDirectory(httpClient, STAGING_DIRECTORY_URL);
-    const dirResult = await directory.get();
+    // В новом API используем AcmeClient для получения directory
+    acmeClient = new AcmeClient(STAGING_DIRECTORY_URL);
+    directory = await acmeClient.getDirectory();
 
     nonceManager = new NonceManager({
-      newNonceUrl: dirResult.newNonce,
-      fetch: httpClient.head.bind(httpClient),
+      newNonceUrl: directory.newNonce,
+      fetch: (url) => acmeClient.getHttp().head(url),
       maxPool: 20,
       prefetchLowWater: 5,
       prefetchHighWater: 10,
@@ -41,6 +40,7 @@ describe.skip('ACME Library Async Behavior Tests', () => {
 
   afterAll(async () => {
     console.log('Async behavior test cleanup complete');
+    await cleanupTestResources();
   });
 
   test('should handle multiple parallel key generation operations', async () => {
@@ -50,7 +50,7 @@ describe.skip('ACME Library Async Behavior Tests', () => {
 
     console.log('Testing parallel key generation...');
 
-    const algorithms: CsrAlgo[] = [
+    const algorithms: AcmeCertificateAlgorithm[] = [
       { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' },
       { kind: 'ec', namedCurve: 'P-384', hash: 'SHA-384' },
       { kind: 'rsa', modulusLength: 2048, hash: 'SHA-256' },
@@ -94,7 +94,7 @@ describe.skip('ACME Library Async Behavior Tests', () => {
       ['test3.acme-love.com', 'api.test3.acme-love.com', 'www.test3.acme-love.com'],
     ];
 
-    const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+    const algo: AcmeCertificateAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
 
     // Create CSRs in parallel
     const startTime = Date.now();
@@ -129,13 +129,13 @@ describe.skip('ACME Library Async Behavior Tests', () => {
 
     console.log('Testing high-frequency nonce requests...');
 
-    const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
+    const namespace = 'staging-high-frequency'; // В новом API просто используем строку
     const numberOfRequests = 20;
 
     // Make many concurrent nonce requests
     const startTime = Date.now();
     const noncePromises = Array.from({ length: numberOfRequests }, async (_, index) => {
-      const nonce = await nonceManager.take(namespace);
+      const nonce = await nonceManager.get(namespace);
       if (index % 5 === 0) {
         console.log(`Fetched nonce ${index + 1}/${numberOfRequests}: ${nonce.substring(0, 20)}...`);
       }
@@ -154,7 +154,7 @@ describe.skip('ACME Library Async Behavior Tests', () => {
     expect(uniqueNonces.size).toBe(numberOfRequests);
 
     // Verify all nonces are valid strings
-    nonces.forEach((nonce) => {
+    nonces.forEach((nonce: string) => {
       expect(typeof nonce).toBe('string');
       expect(nonce.length).toBeGreaterThan(10);
     });
@@ -162,22 +162,22 @@ describe.skip('ACME Library Async Behavior Tests', () => {
     console.log('✓ All high-frequency nonce requests successful and unique');
   }, 30000);
 
-  test.skip('should handle mixed async operations concurrently', async () => {
+  test('should handle mixed async operations concurrently', async () => {
     if (process.env.CI && !process.env.ACME_E2E_ENABLED) {
       return;
     }
 
     console.log('Testing mixed async operations...');
 
-    const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
-    const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+    const namespace = 'staging-mixed-ops'; // В новом API просто используем строку
+    const algo: AcmeCertificateAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
 
     const startTime = Date.now();
 
     // Run multiple different operations in parallel
     const mixedPromises = [
-      // Directory operations
-      directory.get(),
+      // Directory operations (в новом API directory уже загружен, делаем dummy async операцию)
+      Promise.resolve(directory),
 
       // Key generation operations
       generateKeyPair(algo),
@@ -185,8 +185,8 @@ describe.skip('ACME Library Async Behavior Tests', () => {
 
       // Nonce operations
       // Fewer nonce operations to reduce pressure on refill timing
-      nonceManager.take(namespace),
-      nonceManager.take(namespace),
+      nonceManager.get(namespace),
+      nonceManager.get(namespace),
 
       // CSR creation (after key generation)
       (async () => {
@@ -206,11 +206,10 @@ describe.skip('ACME Library Async Behavior Tests', () => {
     console.log(`Mixed async operations completed in ${duration}ms`);
 
     // Verify all operations completed successfully
-    const [dirResult, ecKey, rsaKey, nonce1, nonce2, nonce3, csrResult] = results as [
+    const [dirResult, ecKey, rsaKey, nonce1, nonce2, csrResult] = results as [
       any, // ACMEDirectory
       any, // CryptoKeyPair
       any, // CryptoKeyPair
-      string,
       string,
       string,
       any, // CreateCsrResult
@@ -229,8 +228,7 @@ describe.skip('ACME Library Async Behavior Tests', () => {
     // Nonces
     expect(typeof nonce1).toBe('string');
     expect(typeof nonce2).toBe('string');
-    expect(typeof nonce3).toBe('string');
-    expect(new Set([nonce1, nonce2, nonce3]).size).toBe(3); // All unique
+    expect(new Set([nonce1, nonce2]).size).toBe(2); // All unique
 
     // CSR
     expect(csrResult.pem).toContain('-----BEGIN CERTIFICATE REQUEST-----');
@@ -239,15 +237,15 @@ describe.skip('ACME Library Async Behavior Tests', () => {
     console.log('✓ All mixed async operations successful');
   }, 30000);
 
-  test.skip('should handle rapid sequential operations without memory leaks', async () => {
+  test('should handle rapid sequential operations without memory leaks', async () => {
     if (process.env.CI && !process.env.ACME_E2E_ENABLED) {
       return;
     }
 
     console.log('Testing rapid sequential operations...');
 
-    const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
-    const algo: CsrAlgo = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+    const namespace = 'staging-sequential'; // В новом API просто используем строку
+    const algo: AcmeCertificateAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
 
     const initialMemory = process.memoryUsage();
     console.log(`Initial memory usage: ${(initialMemory.heapUsed / 1024 / 1024).toFixed(2)} MB`);
@@ -264,7 +262,7 @@ describe.skip('ACME Library Async Behavior Tests', () => {
         `seq-test-${i}.acme-love.com`,
         keyPair,
       );
-      const nonce = await nonceManager.take(namespace);
+      const nonce = await nonceManager.get(namespace);
 
       const batchDuration = Date.now() - batchStart;
 
@@ -295,7 +293,7 @@ describe.skip('ACME Library Async Behavior Tests', () => {
     console.log('✓ Rapid sequential operations completed without excessive memory usage');
   }, 60000);
 
-  test.skip('should handle error recovery in async operations', async () => {
+  test('should handle error recovery in async operations', async () => {
     if (process.env.CI && !process.env.ACME_E2E_ENABLED) {
       return;
     }
@@ -303,17 +301,17 @@ describe.skip('ACME Library Async Behavior Tests', () => {
     console.log('Testing error recovery in async operations...');
 
     // Test with mix of valid and invalid operations
-    const validNamespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
+    const validNamespace = 'staging-error-recovery'; // В новом API просто используем строку
 
     const mixedOperations = [
       // Valid operations
-      nonceManager.take(validNamespace),
-      directory.get(),
+      nonceManager.get(validNamespace),
+      Promise.resolve(directory), // directory уже загружен в новом API
       generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' }),
 
-      // Operations that may fail gracefully
-      directory.get(), // Should succeed (cached)
-      nonceManager.take(validNamespace), // Should succeed
+      // More valid operations
+      Promise.resolve(directory), // Should succeed (cached)
+      nonceManager.get(validNamespace), // Should succeed
     ];
 
     const results = await Promise.allSettled(mixedOperations);

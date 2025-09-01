@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
-import { AcmeClientCore } from '../../src/acme/client/acme-client-core.js';
-import { NonceManager } from '../../src/acme/client/nonce-manager.js';
+import { AcmeClient } from '../../src/lib/core/acme-client.js';
+import { NonceManager } from '../../src/lib/managers/nonce-manager.js';
 import { testAccountManager } from '../utils/account-manager.js';
 import { cleanupTestResources } from '../test-utils.js';
 
@@ -185,7 +185,7 @@ describe('ACME Deadlock Detection Test', () => {
   }
 
   let detector: DeadlockDetector;
-  let testResources: { core: AcmeClientCore; nonceManager: NonceManager }[] = [];
+  let testResources: { account: any; client: AcmeClient; nonceManager: NonceManager }[] = [];
 
   beforeAll(async () => {
     detector = new DeadlockDetector();
@@ -202,11 +202,12 @@ describe('ACME Deadlock Detection Test', () => {
       detector.stop();
     }
 
-    // Cleanup all NonceManagers
+    // Cleanup all resources
     for (const resource of testResources) {
       try {
-        if (resource.nonceManager && typeof resource.nonceManager.cleanup === 'function') {
-          resource.nonceManager.cleanup();
+        // В новой API используем clear() вместо cleanup()
+        if (resource.nonceManager && typeof resource.nonceManager.clear === 'function') {
+          resource.nonceManager.clear();
         }
       } catch (error) {
         console.warn(`Warning: Could not cleanup nonce manager:`, error);
@@ -247,26 +248,26 @@ describe('ACME Deadlock Detection Test', () => {
               { nonce: { maxPool: 3 } }, // Smaller pool to increase contention but reduce timeout issues
             );
 
-            // Get the core client for tracking
-            const core = (acct as any).client;
+            // Get the client for tracking - новый AcmeClient через приватное поле
+            const client = (acct as any).client;
 
             // Add deadlock tracking
-            const originalHttp = core.getHttp();
+            const originalHttp = client.getHttp();
             const trackingHttp = new DeadlockTrackingHttpClient(
               detector,
               originalHttp,
               accountIndex,
             );
-            (core as any).http = trackingHttp;
+            (client as any).http = trackingHttp;
 
             // Track resources for cleanup
-            const nonceManager = core.getDefaultNonce();
-            testResources.push({ core, nonceManager });
+            const nonceManager = client.getDefaultNonce();
+            testResources.push({ account: acct, client, nonceManager });
 
             detector.completeOperation(operationId, 'completed');
             console.log(`   ✅ Account ${accountIndex + 1} created successfully`);
 
-            return { accountIndex, acct, core, trackingHttp };
+            return { accountIndex, acct, client, trackingHttp, nonceManager };
           } catch (error) {
             detector.completeOperation(operationId, 'error');
             console.error(`   ❌ Account ${accountIndex + 1} failed: ${error}`);
@@ -280,15 +281,16 @@ describe('ACME Deadlock Detection Test', () => {
 
       // Test 2: Concurrent nonce requests
       console.log(`\n🧪 Test 2: Concurrent Nonce Pool Stress`);
-      const nonceStressPromises = accounts.flatMap(({ core }, accountIndex) => {
+      const nonceStressPromises = accounts.flatMap(({ client }, accountIndex) => {
         return Array.from({ length: 10 }, async (_, requestIndex) => {
           const operationId = `nonce-stress-${accountIndex}-${requestIndex}`;
           detector.trackOperation(operationId, 'Nonce Request', accountIndex);
 
           try {
-            const nonceManager = core.getDefaultNonce();
-            const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
-            await nonceManager.take(namespace);
+            const nonceManager = client.getDefaultNonce();
+            // В новой API используем get() и строку для namespace
+            const namespace = STAGING_DIRECTORY_URL;
+            await nonceManager.get(namespace);
             detector.completeOperation(operationId, 'completed');
           } catch (error) {
             detector.completeOperation(operationId, 'error');
@@ -302,13 +304,13 @@ describe('ACME Deadlock Detection Test', () => {
 
       // Test 3: Rapid-fire directory requests
       console.log(`\n🧪 Test 3: Rapid Directory Requests`);
-      const directoryPromises = accounts.flatMap(({ core }, accountIndex) => {
+      const directoryPromises = accounts.flatMap(({ client }, accountIndex) => {
         return Array.from({ length: 5 }, async (_, requestIndex) => {
           const operationId = `directory-${accountIndex}-${requestIndex}`;
           detector.trackOperation(operationId, 'Directory Request', accountIndex);
 
           try {
-            await core.getDirectory();
+            await client.getDirectory();
             detector.completeOperation(operationId, 'completed');
           } catch (error) {
             detector.completeOperation(operationId, 'error');
@@ -322,15 +324,15 @@ describe('ACME Deadlock Detection Test', () => {
 
       // Test 4: Mixed concurrent operations
       console.log(`\n🧪 Test 4: Mixed Concurrent Operations`);
-      const mixedPromises = accounts.flatMap(({ core }, accountIndex) => {
+      const mixedPromises = accounts.flatMap(({ client, nonceManager }, accountIndex) => {
         return [
           // Nonce requests
           ...Array.from({ length: 3 }, async (_, i) => {
             const operationId = `mixed-nonce-${accountIndex}-${i}`;
             detector.trackOperation(operationId, 'Mixed Nonce', accountIndex);
             try {
-              const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
-              await core.getDefaultNonce().take(namespace);
+              const namespace = STAGING_DIRECTORY_URL; // В новой API просто строка
+              await nonceManager.get(namespace); // Используем get() для нового API
               detector.completeOperation(operationId, 'completed');
             } catch (error) {
               detector.completeOperation(operationId, 'error');
@@ -342,7 +344,7 @@ describe('ACME Deadlock Detection Test', () => {
             const operationId = `mixed-directory-${accountIndex}-${i}`;
             detector.trackOperation(operationId, 'Mixed Directory', accountIndex);
             try {
-              await core.getDirectory();
+              await client.getDirectory();
               detector.completeOperation(operationId, 'completed');
             } catch (error) {
               detector.completeOperation(operationId, 'error');
@@ -380,11 +382,14 @@ describe('ACME Deadlock Detection Test', () => {
 
       // Nonce pool analysis
       console.log(`\n🔍 NONCE POOL ANALYSIS:`);
-      accounts.forEach(({ core }, accountIndex) => {
+      accounts.forEach(({ client }, accountIndex) => {
         try {
-          const nonceManager = core.getDefaultNonce();
-          const poolSize = (nonceManager as any).pool?.length || 0;
-          console.log(`   Account ${accountIndex + 1}: ${poolSize} nonces in pool`);
+          const nonceManager = client.getDefaultNonce();
+          const namespace = STAGING_DIRECTORY_URL; // В новой API просто строка
+          const stats = nonceManager.getStats(namespace); // Используем namespace для новой API
+          console.log(
+            `   Account ${accountIndex + 1}: ${stats.poolSize} nonces in pool (prefetching: ${stats.prefetching})`,
+          );
         } catch (error) {
           console.log(`   Account ${accountIndex + 1}: Could not read nonce pool`);
         }
@@ -416,22 +421,28 @@ describe('ACME Deadlock Detection Test', () => {
     console.log(`\n🧪 Specific Nonce Manager Deadlock Test`);
 
     try {
-      const core = new AcmeClientCore(STAGING_DIRECTORY_URL, {
-        nonce: { maxPool: 2 }, // Very small pool to force contention
-      });
+      // Используем тестовый аккаунт вместо создания нового клиента
+      const acct = await testAccountManager.getOrCreateAccountSession(
+        'deadlock-detection-nonce-test',
+        STAGING_DIRECTORY_URL,
+        `deadlock-nonce-test-${Date.now()}@acme-love.com`,
+        { nonce: { maxPool: 2 } }, // Very small pool to force contention
+      );
+
+      const client = (acct as any).client;
 
       // Initialize directory first (required for NonceManager)
       const initOpId = 'init-directory';
       detector.trackOperation(initOpId, 'Directory Initialization');
-      await core.getDirectory();
+      await client.getDirectory();
       detector.completeOperation(initOpId, 'completed');
 
       // Track resources for cleanup
-      const nonceManager = core.getDefaultNonce();
-      testResources.push({ core, nonceManager });
+      const nonceManager = client.getDefaultNonce();
+      testResources.push({ account: acct, client, nonceManager });
 
-      const trackingHttp = new DeadlockTrackingHttpClient(detector, core.getHttp());
-      (core as any).http = trackingHttp;
+      const trackingHttp = new DeadlockTrackingHttpClient(detector, client.getHttp());
+      (client as any).http = trackingHttp;
 
       // Hammer the nonce manager with many concurrent requests
       const noncePromises = Array.from({ length: 20 }, async (_, i) => {
@@ -439,9 +450,9 @@ describe('ACME Deadlock Detection Test', () => {
         detector.trackOperation(operationId, 'Nonce Hammer');
 
         try {
-          const nonceManager = core.getDefaultNonce();
-          const namespace = NonceManager.makeNamespace(STAGING_DIRECTORY_URL);
-          const nonce = await nonceManager.take(namespace);
+          const nonceManager = client.getDefaultNonce();
+          const namespace = STAGING_DIRECTORY_URL; // В новой API просто используем строку
+          const nonce = await nonceManager.get(namespace); // Используем get() вместо take()
 
           // Simulate some work
           await new Promise((resolve) => setTimeout(resolve, Math.random() * 100));

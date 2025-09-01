@@ -41,4 +41,7 @@ export default {
 
   // Restore mocks after each test
   restoreMocks: true,
+
+  // Setup files
+  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.ts'],
 };

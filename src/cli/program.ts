@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { handleError } from './utils/errors.js';
@@ -11,7 +11,13 @@ import { handleInteractiveMode } from './commands/interactive.js';
 export function createCli(): Command {
   const program = new Command();
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
+  // Look for package.json in the project root, handling both development and built scenarios
+  let packagePath = join(__dirname, '..', '..', 'package.json');
+  if (!existsSync(packagePath)) {
+    // In built version, we're in dist/src/cli/, so go back to root
+    packagePath = join(__dirname, '..', '..', '..', 'package.json');
+  }
+  const pkg = JSON.parse(readFileSync(packagePath, 'utf-8'));
 
   program.name('acme-love').description('CLI for ACME certificate management').version(pkg.version);
 

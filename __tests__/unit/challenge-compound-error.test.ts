@@ -1,9 +1,8 @@
-import { describe, it, expect } from '@jest/globals';
-import {
-  AcmeAccountSession,
-  type AccountKeys,
-} from '../../src/acme/client/acme-account-session.js';
-import { CompoundError, IncorrectResponseError } from '../../src/acme/errors/errors.js';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import { AcmeAccount, type AccountKeys } from '../../src/lib/core/acme-account.js';
+import { AcmeClient } from '../../src/lib/core/acme-client.js';
+import { CompoundError, IncorrectResponseError } from '../../src/lib/errors/errors.js';
+import { generateKeyPair } from '../../src/lib/crypto/csr.js';
 
 // Authorization response fixture (simplified) based on provided sample
 const AUTHZ_FIXTURE = {
@@ -48,7 +47,7 @@ const AUTHZ_FIXTURE = {
 };
 
 describe('challenge compound error propagation', () => {
-  // Minimal stub for AcmeClientCore used only for directoryUrl reference inside session
+  // Minimal stub for AcmeClient used only for directoryUrl reference inside account
   const clientStub: any = {
     directoryUrl: 'https://example.test/directory',
     getHttp() {
@@ -57,26 +56,46 @@ describe('challenge compound error propagation', () => {
           throw new Error('should not reach network');
         },
         head: () => {
-          throw new Error('no head');
+          // Return a mock nonce response for the test
+          return Promise.resolve({
+            statusCode: 200,
+            headers: { 'replay-nonce': 'test-nonce-123' },
+            body: '',
+          });
         },
       };
     },
-    getDirectory: async () => ({ newNonce: '', newAccount: '', newOrder: '' }),
+    getDirectory: async () => ({
+      newNonce: 'https://example.test/acme/new-nonce',
+      newAccount: 'https://example.test/acme/new-account',
+      newOrder: 'https://example.test/acme/new-order',
+    }),
     getDefaultNonce: () => ({}),
   };
 
-  // Dummy keys (not used because error thrown before signing is needed)
-  const keys: AccountKeys = { privateKey: {} as any, publicKey: {} as any };
+  // Generate real keys for the test
+  let testKeys: AccountKeys;
 
-  class TestSession extends AcmeAccountSession {
-    // Override fetch to return our authorization fixture regardless of URL
-    public override async fetch<T>(_url: string): Promise<T> {
-      return AUTHZ_FIXTURE as unknown as T;
+  beforeEach(async () => {
+    const keyPair = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' });
+    testKeys = {
+      privateKey: keyPair.privateKey!,
+      publicKey: keyPair.publicKey,
+    };
+  });
+
+  class TestAccount extends AcmeAccount {
+    constructor(keys: AccountKeys) {
+      super(clientStub as any, keys, {});
+    }
+
+    // Override getAuthorization to return our authorization fixture
+    override async getAuthorization(_authzUrl: string): Promise<any> {
+      return AUTHZ_FIXTURE;
     }
   }
-
   it('throws CompoundError with mapped IncorrectResponse subproblems', async () => {
-    const session = new TestSession(clientStub, keys, {});
+    const account = new TestAccount(testKeys);
 
     const order = {
       url: 'https://example.test/order/1',
@@ -86,27 +105,16 @@ describe('challenge compound error propagation', () => {
       finalize: 'https://example.test/acme/finalize/1',
     };
 
-    await expect(
-      session.solveDns01(order as any, {
-        setDns: async () => {
-          throw new Error('should not set DNS due to early error');
-        },
-        waitFor: async () => {
-          throw new Error('should not wait');
-        },
-      }),
-    ).rejects.toBeInstanceOf(CompoundError);
-
+    // Test the detailed error structure
     try {
-      await session.solveDns01(order as any, { setDns: async () => {}, waitFor: async () => {} });
+      await account.solveDns01(order as any, { setDns: async () => {}, waitFor: async () => {} });
+      throw new Error('Expected CompoundError was not thrown');
     } catch (e) {
       const err = e as CompoundError;
       expect(err).toBeInstanceOf(CompoundError);
       expect(err.subproblems).toHaveLength(2);
       expect(err.subproblems?.every((sp) => sp instanceof IncorrectResponseError)).toBe(true);
       expect(err.toString()).toMatch(/1\. \[/);
-      return;
     }
-    throw new Error('Expected CompoundError was not thrown');
   });
 });
