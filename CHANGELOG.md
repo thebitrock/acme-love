@@ -1,3 +1,17 @@
+## [2.0.0](https://github.com/thebitrock/acme-love/compare/v1.7.0...v2.0.0) (2025-09-01)
+
+### ⚠ BREAKING CHANGES
+
+- RFC 8555
+
+### Features
+
+- API update ([621d1a6](https://github.com/thebitrock/acme-love/commit/621d1a69d9f675cb142e7bc2d0402fe031ce7acd))
+
+### Bug Fixes
+
+- improve comment formatting for clarity in rate limit avoidance tests ([54c3353](https://github.com/thebitrock/acme-love/commit/54c33532a9bdc074fba1d654d3f6017bd55b61e6))
+
 ## [1.7.1](https://github.com/thebitrock/acme-love/compare/v1.7.0...v1.7.1) (2025-09-01)
 
 ### Bug Fixes
