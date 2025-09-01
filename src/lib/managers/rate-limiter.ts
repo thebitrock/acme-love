@@ -89,7 +89,7 @@ export class RateLimiter {
           endpoint,
         );
       }
-      
+
       await pendingAcquire;
       // After the first acquire completes, others can proceed without additional delay
       return;
@@ -188,7 +188,7 @@ export class RateLimiter {
         // Check if this is a rate limit error
         if (this.isRateLimitError(error)) {
           const retryAfter = this.extractRetryAfter(error);
-          
+
           debugRateLimit(
             'Rate limit detected for endpoint %s, retry-after: %d seconds, attempt %d/%d',
             endpoint,
@@ -196,7 +196,7 @@ export class RateLimiter {
             attempt,
             this.opts.maxRetries + 1,
           );
-          
+
           if (retryAfter > 0) {
             this.recordRateLimit(endpoint, retryAfter);
           }

@@ -133,7 +133,7 @@ export async function handleCertCommand(options: CertCommandOptions) {
     );
   }
 
-    const acct = new AcmeAccount(client, accountKeys, {
+  const acct = new AcmeAccount(client, accountKeys, {
     ...(kid && { kid }),
     nonce: { maxPool: 64 },
     ...(options.eabKid &&
@@ -365,7 +365,7 @@ async function solveHttp01(acct: AcmeAccount, order: AcmeOrder): Promise<AcmeOrd
     },
     waitFor: async (prep) => {
       const { validateHttp01ChallengeByUrl } = await import(
-        '../../acme/validator/http-validator.js'
+        '../../lib/challenges/http-validator.js'
       );
       const maxAttempts = 12;
       const delayMs = 5000;

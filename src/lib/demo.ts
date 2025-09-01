@@ -8,9 +8,9 @@
 // New RFC 8555 compliant imports
 import { AcmeClient } from '../lib/core/acme-client.js';
 import type { AcmeClientOptions } from '../lib/core/acme-client.js';
-import type { ACMEDirectory } from '../acme/types/directory.js';
-import { ACME_ERROR } from '../acme/errors/codes.js';
-import { createErrorFromProblem } from '../acme/errors/factory.js';
+import type { AcmeDirectory } from './types/directory.js';
+import { ACME_ERROR } from './errors/codes.js';
+import { createErrorFromProblem } from './errors/factory.js';
 
 /**
  * Demo: Modern ACME certificate workflow with RFC 8555 naming
@@ -34,7 +34,7 @@ async function demonstrateModernAcmeWorkflow() {
   console.log('✅ AcmeClient created (was: AcmeClientCore)');
 
   // 2. Get ACME directory
-  const directory: ACMEDirectory = await client.getDirectory();
+  const directory: AcmeDirectory = await client.getDirectory();
   console.log('✅ Directory fetched:', {
     newAccount: directory.newAccount,
     newOrder: directory.newOrder,

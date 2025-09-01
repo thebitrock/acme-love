@@ -125,7 +125,7 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
           nonces.push(nonce);
 
           console.log(`  Nonce ${i + 1}: ${nonce.substring(0, 15)}... (${elapsed}ms)`);
-          
+
           // If this took a long time, it might indicate rate limit recovery
           if (elapsed > 3000) {
             console.log(`  ↳ Long delay detected (${elapsed}ms) - likely rate limit recovery`);
@@ -133,7 +133,7 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
           }
         } catch (error) {
           console.error(`Failed to fetch nonce ${i + 1}:`, error);
-          
+
           // Check if it's a rate limit error - this shouldn't happen with proper retry logic
           if (error instanceof Error && error.name === 'RateLimitError') {
             console.log(`  ↳ Rate limit error encountered (${error.message})`);
@@ -142,7 +142,7 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
             console.log('Skipping test due to persistent rate limit');
             return;
           }
-          
+
           // If it's a network error, skip this test
           if (error instanceof TypeError && error.message.includes('fetch failed')) {
             console.log('Skipping test due to network connectivity issues');
@@ -171,7 +171,7 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
       // Most requests should be fast (cached/pooled), unless rate limits were hit
       const fastRequests = delays.filter((d) => d < 2000).length;
       const slowRequests = delays.filter((d) => d >= 2000).length;
-      
+
       console.log(`Request timing: ${fastRequests} fast (<2s), ${slowRequests} slow (≥2s)`);
       console.log(
         `Average delay: ${(delays.reduce((a, b) => a + b, 0) / delays.length).toFixed(1)}ms`,
@@ -258,7 +258,7 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
       let callCount = 0;
       const mockFetch = async (_url: string) => {
         callCount++;
-        
+
         if (callCount === 1) {
           // First call returns 503 with Retry-After header
           console.log(`  Mock fetch call ${callCount}: Returning 503 with Retry-After: 2`);
@@ -303,22 +303,22 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
 
       console.log('Testing rate limit retry logic with mock 503 response...');
       const startTime = Date.now();
-      
+
       const nonce = await mockNonceManager.get(namespace);
-      
+
       const elapsed = Date.now() - startTime;
       console.log(`✓ Successfully recovered from rate limit in ${elapsed}ms`);
       console.log(`✓ Total fetch calls made: ${callCount}`);
-      
+
       // Verify we got a nonce
       expect(nonce).toBeDefined();
       expect(typeof nonce).toBe('string');
       expect(nonce).toContain('mock-nonce-after-retry');
-      
+
       // Verify that retry logic was used (should take at least 2 seconds due to Retry-After)
       expect(elapsed).toBeGreaterThan(1900); // Allow some margin for timing
       expect(callCount).toBe(2); // First call failed, second succeeded
-      
+
       console.log('✓ Rate limit retry logic working correctly');
     }, 30000);
 

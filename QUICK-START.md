@@ -202,19 +202,7 @@ const client = new AcmeClient(directoryUrl);
 const account = new AcmeAccount(client, privateKey);
 ```
 
-### Gradual Migration
-
-```typescript
-// Both APIs work simultaneously
-import {
-  AcmeClientCore, // Legacy (still works)
-  AcmeClient, // New RFC 8555 (recommended)
-} from 'acme-love';
-
-// Migrate gradually
-const legacyClient = new AcmeClientCore(directoryUrl);
-const newClient = new AcmeClient(directoryUrl);
-```
+<!-- Legacy gradual migration section removed (old API deleted) -->
 
 ## Best Practices
 
@@ -229,15 +217,11 @@ const newClient = new AcmeClient(directoryUrl);
 
 See complete examples in:
 
-- [`src/lib/example.ts`](src/lib/example.ts) - Basic usage
-- [`src/lib/demo.ts`](src/lib/demo.ts) - Live demo
-- [`docs/`](docs/) - Comprehensive guides
+- [`docs/`](docs/) - Guides and references
 
 ## Documentation
 
 - [Architecture Overview](src/lib/README.md)
-- [Migration Guide](docs/MIGRATION-PLAN.md)
-- [RFC 8555 Naming](docs/RFC8555-NAMING.md)
 - [API Reference](docs/)
 
 ---

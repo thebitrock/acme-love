@@ -16,7 +16,7 @@ export function cleanupTestResources(): Promise<void> {
       id++;
     }
   };
-  
+
   clearAllTimers();
 
   // Force garbage collection if available (helps with memory cleanup)

@@ -190,10 +190,10 @@ export class TestAccountManager {
 
     // Create ACME session
     const client = new AcmeClient(directoryUrl, options);
-    
+
     // Initialize directory first (required for NonceManager in new API)
     await client.getDirectory();
-    
+
     const sessionOptions = kid ? { kid } : {};
     const account = new AcmeAccount(client, accountKeys, sessionOptions);
 

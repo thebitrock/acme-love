@@ -196,17 +196,9 @@ const options: AcmeClientOptions = {
 - `docs/` - Comprehensive documentation
 - `scripts/` - Migration and automation tools
 
-### Migration Status
-
-Run `./scripts/migrate.sh status` for current progress.
-
 ## 📚 Documentation
 
-- [Architecture Proposal](docs/ARCHITECTURE-PROPOSAL.md)
-- [Migration Plan](docs/MIGRATION-PLAN.md)
-- [RFC 8555 Naming](docs/RFC8555-NAMING.md)
-- [Migration Status](docs/MIGRATION-STATUS.md)
-- [Final Report](docs/MIGRATION-FINAL-REPORT.md)
+Legacy migration documents have been removed after completion. Current docs focus only on the stable API.
 
 ## 🤝 Contributing
 

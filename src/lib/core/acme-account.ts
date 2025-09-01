@@ -12,7 +12,7 @@ import type { AcmeClient } from './acme-client.js';
 import { NonceManager, type NonceManagerOptions } from '../managers/nonce-manager.js';
 import type { AcmeOrder, AcmeChallenge, AcmeAuthorization } from '../../lib/types/order.js';
 import { createErrorFromProblem } from '../errors/factory.js';
-import { debugChallenge } from '../../acme/debug.js';
+import { debugChallenge } from '../utils/debug.js';
 import type { AcmeDirectory } from '../types/directory.js';
 import type { ParsedResponseData } from '../transport/http-client.js';
 
@@ -270,7 +270,7 @@ export class AcmeAccount {
       throw createErrorFromProblem(response.body);
     }
 
-  return response.body as Record<string, unknown>;
+    return response.body as Record<string, unknown>;
   }
 
   /**

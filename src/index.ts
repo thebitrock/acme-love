@@ -12,16 +12,4 @@ export type { AcmeDirectoryEntry, AcmeProvider, AcmeDirectoryConfig } from './di
 // Modern RFC 8555 compliant API (primary interface)
 export * from './lib/index.js';
 
-// Legacy exports for backward compatibility (deprecated)
-// These are re-exported at the top level for existing code compatibility
-export { AcmeAccountSession } from './acme/client/acme-account-session.js';
-export { AcmeClientCore } from './acme/client/acme-client-core.js';
-export type { AccountKeys, ExternalAccountBinding } from './acme/client/acme-account-session.js';
-
-// Legacy types
-export type { ACMEAccount, CreateAccount } from './acme/types/account.js';
-export type { ACMEOrder, ACMEChallenge, ACMEAuthorization } from './acme/types/order.js';
-export type { ACMEDirectory } from './acme/types/directory.js';
-
-// Legacy CSR types
-export type { CsrAlgo, EcAlgo, RsaAlgo, CryptoKeyPair } from './acme/csr.js';
+// (Legacy API removed)
