@@ -75,7 +75,7 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
         return;
       }
 
-      const namespace = 'staging-test'; // В новом API просто используем строку
+      const namespace = 'staging-test';
 
       console.log("Testing single nonce fetch from Let's Encrypt staging...");
       const startTime = Date.now();
@@ -106,7 +106,7 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
         return;
       }
 
-      const namespace = 'staging-sequential'; // В новом API просто используем строку
+      const namespace = 'staging-sequential';
 
       console.log('Testing sequential nonce fetches with rate limit recovery...');
       const nonces: string[] = [];
@@ -182,7 +182,7 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
     }, 45000);
 
     test('should handle moderate concurrency without rate limits', async () => {
-      const namespace = 'staging-concurrent'; // В новом API просто используем строку
+      const namespace = 'staging-concurrent';
 
       console.log('Testing concurrent nonce fetches...');
       const startTime = Date.now();
@@ -210,7 +210,7 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
     }, 30000);
 
     test('should demonstrate rate limit recovery if it occurs', async () => {
-      const namespace = 'staging-stress'; // В новом API просто используем строку
+      const namespace = 'staging-stress';
 
       console.log('Testing potential rate limit recovery...');
 
@@ -340,7 +340,7 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
         maxPool: 5,
       });
 
-      const namespace = 'conservative-test'; // В новом API просто используем строку
+      const namespace = 'conservative-test';
 
       console.log('Testing with conservative rate limiter settings...');
       const nonce = await conservativeNonceManager.get(namespace);

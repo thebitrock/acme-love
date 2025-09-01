@@ -1,10 +1,10 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
-import { AcmeClient } from '../src/lib/core/acme-client.js';
-import { NonceManager } from '../src/lib/managers/nonce-manager.js';
-import { generateKeyPair, createAcmeCsr } from '../src/lib/crypto/csr.js';
-import type { AcmeDirectory } from '../src/lib/types/directory.js';
-import type { AcmeCertificateAlgorithm } from '../src/lib/crypto/csr.js';
-import { cleanupTestResources } from './test-utils.js';
+import { AcmeClient } from '../../src/lib/core/acme-client.js';
+import { NonceManager } from '../../src/lib/managers/nonce-manager.js';
+import { generateKeyPair, createAcmeCsr } from '../../src/lib/crypto/csr.js';
+import type { AcmeDirectory } from '../../src/lib/types/directory.js';
+import type { AcmeCertificateAlgorithm } from '../../src/lib/crypto/csr.js';
+import { cleanupTestResources } from '../test-utils.js';
 
 const STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory';
 
@@ -23,7 +23,7 @@ describe('ACME Library Async Behavior Tests', () => {
 
     console.log('Setting up async behavior tests...');
 
-    // В новом API используем AcmeClient для получения directory
+    // In the new API we use AcmeClient to obtain the directory
     acmeClient = new AcmeClient(STAGING_DIRECTORY_URL);
     directory = await acmeClient.getDirectory();
 
@@ -129,7 +129,7 @@ describe('ACME Library Async Behavior Tests', () => {
 
     console.log('Testing high-frequency nonce requests...');
 
-    const namespace = 'staging-high-frequency'; // В новом API просто используем строку
+    const namespace = 'staging-high-frequency';
     const numberOfRequests = 20;
 
     // Make many concurrent nonce requests
@@ -169,14 +169,14 @@ describe('ACME Library Async Behavior Tests', () => {
 
     console.log('Testing mixed async operations...');
 
-    const namespace = 'staging-mixed-ops'; // В новом API просто используем строку
+    const namespace = 'staging-mixed-ops';
     const algo: AcmeCertificateAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
 
     const startTime = Date.now();
 
     // Run multiple different operations in parallel
     const mixedPromises = [
-      // Directory operations (в новом API directory уже загружен, делаем dummy async операцию)
+      // Directory operations (in the new API the directory is already loaded, perform a dummy async op)
       Promise.resolve(directory),
 
       // Key generation operations
@@ -244,7 +244,7 @@ describe('ACME Library Async Behavior Tests', () => {
 
     console.log('Testing rapid sequential operations...');
 
-    const namespace = 'staging-sequential'; // В новом API просто используем строку
+    const namespace = 'staging-sequential';
     const algo: AcmeCertificateAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
 
     const initialMemory = process.memoryUsage();
@@ -301,16 +301,16 @@ describe('ACME Library Async Behavior Tests', () => {
     console.log('Testing error recovery in async operations...');
 
     // Test with mix of valid and invalid operations
-    const validNamespace = 'staging-error-recovery'; // В новом API просто используем строку
+    const validNamespace = 'staging-error-recovery';
 
     const mixedOperations = [
       // Valid operations
       nonceManager.get(validNamespace),
-      Promise.resolve(directory), // directory уже загружен в новом API
+      Promise.resolve(directory), // Directory already loaded in the new API
       generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' }),
 
       // More valid operations
-      Promise.resolve(directory), // Should succeed (cached)
+      Promise.resolve(directory), // Should succeed (cached directory)
       nonceManager.get(validNamespace), // Should succeed
     ];
 

@@ -119,9 +119,6 @@ describe('ACME Rate Limiting Tests', () => {
       await expect(rateLimiter.executeWithRetry(mockFn, '/test-endpoint')).rejects.toThrow(
         RateLimitError,
       );
-
-      // В новом API нет методов для проверки внутреннего состояния rate limit
-      // Это нормально - реализация скрыта внутри
     });
   });
 
@@ -145,7 +142,7 @@ describe('ACME Rate Limiting Tests', () => {
         };
       });
 
-      const namespace = 'test-ca'; // В новом API просто используем строку
+      const namespace = 'test-ca';
       const startTime = Date.now();
       const nonce = await nonceManager.get(namespace);
       const elapsed = Date.now() - startTime;
@@ -166,7 +163,7 @@ describe('ACME Rate Limiting Tests', () => {
         body: null,
       });
 
-      const namespace = 'test-ca'; // В новом API просто используем строку
+      const namespace = 'test-ca';
 
       // Should fail after retries due to persistent rate limiting
       await expect(nonceManager.get(namespace)).rejects.toThrow(RateLimitError);
@@ -182,7 +179,7 @@ describe('ACME Rate Limiting Tests', () => {
         body: null,
       });
 
-      const namespace = 'test-ca'; // В новом API просто используем строку
+      const namespace = 'test-ca';
       const startTime = Date.now();
       const nonce = await nonceManager.get(namespace);
       const elapsed = Date.now() - startTime;
@@ -211,7 +208,7 @@ describe('ACME Rate Limiting Tests', () => {
         };
       });
 
-      const namespace = 'test-ca'; // В новом API просто используем строку
+      const namespace = 'test-ca';
 
       // Make 3 concurrent requests
       const promises = [
@@ -250,13 +247,13 @@ describe('ACME Rate Limiting Tests', () => {
 
       expect(prodNonceManager).toBeDefined();
 
-      // В новом API нет методов для проверки внутреннего состояния rate limiter
-      // Это нормально - реализация скрыта внутри
+      // In the new API there are no methods to inspect internal rate limiter state
+      // This is intentional - implementation details are encapsulated
     });
 
     test('should provide known endpoint patterns', () => {
-      // В новом API нет статических констант для endpoints
-      // Это нормально - endpoints определяются динамически из directory
+      // In the new API there are no static constants for endpoints
+      // This is intentional - endpoints are derived dynamically from the directory
       const expectedPatterns = ['/acme/new-nonce', '/acme/new-account', '/acme/new-order'];
       expectedPatterns.forEach((pattern) => {
         expect(pattern).toMatch(/^\/acme\//);

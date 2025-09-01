@@ -16,7 +16,7 @@ describe('Simple Nonce Test', () => {
     console.log('   Directory initialized ✅');
 
     const nonceManager = client.getDefaultNonce();
-    const namespace = STAGING_DIRECTORY_URL; // In the new API we simply use the string
+    const namespace = STAGING_DIRECTORY_URL;
 
     console.log('   Fetching single nonce...');
     const start = Date.now();
@@ -50,7 +50,7 @@ describe('Simple Nonce Test', () => {
       const start = Date.now();
 
       try {
-        const nonce = await nonceManager.get(namespace); // Используем get() вместо take()
+        const nonce = await nonceManager.get(namespace);
         const duration = Date.now() - start;
         console.log(`   ✅ Nonce ${i + 1} fetched in ${duration}ms: ${nonce.substring(0, 10)}...`);
         nonces.push(nonce);
@@ -75,14 +75,14 @@ describe('Simple Nonce Test', () => {
     await client.getDirectory();
 
     const nonceManager = client.getDefaultNonce();
-    const namespace = STAGING_DIRECTORY_URL; // В новом API просто используем строку
+    const namespace = STAGING_DIRECTORY_URL;
 
     console.log('   Starting 3 concurrent requests...');
     const start = Date.now();
 
     const promises = Array.from({ length: 3 }, (_, i) => {
       return nonceManager
-        .get(namespace) // Используем get() вместо take()
+        .get(namespace) // Using get() instead of deprecated take()
         .then((nonce: string) => {
           const duration = Date.now() - start;
           console.log(

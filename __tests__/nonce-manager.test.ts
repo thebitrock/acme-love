@@ -70,9 +70,9 @@ describe('NonceManager', () => {
       ),
     );
 
-    const nonce = await nm.get(ns); // Используем get() вместо take()
+    const nonce = await nm.get(ns); // Using get() instead of deprecated take()
     expect(nonce).toBe('nonceA');
-    expect(nm.getStats(ns).poolSize).toBe(0); // Используем getStats() вместо getPoolSize()
+    expect(nm.getStats(ns).poolSize).toBe(0); // Using getStats() instead of deprecated getPoolSize()
   });
 
   it('prefetches nonces automatically when pool is low', async () => {

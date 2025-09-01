@@ -205,7 +205,6 @@ describe('ACME Deadlock Detection Test', () => {
     // Cleanup all resources
     for (const resource of testResources) {
       try {
-        // В новой API используем clear() вместо cleanup()
         if (resource.nonceManager && typeof resource.nonceManager.clear === 'function') {
           resource.nonceManager.clear();
         }
@@ -248,7 +247,7 @@ describe('ACME Deadlock Detection Test', () => {
               { nonce: { maxPool: 3 } }, // Smaller pool to increase contention but reduce timeout issues
             );
 
-            // Get the client for tracking - новый AcmeClient через приватное поле
+            // Get the client for tracking - new AcmeClient instance via private field
             const client = (acct as any).client;
 
             // Add deadlock tracking
@@ -288,7 +287,7 @@ describe('ACME Deadlock Detection Test', () => {
 
           try {
             const nonceManager = client.getDefaultNonce();
-            // В новой API используем get() и строку для namespace
+            // In the new API we use get() and a plain string namespace
             const namespace = STAGING_DIRECTORY_URL;
             await nonceManager.get(namespace);
             detector.completeOperation(operationId, 'completed');
@@ -331,8 +330,8 @@ describe('ACME Deadlock Detection Test', () => {
             const operationId = `mixed-nonce-${accountIndex}-${i}`;
             detector.trackOperation(operationId, 'Mixed Nonce', accountIndex);
             try {
-              const namespace = STAGING_DIRECTORY_URL; // В новой API просто строка
-              await nonceManager.get(namespace); // Используем get() для нового API
+              const namespace = STAGING_DIRECTORY_URL; // In the new API just a string
+              await nonceManager.get(namespace); // Using get() for the new API
               detector.completeOperation(operationId, 'completed');
             } catch (error) {
               detector.completeOperation(operationId, 'error');
@@ -385,8 +384,8 @@ describe('ACME Deadlock Detection Test', () => {
       accounts.forEach(({ client }, accountIndex) => {
         try {
           const nonceManager = client.getDefaultNonce();
-          const namespace = STAGING_DIRECTORY_URL; // В новой API просто строка
-          const stats = nonceManager.getStats(namespace); // Используем namespace для новой API
+          const namespace = STAGING_DIRECTORY_URL; // In the new API just a string
+          const stats = nonceManager.getStats(namespace); // Using namespace string for the new API
           console.log(
             `   Account ${accountIndex + 1}: ${stats.poolSize} nonces in pool (prefetching: ${stats.prefetching})`,
           );
@@ -421,7 +420,7 @@ describe('ACME Deadlock Detection Test', () => {
     console.log(`\n🧪 Specific Nonce Manager Deadlock Test`);
 
     try {
-      // Используем тестовый аккаунт вместо создания нового клиента
+      // Use the test account instead of creating a new client instance
       const acct = await testAccountManager.getOrCreateAccountSession(
         'deadlock-detection-nonce-test',
         STAGING_DIRECTORY_URL,
@@ -451,8 +450,8 @@ describe('ACME Deadlock Detection Test', () => {
 
         try {
           const nonceManager = client.getDefaultNonce();
-          const namespace = STAGING_DIRECTORY_URL; // В новой API просто используем строку
-          const nonce = await nonceManager.get(namespace); // Используем get() вместо take()
+          const namespace = STAGING_DIRECTORY_URL; // In the new API we just use a string
+          const nonce = await nonceManager.get(namespace); // Using get() instead of deprecated take()
 
           // Simulate some work
           await new Promise((resolve) => setTimeout(resolve, Math.random() * 100));

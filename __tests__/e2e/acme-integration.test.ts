@@ -56,7 +56,7 @@ describe('ACME Integration Tests (E2E)', () => {
 
     expect(directory).toBeDefined();
 
-    // directory уже получен через client.getDirectory() в beforeAll
+    // Directory already obtained via client.getDirectory() in beforeAll
     expect(directory.newNonce).toContain('https://acme-staging-v02.api.letsencrypt.org');
     expect(directory.newAccount).toContain('https://acme-staging-v02.api.letsencrypt.org');
     expect(directory.newOrder).toContain('https://acme-staging-v02.api.letsencrypt.org');
@@ -75,12 +75,12 @@ describe('ACME Integration Tests (E2E)', () => {
 
     expect(nonceManager).toBeDefined();
 
-    const namespace = STAGING_DIRECTORY_URL; // В новом API просто используем строку
+    const namespace = STAGING_DIRECTORY_URL;
 
     // Fetch multiple nonces to test the functionality
     const nonces: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const nonce = await nonceManager.get(namespace); // Используем get() вместо take()
+      const nonce = await nonceManager.get(namespace); // Using get() instead of deprecated take()
       expect(nonce).toBeDefined();
       expect(typeof nonce).toBe('string');
       expect(nonce.length).toBeGreaterThan(10);
@@ -100,12 +100,12 @@ describe('ACME Integration Tests (E2E)', () => {
 
     expect(nonceManager).toBeDefined();
 
-    const namespace = STAGING_DIRECTORY_URL; // В новом API просто используем строку
+    const namespace = STAGING_DIRECTORY_URL;
 
     // Make multiple concurrent requests
     const promises: Promise<string>[] = [];
     for (let i = 0; i < 5; i++) {
-      promises.push(nonceManager.get(namespace)); // Используем get() вместо take()
+      promises.push(nonceManager.get(namespace)); // Using get() instead of deprecated take()
     }
 
     const nonces = await Promise.all(promises);
@@ -199,8 +199,8 @@ describe('ACME Integration Tests (E2E)', () => {
       fetch: (url) => new AcmeHttpClient().head(url),
     });
 
-    const namespace = 'https://invalid-acme-server.acme-love.com'; // В новом API просто используем строку
-    await expect(invalidNonceManager.get(namespace)).rejects.toThrow(); // Используем get() вместо take()
+    const namespace = 'https://invalid-acme-server.acme-love.com';
+    await expect(invalidNonceManager.get(namespace)).rejects.toThrow(); // Using get() instead of deprecated take()
     console.log('Invalid nonce URL handled correctly');
   }, 15000);
 
@@ -209,7 +209,7 @@ describe('ACME Integration Tests (E2E)', () => {
       return;
     }
 
-    // directory уже получен через client.getDirectory() в beforeAll
+    // Directory already obtained via client.getDirectory() in beforeAll
 
     // Validate all required ACME directory endpoints
     expect(directory.newNonce).toBeDefined();
