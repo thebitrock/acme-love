@@ -350,8 +350,8 @@ describe("Real Let's Encrypt Rate Limit Avoidance", () => {
 
       console.log('✓ Rate limit retry logic working correctly');
 
-  // Ensure any background prefetch triggered by low water mark finishes before test ends
-  await waitForNonceManagerIdle(mockNonceManager, namespace);
+      // Ensure any background prefetch triggered by low water mark finishes before test ends
+      await waitForNonceManagerIdle(mockNonceManager, namespace);
     }, 30000);
 
     test('should work with production rate limiter settings', async () => {
