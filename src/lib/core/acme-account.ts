@@ -31,7 +31,19 @@ import * as jose from 'jose';
 import type { webcrypto } from 'crypto';
 import type { AcmeClient } from './acme-client.js';
 import { NonceManager, type NonceManagerOptions } from '../managers/nonce-manager.js';
-import type { AcmeOrder, AcmeChallenge, AcmeAuthorization } from '../../lib/types/order.js';
+import type {
+  AcmeOrder,
+  AcmeChallenge,
+  AcmeAuthorization,
+  AcmeOrderStatus,
+  AcmeChallengeType,
+} from '../../lib/types/order.js';
+import {
+  ORDER_STATUS,
+  AUTHORIZATION_STATUS,
+  CHALLENGE_STATUS,
+  CHALLENGE_TYPE,
+} from '../types/status.js';
 import { createErrorFromProblem } from '../errors/factory.js';
 import { debugChallenge } from '../utils/debug.js';
 import type { AcmeDirectory } from '../types/directory.js';
@@ -62,7 +74,7 @@ function throwIfChallengeErrors(authz: AcmeAuthorization): void {
       debugChallenge('mapped challenge error name=%s detail=%s', mapped.name, mapped.detail);
       throw mapped;
     }
-    if (chRaw.status === 'invalid') {
+    if (chRaw.status === CHALLENGE_STATUS.INVALID) {
       throw ChallengeError.invalidWithoutDetail(chRaw.type);
     }
   }
@@ -682,7 +694,7 @@ export class AcmeAccount {
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.6
    */
-  async waitOrder(order: AcmeOrder, targetStatuses: string[]): Promise<AcmeOrder> {
+  async waitOrder(order: AcmeOrder, targetStatuses: AcmeOrderStatus[]): Promise<AcmeOrder> {
     let currentOrder = order;
     let attempts = 0;
     const maxAttempts = 60; // 5 minutes max with 5s intervals
@@ -777,7 +789,7 @@ export class AcmeAccount {
     },
   ): Promise<AcmeOrder> {
     return this.solveChallenge(order, {
-      challengeType: 'dns-01',
+      challengeType: CHALLENGE_TYPE.DNS_01,
       prepareChallenge: async (
         authorization: AcmeAuthorization,
         keyAuth: string,
@@ -828,7 +840,7 @@ export class AcmeAccount {
     },
   ): Promise<AcmeOrder> {
     return this.solveChallenge(order, {
-      challengeType: 'http-01',
+      challengeType: CHALLENGE_TYPE.HTTP_01,
       prepareChallenge: async (
         authorization: AcmeAuthorization,
         keyAuth: string,
@@ -859,7 +871,7 @@ export class AcmeAccount {
   private async solveChallenge(
     order: AcmeOrder,
     opts: {
-      challengeType: string;
+      challengeType: AcmeChallengeType;
       prepareChallenge: (
         authorization: AcmeAuthorization,
         keyAuth: string,
@@ -877,23 +889,23 @@ export class AcmeAccount {
       throwIfChallengeErrors(authorization);
 
       // RFC 8555 Section 7.1.6: Check authorization status
-      if (authorization.status === 'valid') {
+      if (authorization.status === AUTHORIZATION_STATUS.VALID) {
         continue; // Skip already validated authorizations
       }
 
-      if (authorization.status === 'invalid') {
+      if (authorization.status === AUTHORIZATION_STATUS.INVALID) {
         throw AuthorizationError.invalid(authorization.identifier.value);
       }
 
-      if (authorization.status === 'deactivated') {
+      if (authorization.status === AUTHORIZATION_STATUS.DEACTIVATED) {
         throw AuthorizationError.deactivated(authorization.identifier.value);
       }
 
-      if (authorization.status === 'expired') {
+      if (authorization.status === AUTHORIZATION_STATUS.EXPIRED) {
         throw AuthorizationError.expired(authorization.identifier.value);
       }
 
-      if (authorization.status === 'revoked') {
+      if (authorization.status === AUTHORIZATION_STATUS.REVOKED) {
         throw AuthorizationError.revoked(authorization.identifier.value);
       }
 
@@ -904,15 +916,15 @@ export class AcmeAccount {
       }
 
       // RFC 8555 Section 7.1.6: Check challenge status
-      if (challenge.status === 'valid') {
+      if (challenge.status === CHALLENGE_STATUS.VALID) {
         continue; // Skip already validated challenges
       }
 
-      if (challenge.status === 'invalid') {
+      if (challenge.status === CHALLENGE_STATUS.INVALID) {
         throw ChallengeError.invalid(opts.challengeType, authorization.identifier.value);
       }
 
-      if (challenge.status === 'processing') {
+      if (challenge.status === CHALLENGE_STATUS.PROCESSING) {
         // Challenge is already being validated, skip to avoid duplicate submission
         continue;
       }
@@ -934,7 +946,7 @@ export class AcmeAccount {
     }
 
     // Wait for order to become ready
-    return await this.waitOrder(order, ['ready', 'valid']);
+    return await this.waitOrder(order, [ORDER_STATUS.READY, ORDER_STATUS.VALID]);
   }
 
   /**
@@ -950,7 +962,7 @@ export class AcmeAccount {
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.5.1
    */
   private async completeChallenge(challenge: AcmeChallenge): Promise<void> {
-    if (challenge.status === 'valid') {
+    if (challenge.status === CHALLENGE_STATUS.VALID) {
       return;
     }
 

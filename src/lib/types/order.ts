@@ -5,31 +5,21 @@
  * according to RFC 8555 specifications.
  */
 
-/**
- * ACME Order Status
- */
-export type AcmeOrderStatus = 'pending' | 'ready' | 'processing' | 'valid' | 'invalid';
+// Import modern types
+import type {
+  AcmeOrderStatus,
+  AcmeAuthorizationStatus,
+  AcmeChallengeStatus,
+  AcmeChallengeType,
+} from './status.js';
 
-/**
- * ACME Challenge Status
- */
-export type AcmeChallengeStatus = 'pending' | 'processing' | 'valid' | 'invalid';
-
-/**
- * ACME Challenge Types
- */
-export type AcmeChallengeType = 'http-01' | 'dns-01' | 'tls-alpn-01';
-
-/**
- * ACME Authorization Status
- */
-export type AcmeAuthorizationStatus =
-  | 'pending'
-  | 'valid'
-  | 'invalid'
-  | 'deactivated'
-  | 'expired'
-  | 'revoked';
+// Re-export for convenience
+export type {
+  AcmeOrderStatus,
+  AcmeAuthorizationStatus,
+  AcmeChallengeStatus,
+  AcmeChallengeType,
+} from './status.js';
 
 /**
  * ACME Identifier
@@ -56,7 +46,7 @@ export interface AcmeChallenge {
   /** Validation timestamp */
   validated?: string;
   /** Error information if validation failed */
-  error?: any;
+  error?: unknown;
 }
 
 /**
@@ -94,7 +84,7 @@ export interface AcmeOrder {
   /** Order URL (set by client) */
   url?: string;
   /** Error information if order failed */
-  error?: any;
+  error?: unknown;
 }
 
 // Backward compatibility with old naming
