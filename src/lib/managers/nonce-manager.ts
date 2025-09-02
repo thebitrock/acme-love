@@ -4,7 +4,7 @@
  * Manages nonce values for ACME protocol operations with rate limiting and prefetching
  */
 
-import { BadNonceError } from '../errors/errors.js';
+import { BadNonceError } from '../errors/acme-server-errors.js';
 import { createErrorFromProblem } from '../errors/factory.js';
 import type { ParsedResponseData } from '../transport/http-client.js';
 import { safeReadBody } from '../utils/index.js';

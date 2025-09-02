@@ -36,6 +36,12 @@ import { createErrorFromProblem } from '../errors/factory.js';
 import { debugChallenge } from '../utils/debug.js';
 import type { AcmeDirectory } from '../types/directory.js';
 import type { ParsedResponseData } from '../transport/http-client.js';
+import {
+  AuthorizationError,
+  ChallengeError,
+  OrderError,
+  AccountError,
+} from '../errors/acme-operation-errors.js';
 
 // Helper types for challenge error handling
 type ChallengeWithPossibleError = AcmeChallenge & { error?: unknown };
@@ -57,7 +63,7 @@ function throwIfChallengeErrors(authz: AcmeAuthorization): void {
       throw mapped;
     }
     if (chRaw.status === 'invalid') {
-      throw new Error(`Challenge ${chRaw.type} is invalid without error detail`);
+      throw ChallengeError.invalidWithoutDetail(chRaw.type);
     }
   }
 }
@@ -234,8 +240,8 @@ export class AcmeAccount {
    * @param termsOfServiceAgreed - Explicit agreement to terms of service (must be true).
    *                              Required literal true to ensure explicit acknowledgement.
    * @returns Promise resolving to account registration result
-   * @throws {Error} If registration fails due to invalid contact, unsupported schemes,
-   *                 or server rejection of the account creation request
+   * @throws {AccountError} If registration fails due to invalid contact, unsupported schemes,
+   *                        or server rejection of the account creation request
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.3
    */
@@ -273,7 +279,7 @@ export class AcmeAccount {
     // Extract account URL from Location header
     const accountUrl = response.headers.location as string;
     if (!accountUrl) {
-      throw new Error('No account URL in registration response');
+      throw AccountError.noAccountUrl();
     }
 
     this.kid = accountUrl;
@@ -303,7 +309,7 @@ export class AcmeAccount {
    * @param eab - External account binding parameters from CA
    * @param url - The newAccount URL being posted to
    * @returns Promise resolving to the binding JWS string
-   * @throws {Error} If JWS creation fails or parameters are invalid
+   * @throws {AccountError} If JWS creation fails or parameters are invalid
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.3.4
    */
@@ -349,7 +355,7 @@ export class AcmeAccount {
    * @param payload - Request payload (object, string, Uint8Array, or null for POST-as-GET)
    * @param forceJwk - Force use of jwk header instead of kid (required for newAccount)
    * @returns Promise resolving to server response with parsed JSON body
-   * @throws {Error} If signing fails, nonce exhaustion, or server rejects request
+   * @throws {AccountError} If signing fails, nonce exhaustion, or server rejects request
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-6.2
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-6.5
@@ -404,14 +410,14 @@ export class AcmeAccount {
    * related resources.
    *
    * @returns Promise resolving to current account object
-   * @throws {Error} If account is not registered or retrieval fails
+   * @throws {AccountError} If account is not registered or retrieval fails
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.3.2
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.2 (Account Objects)
    */
   async getAccount(): Promise<Record<string, unknown>> {
     if (!this.kid) {
-      throw new Error('Account not registered. Call register() first.');
+      throw AccountError.notRegistered();
     }
 
     const response = await this.signedPost(this.kid, '');
@@ -436,7 +442,7 @@ export class AcmeAccount {
    *
    * @param url - URL of the ACME resource to fetch
    * @returns Promise resolving to the resource data
-   * @throws {Error} If authentication fails or resource cannot be accessed
+   * @throws {AccountError} If authentication fails or resource cannot be accessed
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-6.3
    */
@@ -469,8 +475,8 @@ export class AcmeAccount {
    *                      must be a fully qualified domain name. Wildcard domain names
    *                      (starting with "*") are supported if the server allows them.
    * @returns Promise resolving to an order object with authorization URLs
-   * @throws {Error} If the server cannot fulfill the request as specified or if
-   *                 identifiers are invalid/unsupported
+   * @throws {OrderError} If the server cannot fulfill the request as specified or if
+   *                      identifiers are invalid/unsupported
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.4
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.3 (Order Objects)
@@ -515,7 +521,7 @@ export class AcmeAccount {
    *
    * @param authzUrl - URL of the authorization resource from order.authorizations
    * @returns Promise resolving to authorization object with challenge details
-   * @throws {Error} If authorization cannot be retrieved or URL is invalid
+   * @throws {AuthorizationError} If authorization cannot be retrieved or URL is invalid
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.5
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.4 (Authorization Objects)
@@ -541,7 +547,7 @@ export class AcmeAccount {
    *
    * @param challengeUrl - URL of the challenge resource
    * @returns Promise resolving to challenge object with current status and details
-   * @throws {Error} If challenge cannot be retrieved or URL is invalid
+   * @throws {ChallengeError} If challenge cannot be retrieved or URL is invalid
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.5.1
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.5 (Challenge Objects)
@@ -573,7 +579,7 @@ export class AcmeAccount {
    *
    * @param challengeUrl - URL of the challenge to accept
    * @returns Promise resolving to updated challenge object
-   * @throws {Error} If challenge acceptance fails or challenge is invalid
+   * @throws {ChallengeError} If challenge acceptance fails or challenge is invalid
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.5.1
    */
@@ -630,14 +636,14 @@ export class AcmeAccount {
    * @param order - Order object with finalize URL (must be in "ready" status)
    * @param csrDerBase64Url - Certificate Signing Request in base64url-encoded DER format
    * @returns Promise resolving to updated order object
-   * @throws {Error} If order is not ready, CSR is invalid, or server rejects the request
+   * @throws {OrderError} If order is not ready, CSR is invalid, or server rejects the request
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.4
    * @see https://datatracker.ietf.org/doc/html/rfc2986 (PKCS#10 CSR format)
    */
   async finalize(order: AcmeOrder, csrDerBase64Url: string): Promise<AcmeOrder> {
     if (!order.finalize) {
-      throw new Error('Order does not have finalize URL');
+      throw OrderError.noFinalizeUrl();
     }
 
     const payload = { csr: csrDerBase64Url };
@@ -672,7 +678,7 @@ export class AcmeAccount {
    * @param order - Order object to monitor (must have URL)
    * @param targetStatuses - Array of acceptable final statuses to wait for
    * @returns Promise resolving to order object when target status is reached
-   * @throws {Error} If timeout is reached or order enters an unexpected state
+   * @throws {OrderError} If timeout is reached or order enters an unexpected state
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.6
    */
@@ -695,9 +701,7 @@ export class AcmeAccount {
     }
 
     if (!targetStatuses.includes(currentOrder.status)) {
-      throw new Error(
-        `Order did not reach target status ${targetStatuses.join(', ')} after ${maxAttempts} attempts. Current status: ${currentOrder.status}`,
-      );
+      throw OrderError.timeout(targetStatuses, currentOrder.status, maxAttempts);
     }
 
     return currentOrder;
@@ -719,14 +723,14 @@ export class AcmeAccount {
    *
    * @param order - Finalized order with certificate URL (status must be "valid")
    * @returns Promise resolving to certificate chain in PEM format
-   * @throws {Error} If order has no certificate URL or download fails
+   * @throws {OrderError} If order has no certificate URL or download fails
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.4.2
    * @see https://datatracker.ietf.org/doc/html/rfc7468 (PEM format)
    */
   async downloadCertificate(order: AcmeOrder): Promise<string> {
     if (!order.certificate) {
-      throw new Error('Order does not have certificate URL');
+      throw OrderError.noCertificateUrl();
     }
 
     const response = await this.signedPost(order.certificate, '');
@@ -761,7 +765,7 @@ export class AcmeAccount {
    * @param opts.setDns - Callback to provision DNS TXT records
    * @param opts.waitFor - Callback to wait for DNS propagation before validation
    * @returns Promise resolving to updated order object
-   * @throws {Error} If DNS setup fails or validation is rejected
+   * @throws {AuthorizationError|ChallengeError} If DNS setup fails or validation is rejected
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-8.4
    */
@@ -812,7 +816,7 @@ export class AcmeAccount {
    * @param opts.setHttp - Callback to provision HTTP challenge files
    * @param opts.waitFor - Callback to wait for HTTP server setup before validation
    * @returns Promise resolving to updated order object
-   * @throws {Error} If HTTP setup fails or validation is rejected
+   * @throws {AuthorizationError|ChallengeError} If HTTP setup fails or validation is rejected
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-8.3
    */
@@ -840,6 +844,17 @@ export class AcmeAccount {
 
   /**
    * Generic challenge solving method
+   *
+   * Implements RFC 8555 challenge validation flow with proper status checking
+   * and error handling according to Section 7.1.6 (Status Changes).
+   *
+   * @param order - Order containing authorizations to process
+   * @param opts - Challenge type specific configuration
+   * @returns Promise resolving to updated order object
+   * @throws {AuthorizationError|ChallengeError} If authorization is invalid or challenge processing fails
+   *
+   * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.5.1
+   * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.6
    */
   private async solveChallenge(
     order: AcmeOrder,
@@ -861,20 +876,45 @@ export class AcmeAccount {
       // Early detection of challenge-level errors (e.g., compound validation errors)
       throwIfChallengeErrors(authorization);
 
+      // RFC 8555 Section 7.1.6: Check authorization status
       if (authorization.status === 'valid') {
         continue; // Skip already validated authorizations
+      }
+
+      if (authorization.status === 'invalid') {
+        throw AuthorizationError.invalid(authorization.identifier.value);
+      }
+
+      if (authorization.status === 'deactivated') {
+        throw AuthorizationError.deactivated(authorization.identifier.value);
+      }
+
+      if (authorization.status === 'expired') {
+        throw AuthorizationError.expired(authorization.identifier.value);
+      }
+
+      if (authorization.status === 'revoked') {
+        throw AuthorizationError.revoked(authorization.identifier.value);
       }
 
       // Find the requested challenge type
       const challenge = authorization.challenges?.find((ch) => ch.type === opts.challengeType);
       if (!challenge) {
-        throw new Error(
-          `Challenge type ${opts.challengeType} not found for ${authorization.identifier.value}`,
-        );
+        throw ChallengeError.notFound(opts.challengeType, authorization.identifier.value);
       }
 
+      // RFC 8555 Section 7.1.6: Check challenge status
       if (challenge.status === 'valid') {
         continue; // Skip already validated challenges
+      }
+
+      if (challenge.status === 'invalid') {
+        throw ChallengeError.invalid(opts.challengeType, authorization.identifier.value);
+      }
+
+      if (challenge.status === 'processing') {
+        // Challenge is already being validated, skip to avoid duplicate submission
+        continue;
       }
 
       // Generate key authorization
@@ -899,14 +939,23 @@ export class AcmeAccount {
 
   /**
    * Complete a specific challenge by notifying the ACME server
+   *
+   * Implements RFC 8555 Section 7.5.1 (Responding to Challenges). According to
+   * the specification, the client indicates readiness for validation by sending
+   * an empty JSON object ({}) to the challenge URL, not the key authorization.
+   *
+   * @param challenge - Challenge object to complete
+   * @throws {ChallengeError} If challenge completion fails or server rejects request
+   *
+   * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.5.1
    */
   private async completeChallenge(challenge: AcmeChallenge): Promise<void> {
     if (challenge.status === 'valid') {
       return;
     }
 
-    const keyAuth = await this.keyAuthorization(challenge.token);
-    const response = await this.signedPost(challenge.url, { keyAuthorization: keyAuth });
+    // RFC 8555 Section 7.5.1: Send empty JSON object to indicate readiness
+    const response = await this.signedPost(challenge.url, {});
 
     if (response.statusCode !== 200) {
       throw createErrorFromProblem(response.body);

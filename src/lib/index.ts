@@ -41,10 +41,25 @@ export {
   UnsupportedContactError,
   UnsupportedIdentifierError,
   UserActionRequiredError,
-} from './errors/errors.js';
+} from './errors/acme-server-errors.js';
 
 export { createErrorFromProblem } from './errors/factory.js';
 export { ACME_ERROR, type AcmeErrorType } from './errors/codes.js';
+
+// Typed ACME operation errors
+export {
+  AcmeOperationError,
+  AuthorizationError,
+  ChallengeError,
+  OrderError,
+  AccountError,
+  isAuthorizationError,
+  isChallengeError,
+  isOrderError,
+  isAccountError,
+  isAcmeOperationError,
+  type AcmeOperationErrorType,
+} from './errors/acme-operation-errors.js';
 
 // Types
 export type { AcmeDirectory, AcmeDirectoryMeta } from './types/directory.js';

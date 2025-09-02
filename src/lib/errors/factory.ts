@@ -25,7 +25,7 @@ import {
   UnsupportedIdentifierError,
   UserActionRequiredError,
   AcmeError,
-} from './errors.js';
+} from './acme-server-errors.js';
 import { ACME_ERROR, type AcmeErrorType } from './codes.js';
 
 // We intentionally accept rest args for specific specialized error ctors

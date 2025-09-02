@@ -3,7 +3,7 @@
  * Handles JWS signing operations for ACME protocol authentication
  */
 import { createHash } from 'crypto';
-import { UnauthorizedError } from '../errors/errors.js';
+import { UnauthorizedError } from '../errors/acme-server-errors.js';
 import type { AcmeAccountKeyPair } from './csr.js';
 import {
   calculateJwkThumbprint,
