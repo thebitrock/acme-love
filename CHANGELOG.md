@@ -1,3 +1,9 @@
+## [2.1.0](https://github.com/thebitrock/acme-love/compare/v2.0.0...v2.1.0) (2025-09-02)
+
+### Features
+
+- introduce modern ACME status handling with type safety and runtime validation ([64c7a95](https://github.com/thebitrock/acme-love/commit/64c7a9575566222530cc4c5f1e945afeea19cc33))
+
 ## [2.0.0](https://github.com/thebitrock/acme-love/compare/v1.7.0...v2.0.0) (2025-09-01)
 
 ### ⚠ BREAKING CHANGES
