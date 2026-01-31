@@ -1,3 +1,9 @@
+## [2.2.0](https://github.com/thebitrock/acme-love/compare/v2.1.0...v2.2.0) (2026-01-31)
+
+### Features
+
+- **release:** minor optimize npm package for SEO and discoverability (v2.1.1) ([cc793b0](https://github.com/thebitrock/acme-love/commit/cc793b09dad9987b6e1fe381b50e508c81b3d9f6))
+
 ## [2.1.1](https://github.com/thebitrock/acme-love/compare/v2.1.0...v2.1.1) (2026-01-31)
 
 ### Documentation
