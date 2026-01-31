@@ -1,3 +1,9 @@
+## [2.2.1](https://github.com/thebitrock/acme-love/compare/v2.2.0...v2.2.1) (2026-01-31)
+
+### Bug Fixes
+
+- remove keyword ([4e19440](https://github.com/thebitrock/acme-love/commit/4e19440a63cf9ba05de4af0417f1b28a8568687b))
+
 ## [2.2.0](https://github.com/thebitrock/acme-love/compare/v2.1.0...v2.2.0) (2026-01-31)
 
 ### Features
