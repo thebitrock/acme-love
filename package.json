@@ -114,8 +114,7 @@
     "infrastructure",
     "buypass",
     "boulder",
-    "nonce-pooling",
-    "undici"
+    "nonce-pooling"
   ],
   "author": {
     "name": "Roman Pohorilchuk",
