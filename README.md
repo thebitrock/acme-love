@@ -1,10 +1,9 @@
 <div align="center">
 
-# ACME Love
+# acme-love
 
-**Modern, strongly‑typed ACME (RFC 8555) toolkit for Node.js 20+**
-
-Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certificate Authorities
+ACME v2 client (RFC 8555) for Let's Encrypt
+TypeScript-first · Node.js · CLI
 
 [![NPM Version](https://img.shields.io/npm/v/acme-love.svg)](https://www.npmjs.com/package/acme-love)
 [![NPM License](https://img.shields.io/npm/l/acme-love.svg)](https://github.com/thebitrock/acme-love/blob/main/LICENSE)
@@ -12,6 +11,8 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 [![Coverage](https://img.shields.io/badge/coverage-94%25%20CSR%20%7C%2069%25%20NonceManager-green.svg)](https://github.com/thebitrock/acme-love)
 
 </div>
+
+A Node.js / TypeScript ACME client for certificate automation with Let's Encrypt and other ACME-compliant CAs. Supports DNS-01 and HTTP-01 validation, wildcard domains, and External Account Binding (EAB).
 
 <a id="table-of-contents"></a>
 
