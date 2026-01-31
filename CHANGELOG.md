@@ -1,3 +1,20 @@
+## [2.1.1](https://github.com/thebitrock/acme-love/compare/v2.1.0...v2.1.1) (2026-01-31)
+
+### Documentation
+
+- **npm seo**: enhance npm registry discoverability with optimized keywords and metadata
+- **badges**: add comprehensive badge suite to NPM-README including CI status, bundle size, and TypeScript version
+- **security**: update SECURITY.md to reflect current version support (2.x.x)
+- **package**: add funding and packageManager fields to package.json
+- **docs**: add package size visibility and optimization information to NPM-README
+
+### Improvements
+
+- Reorganize keywords in package.json for improved npm search ranking
+- Add 5 new badges to NPM-README.md (CI Status, GitHub Stars, Bundle Size, TypeScript, Provenance)
+- Document package size metrics (91.6 kB packed, 407.4 kB unpacked)
+- Update security policy version support table (2.x.x, 1.7.x, 1.6.x)
+
 ## [2.1.0](https://github.com/thebitrock/acme-love/compare/v2.0.0...v2.1.0) (2025-09-02)
 
 ### Features
