@@ -1,4 +1,4 @@
-# 🚀 ACME Love - Quick Start Guide (New RFC 8555 API)
+# ACME Love - Quick Start Guide
 
 ## Installation
 
@@ -11,22 +11,17 @@ npm install acme-love
 ### 1. Create ACME Client
 
 ```typescript
-import { AcmeClient } from 'acme-love';
+import { AcmeClient, provider } from 'acme-love';
 
-// Create client with RFC 8555 compliant naming
-const client = new AcmeClient('https://acme-v02.api.letsencrypt.org/directory');
+// Using provider preset (recommended)
+const client = new AcmeClient(provider.letsencrypt.staging);
 
-// Or with options
-const client = new AcmeClient(directoryUrl, {
+// Or with a string URL and options
+const client = new AcmeClient('https://acme-v02.api.letsencrypt.org/directory', {
   nonce: {
-    maxPool: 20, // Nonce pool size
-    prefetchLowWater: 5, // Prefetch trigger
-    maxAgeMs: 120_000, // Nonce lifetime
-  },
-  rateLimiter: {
-    maxRetries: 3,
-    baseDelayMs: 1000,
-    respectRetryAfter: true,
+    maxPool: 20,
+    prefetchLowWater: 5,
+    maxAgeMs: 120_000,
   },
 });
 ```
@@ -43,7 +38,10 @@ const accountKeys = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', has
 const account = new AcmeAccount(client, accountKeys);
 
 // Register account
-const registration = await account.register(['admin@example.com'], true);
+const registration = await account.register({
+  contact: 'admin@example.com',
+  termsOfServiceAgreed: true,
+});
 
 // Get account info
 const accountInfo = await account.getAccount();
@@ -81,35 +79,22 @@ const valid = await account.waitOrder(finalized, ['valid']);
 const certificate = await account.downloadCertificate(valid);
 ```
 
-## Tree-Shaking Imports
-
-```typescript
-// Import only what you need for optimal bundle size
-import { AcmeClient } from 'acme-love/lib/core';
-import { NonceManager } from 'acme-love/lib/managers';
-import { createErrorFromProblem } from 'acme-love/lib/errors';
-import type { AcmeDirectory, AcmeOrder } from 'acme-love/lib/types';
-```
-
 ## Error Handling
 
 ```typescript
-import { ACME_ERROR, AcmeError } from 'acme-love/lib/errors';
+import { AcmeError, RateLimitedError, BadNonceError, ACME_ERROR } from 'acme-love';
 
 try {
-  await account.register(['admin@example.com'], true);
+  await account.register({
+    contact: 'admin@example.com',
+    termsOfServiceAgreed: true,
+  });
 } catch (error) {
-  if (error instanceof AcmeError) {
-    switch (error.type) {
-      case ACME_ERROR.rateLimited:
-        console.log('Rate limited, waiting...');
-        break;
-      case ACME_ERROR.badNonce:
-        console.log('Bad nonce, retrying...');
-        break;
-      default:
-        console.error('ACME error:', error.detail);
-    }
+  if (error instanceof RateLimitedError) {
+    const retrySeconds = error.getRetryAfterSeconds();
+    console.log(`Rate limited. Retry in ${retrySeconds} seconds`);
+  } else if (error instanceof AcmeError) {
+    console.error(`ACME error [${error.type}]: ${error.detail}`);
   }
 }
 ```
@@ -119,56 +104,40 @@ try {
 ### Nonce Management
 
 ```typescript
-const client = new AcmeClient(directoryUrl, {
+const client = new AcmeClient(provider.letsencrypt.production, {
   nonce: {
-    maxPool: 30, // Larger pool for high concurrency
-    prefetchLowWater: 10, // Prefetch when pool gets low
-    maxAgeMs: 300_000, // 5-minute nonce lifetime
-    initialFetchCount: 5, // Pre-populate pool
-  },
-});
-```
-
-### Rate Limiting
-
-```typescript
-const client = new AcmeClient(directoryUrl, {
-  rateLimiter: {
-    maxRetries: 5,
-    baseDelayMs: 2000,
-    maxDelayMs: 30_000,
-    backoffFactor: 2,
-    jitterPercent: 0.1,
-    respectRetryAfter: true,
+    maxPool: 30,
+    prefetchLowWater: 10,
+    prefetchHighWater: 20,
+    maxAgeMs: 300_000,
   },
 });
 ```
 
 ### Debug Mode
 
-```typescript
-import { enableDebug } from 'acme-love/lib/utils';
+Enable debug logging via environment variable:
 
-// Enable debug logging
-enableDebug(true);
+```bash
+# Enable all ACME Love debug output
+DEBUG=acme-love:* node your-app.js
 
-// Custom logger
-enableDebug(true, (level, message, data) => {
-  console.log(`[${level}] ${message}`, data);
-});
+# Enable specific components
+DEBUG=acme-love:nonce,acme-love:http node your-app.js
 ```
 
 ## Type Safety
 
 ```typescript
 import type {
-  AcmeClient,
   AcmeClientOptions,
-  AcmeAccount,
   AcmeDirectory,
   AcmeOrder,
   AcmeChallenge,
   AcmeAuthorization,
+  AcmeEcAlgorithm,
+  AcmeRsaAlgorithm,
+  AcmeCertificateAlgorithm,
 } from 'acme-love';
 
 // Full type safety throughout your code
@@ -179,51 +148,22 @@ const options: AcmeClientOptions = {
   },
 };
 
-const client: AcmeClient = new AcmeClient(directoryUrl, options);
+const client = new AcmeClient(provider.letsencrypt.staging, options);
 ```
-
-## Migration from Legacy API
-
-### Before (Legacy)
-
-```typescript
-import { AcmeClientCore, AcmeAccountSession } from 'acme-love';
-
-const client = new AcmeClientCore(directoryUrl);
-const session = new AcmeAccountSession(client, privateKey);
-```
-
-### After (RFC 8555)
-
-```typescript
-import { AcmeClient, AcmeAccount } from 'acme-love';
-
-const client = new AcmeClient(directoryUrl);
-const account = new AcmeAccount(client, privateKey);
-```
-
-<!-- Legacy gradual migration section removed (old API deleted) -->
 
 ## Best Practices
 
-1. **Use RFC 8555 API** for new projects
-2. **Enable nonce pooling** for better performance
-3. **Handle rate limiting** gracefully
-4. **Use tree-shaking imports** for smaller bundles
-5. **Enable TypeScript strict mode** for type safety
-6. **Set up proper error handling** for production use
-
-## Examples
-
-See complete examples in:
-
-- [`docs/`](docs/) - Guides and references
+1. **Use provider presets** for standard CAs (Let's Encrypt, ZeroSSL, etc.)
+2. **Enable nonce pooling** for better performance under load
+3. **Handle rate limiting** gracefully using `RateLimitedError`
+4. **Enable TypeScript strict mode** for full type safety
+5. **Set up proper error handling** for production use
+6. **Use debug logging** during development (`DEBUG=acme-love:*`)
 
 ## Documentation
 
-- [Architecture Overview](src/lib/README.md)
-- [API Reference](docs/)
-
----
-
-**Happy coding with ACME Love! 🚀**
+- [Full README](./README.md) - Comprehensive documentation
+- [CLI Guide](./docs/CLI.md) - CLI usage and examples
+- [EAB Guide](./docs/EAB.md) - External Account Binding setup
+- [Nonce Manager](./docs/NONCE-MANAGER.md) - Advanced nonce configuration
+- [Rate Limiting](./docs/RATE-LIMIT-GUIDE.md) - Rate limiting details

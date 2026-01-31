@@ -9,9 +9,16 @@ export { AcmeClient, type AcmeClientOptions } from './core/acme-client.js';
 export {
   AcmeAccount,
   type AcmeAccountOptions,
+  type AcmeAccountRegistrationPayload,
   type AccountKeys,
   type ExternalAccountBinding,
+  type ChallengePreparation,
 } from './core/acme-account.js';
+
+// Internal sub-modules (advanced usage)
+export { AcmeRequestSigner, detectJwsAlgorithm } from './core/acme-request-signer.js';
+export { AcmeOrderManager } from './core/acme-order-manager.js';
+export { AcmeChallengeSolver } from './core/acme-challenge-solver.js';
 
 // Error handling
 export {
@@ -64,6 +71,7 @@ export {
 // Types
 export type { AcmeDirectory, AcmeDirectoryMeta } from './types/directory.js';
 export type {
+  AcmeProblem,
   AcmeOrder,
   ACMEOrder,
   AcmeOrderStatus,

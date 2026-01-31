@@ -1,16 +1,16 @@
 ---
-name: 🐛 Bug Report
+name: Bug Report
 about: Create a report to help us improve acme-love
 title: '[BUG] '
 labels: ['bug', 'needs-triage']
 assignees: ['thebitrock']
 ---
 
-## 🐛 Bug Description
+## Bug Description
 
 A clear and concise description of what the bug is.
 
-## 🔄 Steps to Reproduce
+## Steps to Reproduce
 
 Steps to reproduce the behavior:
 
@@ -18,15 +18,15 @@ Steps to reproduce the behavior:
 2. With options '...'
 3. See error
 
-## ✅ Expected Behavior
+## Expected Behavior
 
 A clear and concise description of what you expected to happen.
 
-## ❌ Actual Behavior
+## Actual Behavior
 
 A clear and concise description of what actually happened.
 
-## 🖥️ Environment
+## Environment
 
 - **acme-love version**: [e.g. 1.5.0]
 - **Node.js version**: [e.g. 20.18.1]
@@ -34,21 +34,21 @@ A clear and concise description of what actually happened.
 - **Operating System**: [e.g. Ubuntu 22.04, macOS 14, Windows 11]
 - **Architecture**: [e.g. x64, arm64]
 
-## 📋 Command Used
+## Command Used
 
 ```bash
 # Paste the exact command that caused the issue
 acme-love cert --domain example.com --email test@example.com --staging
 ```
 
-## 📄 Error Output
+## Error Output
 
 ```
 # Paste the full error message and stack trace
 Error: Something went wrong...
 ```
 
-## 📝 Debug Logs
+## Debug Logs
 
 If possible, run with debug logging and paste the output:
 
@@ -56,7 +56,7 @@ If possible, run with debug logging and paste the output:
 DEBUG=acme-love:* your-command-here
 ```
 
-## 📎 Additional Context
+## Additional Context
 
 Add any other context about the problem here:
 
@@ -65,11 +65,11 @@ Add any other context about the problem here:
 - DNS setup
 - Previous commands that worked/didn't work
 
-## 🔍 Possible Solution
+## Possible Solution
 
 If you have ideas on how to fix this, please share them here.
 
-## ✅ Checklist
+## Checklist
 
 - [ ] I have searched existing issues to ensure this is not a duplicate
 - [ ] I have included all required environment information

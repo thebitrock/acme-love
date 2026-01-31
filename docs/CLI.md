@@ -1,4 +1,4 @@
-# 🚀 ACME Love CLI
+# ACME Love CLI
 
 CLI tool for obtaining SSL certificates through the ACME protocol (Let's Encrypt and other CAs).
 
@@ -39,7 +39,7 @@ acme-love --help
 
 ## Quick Start
 
-### 🎯 Option 1: Interactive Mode (Recommended)
+### Option 1: Interactive Mode (Recommended)
 
 The easiest way to get started:
 
@@ -49,11 +49,11 @@ acme-love interactive
 acme-love i
 
 # With pre-selected environment
-acme-love interactive --staging    # For testing
+acme-love interactive --staging # For testing
 acme-love interactive --production # For real certificates
 ```
 
-### 📦 Option 2: Direct Commands
+### Option 2: Direct Commands
 
 ```bash
 # Get a staging certificate (recommended first)
@@ -66,7 +66,7 @@ acme-love cert -d acme-love.com -e admin@acme-love.com --production
 acme-love create-account-key -o ./my-account.json
 ```
 
-### 🛠️ Option 3: Development Usage
+### Option 3: Development Usage
 
 For development and testing, you have convenient wrapper options:
 
@@ -76,16 +76,16 @@ For development and testing, you have convenient wrapper options:
 ./acme-love interactive --staging
 
 # NPM Scripts
-npm run cli:help         # Show help
-npm run cli:interactive  # Interactive mode
-npm run cli:staging      # Interactive with staging
-npm run cli:production   # Interactive with production
+npm run cli:help # Show help
+npm run cli:interactive # Interactive mode
+npm run cli:staging # Interactive with staging
+npm run cli:production # Interactive with production
 
 # Make commands
-make help        # Show all make targets
-make cli         # Show CLI help
+make help # Show all make targets
+make cli # Show CLI help
 make interactive # Interactive mode
-make staging     # Staging mode
+make staging # Staging mode
 ```
 
 ## Commands Reference
@@ -168,22 +168,24 @@ acme-love cert --challenge dns-01 -d acme-love.com -e user@acme-love.com --stagi
 
 **Advantages:**
 
-- ✅ Works with wildcard certificates (`*.acme-love.com`)
-- ✅ No need for public web server
-- ✅ More secure as no web server exposure required
+- Works with wildcard certificates (`*.acme-love.com`)
+- No need for public web server
+- More secure as no web server exposure required
 
 **Requirements:**
 
-- 🔧 DNS provider access to add TXT records
+- DNS provider access to add TXT records
 
 **Process:**
 
 1. CLI will show DNS TXT record to add:
-   ```
-   Record Type: TXT
-   Record Name: _acme-challenge.acme-love.com
-   Record Value: AbCdEf123456...
-   ```
+
+```
+Record Type: TXT
+Record Name: _acme-challenge.acme-love.com
+Record Value: AbCdEf123456...
+```
+
 2. Add this record to your domain's DNS
 3. Wait for propagation (usually 5-15 minutes)
 4. Confirm in CLI that record is added
@@ -196,13 +198,13 @@ acme-love cert --challenge http-01 -d acme-love.com -e user@acme-love.com --stag
 
 **Advantages:**
 
-- ✅ Simple validation via HTTP file
-- ✅ Automatic validation with built-in checker
+- Simple validation via HTTP file
+- Automatic validation with built-in checker
 
 **Requirements:**
 
-- 🔧 Domain must point to your web server
-- 🔧 Web server must serve files from `/.well-known/acme-challenge/`
+- Domain must point to your web server
+- Web server must serve files from `/.well-known/acme-challenge/`
 
 ## Cryptographic Algorithms
 
@@ -236,11 +238,11 @@ For commercial CAs that require EAB (like ZeroSSL, Google Trust Services):
 
 ```bash
 acme-love cert \
-  -d acme-love.com \
-  -e admin@acme-love.com \
-  --eab-kid "your-key-identifier" \
-  --eab-hmac-key "your-base64url-hmac-key" \
-  --directory https://acme.zerossl.com/v2/DV90
+ -d acme-love.com \
+ -e admin@acme-love.com \
+ --eab-kid "your-key-identifier" \
+ --eab-hmac-key "your-base64url-hmac-key" \
+ --directory https://acme.zerossl.com/v2/DV90
 ```
 
 ## Usage Examples
@@ -253,16 +255,16 @@ acme-love create-account-key -o ./staging-account.json
 
 # 2. Get test certificate
 acme-love cert \
-  -d test.acme-love.com \
-  -e admin@acme-love.com \
-  --staging \
-  --account-key ./staging-account.json \
-  -o ./certificates
+ -d test.acme-love.com \
+ -e admin@acme-love.com \
+ --staging \
+ --account-key ./staging-account.json \
+ -o ./certificates
 ```
 
 ### Get Production Certificate
 
-**⚠️ Warning:** Let's Encrypt has rate limits on production. Always test with staging first!
+** Warning:** Let's Encrypt has rate limits on production. Always test with staging first!
 
 ```bash
 # 1. Create production account key
@@ -270,11 +272,11 @@ acme-love create-account-key -o ./production-account.json
 
 # 2. Get production certificate
 acme-love cert \
-  -d acme-love.com \
-  -e admin@acme-love.com \
-  --production \
-  --account-key ./production-account.json \
-  -o ./certificates
+ -d acme-love.com \
+ -e admin@acme-love.com \
+ --production \
+ --account-key ./production-account.json \
+ -o ./certificates
 ```
 
 ### Working with Other CAs
@@ -282,23 +284,23 @@ acme-love cert \
 ```bash
 # Buypass
 acme-love cert \
-  -d acme-love.com \
-  -e admin@acme-love.com \
-  --directory https://api.buypass.com/acme/directory
+ -d acme-love.com \
+ -e admin@acme-love.com \
+ --directory https://api.buypass.com/acme/directory
 
 # Google Trust Services
 acme-love cert \
-  -d acme-love.com \
-  -e admin@acme-love.com \
-  --directory https://dv.acme-v02.api.pki.goog/directory
+ -d acme-love.com \
+ -e admin@acme-love.com \
+ --directory https://dv.acme-v02.api.pki.goog/directory
 
 # ZeroSSL (requires EAB)
 acme-love cert \
-  -d acme-love.com \
-  -e admin@acme-love.com \
-  --directory https://acme.zerossl.com/v2/DV90 \
-  --eab-kid "your-kid" \
-  --eab-hmac-key "your-hmac-key"
+ -d acme-love.com \
+ -e admin@acme-love.com \
+ --directory https://acme.zerossl.com/v2/DV90 \
+ --eab-kid "your-kid" \
+ --eab-hmac-key "your-hmac-key"
 ```
 
 ## Certificate Obtaining Process
@@ -318,10 +320,10 @@ After successful certificate obtaining, these files are created:
 
 ```
 certificates/
-├── acme-love.com.crt    # SSL certificate
-├── acme-love.com.key    # Private key
-├── acme-love.com.csr    # Certificate Signing Request
-└── account-key.json     # ACME account key (if created automatically)
+ acme-love.com.crt # SSL certificate
+ acme-love.com.key # Private key
+ acme-love.com.csr # Certificate Signing Request
+ account-key.json # ACME account key (if created automatically)
 ```
 
 ## Validation Helpers
@@ -362,20 +364,20 @@ ACCOUNT_KEY="./account-key.json"
 
 # Get/renew certificate
 acme-love cert \
-  -d "$DOMAIN" \
-  -e "$EMAIL" \
-  --production \
-  --account-key "$ACCOUNT_KEY" \
-  -o "$CERT_DIR" \
-  --force
+ -d "$DOMAIN" \
+ -e "$EMAIL" \
+ --production \
+ --account-key "$ACCOUNT_KEY" \
+ -o "$CERT_DIR" \
+ --force
 
 # Restart web server (example for nginx)
 if [ $? -eq 0 ]; then
-    sudo systemctl reload nginx
-    echo "Certificate renewed and nginx reloaded"
+ sudo systemctl reload nginx
+ echo "Certificate renewed and nginx reloaded"
 else
-    echo "Certificate renewal failed"
-    exit 1
+ echo "Certificate renewal failed"
+ exit 1
 fi
 ```
 
@@ -386,37 +388,37 @@ fi
 name: Renew SSL Certificate
 
 on:
-  schedule:
-    - cron: '0 0 1 * *' # Monthly
-  workflow_dispatch:
+ schedule:
+ - cron: '0 0 1 * *' # Monthly
+ workflow_dispatch:
 
 jobs:
-  renew:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+ renew:
+ runs-on: ubuntu-latest
+ steps:
+ - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
+ - name: Setup Node.js
+ uses: actions/setup-node@v3
+ with:
+ node-version: '20'
 
-      - name: Install ACME Love
-        run: npm install -g acme-love
+ - name: Install ACME Love
+ run: npm install -g acme-love
 
-      - name: Renew Certificate
-        run: |
-          echo "${{ secrets.ACCOUNT_KEY }}" > account-key.json
-          acme-love cert \
-            -d ${{ secrets.DOMAIN }} \
-            -e ${{ secrets.EMAIL }} \
-            --production \
-            --account-key ./account-key.json
-        env:
-          # Add these secrets in GitHub
-          DOMAIN: acme-love.com
-          EMAIL: admin@acme-love.com
-          ACCOUNT_KEY: ${{ secrets.ACME_ACCOUNT_KEY }}
+ - name: Renew Certificate
+ run: |
+ echo "${{ secrets.ACCOUNT_KEY }}" > account-key.json
+ acme-love cert \
+ -d ${{ secrets.DOMAIN }} \
+ -e ${{ secrets.EMAIL }} \
+ --production \
+ --account-key ./account-key.json
+ env:
+ # Add these secrets in GitHub
+ DOMAIN: acme-love.com
+ EMAIL: admin@acme-love.com
+ ACCOUNT_KEY: ${{ secrets.ACME_ACCOUNT_KEY }}
 ```
 
 ## Debugging
@@ -431,28 +433,33 @@ acme-love cert -d acme-love.com -e admin@acme-love.com --staging
 ### Common Issues and Solutions
 
 1. **DNS record not found**
-   - Check that DNS record is added correctly and propagated
-   - Use online DNS checker tools
-   - Wait longer for propagation (up to 24 hours in some cases)
+
+- Check that DNS record is added correctly and propagated
+- Use online DNS checker tools
+- Wait longer for propagation (up to 24 hours in some cases)
 
 2. **Rate limits**
-   - Let's Encrypt has limits - use staging for testing
-   - Wait for rate limit reset (usually 1 hour for most limits)
-   - Consider using different CA if hitting limits frequently
+
+- Let's Encrypt has limits - use staging for testing
+- Wait for rate limit reset (usually 1 hour for most limits)
+- Consider using different CA if hitting limits frequently
 
 3. **Invalid account**
-   - Account key is corrupted - create new one
-   - Check file permissions and format
+
+- Account key is corrupted - create new one
+- Check file permissions and format
 
 4. **Domain validation failed**
-   - Make sure domain points to your server (for HTTP-01)
-   - Verify DNS record is correct (for DNS-01)
-   - Check firewall settings
+
+- Make sure domain points to your server (for HTTP-01)
+- Verify DNS record is correct (for DNS-01)
+- Check firewall settings
 
 5. **HTTP challenge file not accessible**
-   - Verify web server is running and accessible
-   - Check that `/.well-known/acme-challenge/` directory exists and is writable
-   - Verify no redirects from HTTP to HTTPS for challenge path
+
+- Verify web server is running and accessible
+- Check that `/.well-known/acme-challenge/` directory exists and is writable
+- Verify no redirects from HTTP to HTTPS for challenge path
 
 ## Supported CAs
 
@@ -483,4 +490,4 @@ acme-love cert -d acme-love.com -e admin@acme-love.com --staging
 
 ## License
 
-ISC License - see LICENSE file in repository.
+MIT License - see LICENSE file in repository.

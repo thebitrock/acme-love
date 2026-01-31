@@ -9,14 +9,14 @@ When using a CA that requires EAB (like some commercial CAs), provide the EAB pa
 ```bash
 # Using EAB with cert command
 acme-love cert \
-  --domain example.com \
-  --eab-hmac-key "your-base64url-encoded-hmac-key"
+ --domain example.com \
+ --eab-hmac-key "your-base64url-encoded-hmac-key"
 
 # With both kid and hmac key (optional, kid can be auto-detected)
 acme-love cert \
-  --domain example.com \
-  --eab-kid "your-key-identifier" \
-  --eab-hmac-key "your-base64url-encoded-hmac-key"
+ --domain example.com \
+ --eab-kid "your-key-identifier" \
+ --eab-hmac-key "your-base64url-encoded-hmac-key"
 ```
 
 ## Programmatic Usage

@@ -1,7 +1,7 @@
 {
   "name": "acme-love",
   "version": "2.1.0",
-  "description": "🔐 Modern TypeScript ACME client & CLI for Let's Encrypt certificates. Supports DNS-01/HTTP-01 validation, wildcard domains, EAB (ZeroSSL/Google), nonce pooling. RFC 8555 compliant. Node.js 20+",
+  "description": "Modern TypeScript ACME client and CLI for Let's Encrypt certificates. Supports DNS-01/HTTP-01 validation, wildcard domains, EAB (ZeroSSL/Google), nonce pooling. RFC 8555 compliant. Node.js 20+",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
@@ -147,6 +147,7 @@
     "arm64"
   ],
   "dependencies": {
+    "22": "^0.0.0",
     "@inquirer/prompts": "^7.8.4",
     "@peculiar/asn1-schema": "^2.4.0",
     "@peculiar/asn1-x509": "^2.4.0",
@@ -154,7 +155,6 @@
     "@peculiar/x509": "^1.13.0",
     "chalk": "^5.6.0",
     "commander": "^14.0.0",
-    "debug": "^4.4.1",
     "jose": "^6.1.0",
     "ora": "^8.2.0",
     "undici": "^7.15.0"
@@ -170,7 +170,6 @@
     "@semantic-release/github": "^11.0.5",
     "@semantic-release/npm": "^12.0.2",
     "@semantic-release/release-notes-generator": "^14.0.3",
-    "@types/debug": "^4.1.12",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.3.0",
     "@types/punycode": "^2.1.4",
@@ -204,7 +203,6 @@
     "test": "./__tests__",
     "lib": "./dist"
   },
-  "preferGlobal": false,
   "config": {
     "unsafe-perm": true
   }

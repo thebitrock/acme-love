@@ -6,23 +6,23 @@ This system provides persistent test account management for ACME Love stress tes
 
 ## Features
 
-✅ **Persistent Account Storage**
+**Persistent Account Storage**
 
 - Account keys saved to `stress-test-accounts/` directory
 - Automatic .gitignore protection (accounts never committed)
 - JSON format with metadata (email, creation date)
 
-✅ **CLI Management Tool**
+  **CLI Management Tool**
 
 ```bash
-npm run accounts list                    # List all accounts
-npm run accounts create <account-id>     # Create/load account
-npm run accounts delete <account-id>     # Delete account
-npm run accounts cleanup [hours]        # Delete old accounts
-npm run accounts prepare-stress         # Prepare all stress test accounts
+npm run accounts list # List all accounts
+npm run accounts create <account-id> # Create/load account
+npm run accounts delete <account-id> # Delete account
+npm run accounts cleanup [hours] # Delete old accounts
+npm run accounts prepare-stress # Prepare all stress test accounts
 ```
 
-✅ **Integration with Stress Tests**
+**Integration with Stress Tests**
 
 - Light stress: 2 accounts (`light-stress-1`, `light-stress-2`)
 - Quick stress: 1 account (`quick-stress-1`)
@@ -33,21 +33,21 @@ npm run accounts prepare-stress         # Prepare all stress test accounts
 ## Directory Structure
 
 ```
-stress-test-accounts/          # Git ignored
-├── light-stress-1.json       # Account keys + metadata
-├── light-stress-2.json
-├── quick-stress-1.json
-├── demo-stress-1.json
-├── demo-stress-2.json
-├── demo-stress-3.json
-├── heavy-stress-1.json
-├── heavy-stress-2.json
-├── heavy-stress-3.json
-├── heavy-stress-4.json
-├── heavy-stress-5.json
-├── deadlock-detection-1.json
-├── deadlock-detection-2.json
-└── deadlock-detection-3.json
+stress-test-accounts/ # Git ignored
+ light-stress-1.json # Account keys + metadata
+ light-stress-2.json
+ quick-stress-1.json
+ demo-stress-1.json
+ demo-stress-2.json
+ demo-stress-3.json
+ heavy-stress-1.json
+ heavy-stress-2.json
+ heavy-stress-3.json
+ heavy-stress-4.json
+ heavy-stress-5.json
+ deadlock-detection-1.json
+ deadlock-detection-2.json
+ deadlock-detection-3.json
 ```
 
 ## Account JSON Format
@@ -171,20 +171,20 @@ If you hit rate limits despite using persistent accounts:
 
 ## Current Status
 
-✅ **Implemented and Working**
+**Implemented and Working**
 
 - Account persistence system
 - CLI management tool
 - Integration with light-stress and quick-stress tests
 - Git ignore protection
 
-⏳ **Pending Integration**
+  **Pending Integration**
 
 - Update remaining stress tests (demo, heavy, deadlock-detection)
 - Add account validation and health checks
 - Implement account sharing between developers
 
-🎯 **Future Enhancements**
+  **Future Enhancements**
 
 - Account health monitoring
 - Automatic rate limit detection and backoff

@@ -11,7 +11,8 @@
  * In production, debug output is automatically disabled unless DEBUG is set.
  */
 
-// Simple debug function that can be enabled with DEBUG=acme:* environment variable
+import { format } from 'node:util';
+
 const createDebugger = (namespace: string) => {
   const debugEnv = process.env.DEBUG || '';
   const shouldLog =
@@ -22,25 +23,7 @@ const createDebugger = (namespace: string) => {
   return (message: string, ...args: unknown[]) => {
     if (shouldLog) {
       const timestamp = new Date().toISOString();
-      // Simple string formatting - replace %s, %d, %j
-      let formattedMessage = message;
-      let argIndex = 0;
-      formattedMessage = formattedMessage.replace(/%[sdj%]/g, (match) => {
-        if (argIndex >= args.length) return match;
-        const arg = args[argIndex++];
-        switch (match) {
-          case '%s':
-            return String(arg);
-          case '%d':
-            return String(Number(arg));
-          case '%j':
-            return JSON.stringify(arg);
-          case '%%':
-            return '%';
-          default:
-            return match;
-        }
-      });
+      const formattedMessage = format(message, ...args);
       console.log(`[${timestamp}] acme-love:${namespace} ${formattedMessage}`);
     }
   };
@@ -53,5 +36,4 @@ export const debugClient = createDebugger('client');
 export const debugRateLimit = createDebugger('ratelimit');
 export const debugValidator = createDebugger('validator');
 
-// Main debug logger
 export const debugMain = createDebugger('main');

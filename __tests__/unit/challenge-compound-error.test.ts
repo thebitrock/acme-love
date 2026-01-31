@@ -75,6 +75,7 @@ describe('challenge compound error propagation', () => {
       newOrder: 'https://example.test/acme/new-order',
     }),
     getDefaultNonce: () => ({}),
+    getDefaultNonceOptions: () => ({}),
   };
 
   // Generate real keys for the test

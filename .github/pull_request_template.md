@@ -1,31 +1,31 @@
-## 📋 Summary
+## Summary
 
 Brief description of what this PR does.
 
-## 🔄 Type of Change
+## Type of Change
 
-- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
-- [ ] ✨ New feature (non-breaking change which adds functionality)
-- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📚 Documentation update
-- [ ] 🔧 Refactoring (no functional changes)
-- [ ] ⚡ Performance improvement
-- [ ] 🧪 Test improvements
-- [ ] 🏗️ Build/CI changes
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+- [ ] Refactoring (no functional changes)
+- [ ] Performance improvement
+- [ ] Test improvements
+- [ ] Build/CI changes
 
-## 🎯 Related Issues
+## Related Issues
 
 Fixes #(issue number)
 Closes #(issue number)
 Related to #(issue number)
 
-## 🔍 Changes Made
+## Changes Made
 
 - Change 1
 - Change 2
 - Change 3
 
-## 🧪 Testing
+## Testing
 
 - [ ] Unit tests pass (`npm test`)
 - [ ] Integration tests pass (`npm run test:e2e`)
@@ -41,26 +41,26 @@ npm run lint:check
 npm run format:check
 ```
 
-## 📊 Performance Impact
+## Performance Impact
 
 - [ ] No performance impact
 - [ ] Performance improvement (provide details)
 - [ ] Minor performance regression (justified by benefits)
 - [ ] Significant performance impact (requires discussion)
 
-## 🔐 Security Considerations
+## Security Considerations
 
 - [ ] No security implications
 - [ ] Security improvement
 - [ ] Potential security concerns (describe)
 
-## 📚 Documentation
+## Documentation
 
 - [ ] Documentation updated (README, docs/, code comments)
 - [ ] No documentation changes needed
 - [ ] Documentation will be updated in separate PR
 
-## 🌍 ACME Provider Compatibility
+## ACME Provider Compatibility
 
 Tested with:
 
@@ -70,7 +70,7 @@ Tested with:
 - [ ] Buypass
 - [ ] Custom ACME directory
 
-## 🎨 CLI Changes (if applicable)
+## CLI Changes (if applicable)
 
 - [ ] New commands added
 - [ ] Existing commands modified
@@ -78,14 +78,14 @@ Tested with:
 - [ ] Help text updated
 - [ ] Interactive prompts updated
 
-## 🔄 Breaking Changes
+## Breaking Changes
 
 If this includes breaking changes, list them here:
 
 - Breaking change 1
 - Breaking change 2
 
-## 📋 Migration Guide (if needed)
+## Migration Guide (if needed)
 
 For breaking changes, provide migration instructions:
 
@@ -103,11 +103,11 @@ acme-love old-command
 acme-love new-command
 ```
 
-## 🖼️ Screenshots (if applicable)
+## Screenshots (if applicable)
 
 Add screenshots of CLI output, error messages, or UI changes.
 
-## ✅ Checklist
+## Checklist
 
 - [ ] My code follows the project's coding standards
 - [ ] I have performed a self-review of my code
@@ -118,6 +118,6 @@ Add screenshots of CLI output, error messages, or UI changes.
 - [ ] New and existing unit tests pass locally with my changes
 - [ ] Any dependent changes have been merged and published
 
-## 🤝 Review Notes
+## Review Notes
 
 Any specific areas you'd like reviewers to focus on or questions you have about the implementation.

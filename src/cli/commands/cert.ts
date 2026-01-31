@@ -364,9 +364,8 @@ async function solveHttp01(acct: AcmeAccount, order: AcmeOrder): Promise<AcmeOrd
       if (!proceed) throw new Error('Cancelled by user');
     },
     waitFor: async (prep) => {
-      const { validateHttp01ChallengeByUrl } = await import(
-        '../../lib/challenges/http-validator.js'
-      );
+      const { validateHttp01ChallengeByUrl } =
+        await import('../../lib/challenges/http-validator.js');
       const maxAttempts = 12;
       const delayMs = 5000;
       let ok = false;

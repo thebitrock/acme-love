@@ -96,9 +96,11 @@ Current number of stored (non‑expired) nonces.
 1. `take()` pops the freshest nonce (LIFO) ensuring minimal age.
 2. If pool empty → enqueue waiter & start (or coalesce into) `runRefill`.
 3. `runRefill()` fetches new nonces while:
-   - there are waiters, OR
-   - prefetch enabled and size < lowWater
-     stopping when size reaches highWater / maxPool / no more need / failure.
+
+- there are waiters, OR
+- prefetch enabled and size < lowWater
+  stopping when size reaches highWater / maxPool / no more need / failure.
+
 4. Responses processed by `withNonceRetry()` are scanned for `Replay-Nonce` headers and inserted.
 5. `gc()` prunes expired entries on each `take()`.
 

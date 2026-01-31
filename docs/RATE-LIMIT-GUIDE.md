@@ -241,11 +241,11 @@ await Promise.all(promises);
 
 The rate limit management system in ACME Love provides:
 
-- ✅ Automatic rate limit detection and handling
-- ✅ Intelligent retries with exponential backoff
-- ✅ Nonce pooling to reduce API load
-- ✅ Detailed debug logging
-- ✅ Configurable strategies for different environments
-- ✅ Compatibility with Let's Encrypt production and staging
+- Automatic rate limit detection and handling
+- Intelligent retries with exponential backoff
+- Nonce pooling to reduce API load
+- Detailed debug logging
+- Configurable strategies for different environments
+- Compatibility with Let's Encrypt production and staging
 
 The library is production-ready for high-volume applications without risk of API limit violations.

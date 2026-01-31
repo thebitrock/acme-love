@@ -182,6 +182,16 @@ export class AcmeClient {
    * @see {@link https://datatracker.ietf.org/doc/html/rfc8555#section-6.5 | RFC 8555 Section 6.5 - Replay Protection}
    * @see {@link https://datatracker.ietf.org/doc/html/rfc8555#section-7.2 | RFC 8555 Section 7.2 - Getting a Nonce}
    */
+  /**
+   * Get the default nonce configuration options
+   *
+   * Returns the nonce configuration passed at client construction time.
+   * These serve as defaults for per-account nonce managers.
+   */
+  public getDefaultNonceOptions(): Partial<NonceManagerOptions> {
+    return this.opts.nonce || {};
+  }
+
   public getDefaultNonce(): NonceManager {
     if (!this.nonce) {
       throw new Error('NonceManager not initialized yet. Call getDirectory() first.');
