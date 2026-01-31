@@ -46,31 +46,12 @@ export class AcmeHttpClient {
         res.headers,
       );
 
-      // Special logging for rate limit responses
-      if (res.statusCode === 429 || res.statusCode === 503) {
-        const retryAfter = res.headers['retry-after'] || res.headers['Retry-After'];
-        debugHttp(
-          'RATE LIMIT DETECTED: GET %s status=%d retry-after=%s',
-          url,
-          res.statusCode,
-          retryAfter || 'NOT_SET',
-        );
-      }
+      this.logRateLimit('GET', url, res.statusCode, res.headers);
 
-      let data: unknown;
-      try {
-        data = await res.body.json();
-        debugHttp('GET %s response data=%j', url, data);
-      } catch (e) {
-        debugHttp('GET %s json parse failed: %s', url, (e as Error).message);
-        throw e;
-      }
+      const data = await this.parseResponseBody(res.headers, res.body);
+      debugHttp('GET %s response body=%j', url, data);
 
-      // Return undici response format but with parsed body
-      return {
-        ...res,
-        body: data,
-      };
+      return { ...res, body: data };
     } catch (err) {
       debugHttp('GET %s error: %s', url, (err as Error).message);
       throw err;
@@ -119,60 +100,12 @@ export class AcmeHttpClient {
         res.headers,
       );
 
-      // Special logging for rate limit responses
-      if (res.statusCode === 429 || res.statusCode === 503) {
-        const retryAfter = res.headers['retry-after'] || res.headers['Retry-After'];
-        debugHttp(
-          'RATE LIMIT DETECTED: POST %s status=%d retry-after=%s',
-          url,
-          res.statusCode,
-          retryAfter || 'NOT_SET',
-        );
-      }
+      this.logRateLimit('POST', url, res.statusCode, res.headers);
 
-      const rawCt = res.headers['content-type'];
-      const ct = (Array.isArray(rawCt) ? rawCt[0] : rawCt)?.toLowerCase() ?? '';
+      const data = await this.parseResponseBody(res.headers, res.body);
+      debugHttp('POST %s response body=%j', url, data);
 
-      let data: unknown;
-      try {
-        if (ct.includes('application/json') || ct.includes('application/problem+json')) {
-          data = await res.body.json();
-          // For JSON we log full body after parse below
-        } else if (ct.startsWith('text/') || ct.includes('application/pem-certificate-chain')) {
-          data = await res.body.text();
-          // For text we log full body after read below
-        } else {
-          const buf = await res.body.arrayBuffer();
-          data = Buffer.from(buf);
-          // For binary we log summary + body (Buffer JSON form) below
-        }
-        let dataLen = -1;
-        if (typeof data === 'string') {
-          dataLen = data.length;
-        } else if (data instanceof Uint8Array) {
-          dataLen = data.length;
-        } else if (Array.isArray(data)) {
-          dataLen = data.length;
-        } else if (
-          data !== null &&
-          typeof data === 'object' &&
-          // Use type assertion safe check for a numeric length field
-          'length' in data &&
-          typeof (data as { length?: unknown }).length === 'number'
-        ) {
-          dataLen = (data as { length: number }).length;
-        }
-        debugHttp('POST %s response body len=%d body=%j', url, dataLen, data);
-      } catch (e) {
-        debugHttp('POST %s body parse error: %s', url, (e as Error).message);
-        throw e;
-      }
-
-      // Return undici response format but with parsed body
-      return {
-        ...res,
-        body: data as T,
-      };
+      return { ...res, body: data as T };
     } catch (err) {
       debugHttp('POST %s network error: %s', url, (err as Error).message);
       throw err;
@@ -197,16 +130,7 @@ export class AcmeHttpClient {
         res.headers,
       );
 
-      // Special logging for rate limit responses
-      if (res.statusCode === 429 || res.statusCode === 503) {
-        const retryAfter = res.headers['retry-after'] || res.headers['Retry-After'];
-        debugHttp(
-          'RATE LIMIT DETECTED: HEAD %s status=%d retry-after=%s',
-          url,
-          res.statusCode,
-          retryAfter || 'NOT_SET',
-        );
-      }
+      this.logRateLimit('HEAD', url, res.statusCode, res.headers);
 
       // Return undici response format but with undefined body for HEAD
       return {
@@ -216,6 +140,42 @@ export class AcmeHttpClient {
     } catch (err) {
       debugHttp('HEAD %s error: %s', url, (err as Error).message);
       throw err;
+    }
+  }
+
+  private async parseResponseBody(
+    headers: Record<string, string | string[] | undefined>,
+    body: Dispatcher.ResponseData['body'],
+  ): Promise<unknown> {
+    const rawCt = headers['content-type'];
+    const ct = (Array.isArray(rawCt) ? rawCt[0] : rawCt)?.toLowerCase() ?? '';
+
+    if (ct.includes('application/json') || ct.includes('application/problem+json')) {
+      return body.json();
+    }
+    if (ct.startsWith('text/') || ct.includes('application/pem-certificate-chain')) {
+      return body.text();
+    }
+    // Binary fallback
+    const buf = await body.arrayBuffer();
+    return Buffer.from(buf);
+  }
+
+  private logRateLimit(
+    method: string,
+    url: string,
+    statusCode: number,
+    headers: Record<string, string | string[] | undefined>,
+  ): void {
+    if (statusCode === 429 || statusCode === 503) {
+      const retryAfter = headers['retry-after'] || headers['Retry-After'];
+      debugHttp(
+        'RATE LIMIT DETECTED: %s %s status=%d retry-after=%s',
+        method,
+        url,
+        statusCode,
+        retryAfter || 'NOT_SET',
+      );
     }
   }
 

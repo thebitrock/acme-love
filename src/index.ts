@@ -6,10 +6,8 @@
 
 // Directory utilities
 export * as directory from './directory.js';
-export { directory as directories, provider } from './directory.js';
+export { provider } from './directory.js';
 export type { AcmeDirectoryEntry, AcmeProvider, AcmeDirectoryConfig } from './directory.js';
 
-// Modern RFC 8555 compliant API (primary interface)
+// RFC 8555 compliant API
 export * from './lib/index.js';
-
-// (Legacy API removed)

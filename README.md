@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔐 ACME Love
+# ACME Love
 
 **Modern, strongly‑typed ACME (RFC 8555) toolkit for Node.js 20+**
 
@@ -15,64 +15,38 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 
 <a id="table-of-contents"></a>
 
-## 📋 Table of Contents
+## Table of Contents
 
 <!-- TOC-START -->
 
-Main
-
-- [Table of Contents](#table-of-contents)
 - [Key Features](#key-features)
 - [Quick Start](#quick-start)
   - [CLI Installation & Usage](#cli-installation-usage)
-  - [Interactive Mode (Easiest Way)](#interactive-mode-easiest-way)
+  - [Interactive Mode](#interactive-mode-easiest-way)
   - [Command Line Mode](#command-line-mode)
   - [Challenge Types](#challenge-types)
   - [Cryptographic Algorithms](#cryptographic-algorithms)
-  - [ Development & Local Usage](#development-local-usage)
+  - [Development & Local Usage](#development-local-usage)
   - [CLI Commands Reference](#cli-commands-reference)
 - [Library Usage](#library-usage)
   - [Installation](#installation)
   - [Modern ACME Client](#modern-acme-client)
-  - [External Account Binding (EAB) Support](#external-account-binding-eab-support)
+  - [External Account Binding (EAB)](#external-account-binding-eab-support)
   - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms)
   - [Working with Existing Accounts](#working-with-existing-accounts)
   - [Advanced Features](#advanced-features)
 - [Nonce Management](#nonce-management)
-  - [Global Configuration](#global-configuration)
-  - [Per-Account Overrides](#per-account-overrides)
-  - [Configuration Options](#configuration-options)
-  - [Performance Scenarios](#performance-scenarios)
   - [Debug Logging](#debug-logging)
-  - [Custom Nonce Manager Logging](#custom-nonce-manager-logging)
 - [Advanced Validators & Utilities](#advanced-validators-utilities)
-  - [DNS Validation Functions](#dns-validation-functions)
-  - [HTTP Validation Functions](#http-validation-functions)
-  - [CLI Configuration Details](#cli-configuration-details)
 - [CSR Generation](#csr-generation)
-  - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms-1)
 - [Supported ACME Providers](#supported-acme-providers)
 - [Client Initialization](#client-initialization)
-  - [Method 1: Using Provider Presets (Recommended)](#method-1-using-provider-presets-recommended)
-  - [Method 2: Using String URLs](#method-2-using-string-urls)
-  - [Benefits of Provider Presets](#benefits-of-provider-presets)
 - [CLI Features Showcase](#cli-features-showcase)
-  - [Beautiful Interactive Prompts](#beautiful-interactive-prompts)
-  - [Smart Error Handling](#smart-error-handling)
-  - [Automatic Validation](#automatic-validation)
 - [Documentation](#documentation)
 - [Troubleshooting](#troubleshooting)
-  - [Common Issues](#common-issues)
 - [Requirements](#requirements)
 - [Performance & Stress Testing](#performance-stress-testing)
-  - [Consolidated Metrics (Latest Run)](#consolidated-metrics-latest-run)
-  - [Interpretation](#interpretation)
-  - [ Key Optimizations](#key-optimizations)
-  - [Example High-Load Configuration](#example-high-load-configuration)
-  - [Detailed Reports](#detailed-reports)
-  - [Running the Tests](#running-the-tests)
 - [Test Coverage](#test-coverage)
-  - [Test Account Management](#test-account-management)
 - [License](#license)
 - [Contributing](#contributing)
 
@@ -80,32 +54,32 @@ Main
 
 <a id="key-features"></a>
 
-## ✨ Key Features
+## Key Features
 
-| Feature                         | Description                                                           |
-| ------------------------------- | --------------------------------------------------------------------- |
-| 🖥️ **Powerful CLI**             | Interactive & non-interactive modes with polished prompts             |
-| 🌐 **Multi-Environment**        | Staging, production & custom directory endpoints                      |
-| 🔒 **Challenge Support**        | DNS-01 (wildcard-friendly) & HTTP-01 with built-in validation helpers |
-| 🔐 **Crypto Algorithms**        | ECDSA P-256 / P-384 / P-521 and RSA 2048 / 3072 / 4096                |
-| 🔑 **External Account Binding** | EAB support (ZeroSSL, Google Trust Services, etc.)                    |
-| 🛠️ **Resilient Error Handling** | RFC 8555 problem+json mapping, retry & maintenance detection          |
-| ⚡ **Optimized Core**           | Nonce pooling, FS read minimization, undici HTTP client               |
-| 🏢 **Multiple CAs**             | Presets: Let's Encrypt, Buypass, Google, ZeroSSL + custom URLs        |
-| 📦 **Typed API**                | Strong TypeScript types for orders, accounts, directory metadata      |
-| 🔍 **Diagnostics**              | Namespaced debug logging; stress & performance reports                |
-| 🧪 **Tested**                   | Unit + stress tests; concurrency & rate limit scenarios               |
-| 🔧 **Developer Friendly**       | CSR helpers, validation utilities, composable modules                 |
+| Feature                      | Description                                                           |
+| ---------------------------- | --------------------------------------------------------------------- |
+| **Powerful CLI**             | Interactive & non-interactive modes with polished prompts             |
+| **Multi-Environment**        | Staging, production & custom directory endpoints                      |
+| **Challenge Support**        | DNS-01 (wildcard-friendly) & HTTP-01 with built-in validation helpers |
+| **Crypto Algorithms**        | ECDSA P-256 / P-384 / P-521 and RSA 2048 / 3072 / 4096                |
+| **External Account Binding** | EAB support (ZeroSSL, Google Trust Services, etc.)                    |
+| **Resilient Error Handling** | RFC 8555 problem+json mapping, retry & maintenance detection          |
+| **Optimized Core**           | Nonce pooling, FS read minimization, undici HTTP client               |
+| **Multiple CAs**             | Presets: Let's Encrypt, Buypass, Google, ZeroSSL + custom URLs        |
+| **Typed API**                | Strong TypeScript types for orders, accounts, directory metadata      |
+| **Diagnostics**              | Namespaced debug logging; stress & performance reports                |
+| **Tested**                   | Unit + stress tests; concurrency & rate limit scenarios               |
+| **Developer Friendly**       | CSR helpers, validation utilities, composable modules                 |
 
 <a id="quick-start"></a>
 
-## 🚀 Quick Start
+## Quick Start
 
 <a id="cli-installation-usage"></a>
 
 ### CLI Installation & Usage
 
-> 📖 **Full CLI Documentation**: See [CLI.md](./docs/CLI.md) for complete usage guide, examples, and advanced features.
+> **Full CLI Documentation**: See [CLI.md](./docs/CLI.md) for complete usage guide, examples, and advanced features.
 
 ```bash
 # Global installation (recommended)
@@ -118,55 +92,55 @@ npx acme-love interactive --staging
 
 <a id="interactive-mode-easiest-way"></a>
 
-### 🎮 Interactive Mode (Easiest Way)
+### Interactive Mode (Easiest Way)
 
 ```bash
 # Start interactive mode with environment selection
 acme-love interactive
 
 # Or with pre-selected environment
-acme-love interactive --staging    # For testing
+acme-love interactive --staging # For testing
 acme-love interactive --production # For real certificates
 ```
 
 <a id="command-line-mode"></a>
 
-### 📋 Command Line Mode
+### Command Line Mode
 
 ```bash
 # Get a staging certificate (recommended first)
 acme-love cert \
-  --domain test.acme-love.com \
-  --email admin@acme-love.com \
-  --staging \
-  --challenge dns-01
+ --domain test.acme-love.com \
+ --email admin@acme-love.com \
+ --staging \
+ --challenge dns-01
 
 # Get a production certificate with custom algorithms
 acme-love cert \
-  --domain acme-love.com \
-  --email admin@acme-love.com \
-  --production \
-  --challenge http-01 \
-  --account-algo ec-p256 \
-  --cert-algo rsa-4096
+ --domain acme-love.com \
+ --email admin@acme-love.com \
+ --production \
+ --challenge http-01 \
+ --account-algo ec-p256 \
+ --cert-algo rsa-4096
 
 # Create an account key with specific algorithm
 acme-love create-account-key \
-  --algo ec-p384 \
-  --output ./my-account-key.json
+ --algo ec-p384 \
+ --output ./my-account-key.json
 
 # Use External Account Binding for commercial CAs
 acme-love cert \
-  --domain acme-love.com \
-  --email admin@acme-love.com \
-  --directory https://acme.zerossl.com/v2/DV90 \
-  --eab-kid "your-key-identifier" \
-  --eab-hmac-key "your-base64url-hmac-key"
+ --domain acme-love.com \
+ --email admin@acme-love.com \
+ --directory https://acme.zerossl.com/v2/DV90 \
+ --eab-kid "your-key-identifier" \
+ --eab-hmac-key "your-base64url-hmac-key"
 ```
 
 <a id="challenge-types"></a>
 
-### 🎯 Challenge Types
+### Challenge Types
 
 **DNS-01 Challenge** (Recommended)
 
@@ -174,9 +148,9 @@ acme-love cert \
 acme-love cert --challenge dns-01 --domain acme-love.com --email user@acme-love.com --staging
 ```
 
-- ✅ Works with wildcard certificates (`*.acme-love.com`)
-- ✅ No need for public web server
-- 🔧 Requires DNS provider access
+- Works with wildcard certificates (`*.acme-love.com`)
+- No need for public web server
+- Requires DNS provider access
 
 **HTTP-01 Challenge**
 
@@ -184,26 +158,26 @@ acme-love cert --challenge dns-01 --domain acme-love.com --email user@acme-love.
 acme-love cert --challenge http-01 --domain acme-love.com --email user@acme-love.com --staging
 ```
 
-- ✅ Simple validation via HTTP file
-- ✅ Automatic validation with built-in checker
-- 🔧 Requires domain to point to your web server
+- Simple validation via HTTP file
+- Automatic validation with built-in checker
+- Requires domain to point to your web server
 
 <a id="cryptographic-algorithms"></a>
 
-### 🔐 Cryptographic Algorithms
+### Cryptographic Algorithms
 
 The CLI uses **P-256 ECDSA** by default for both account and certificate keys, providing an excellent balance of security and performance. This algorithm is:
 
-- ✅ **Fast**: Quicker than RSA for signing operations
-- ✅ **Secure**: 256-bit elliptic curve equivalent to 3072-bit RSA
-- ✅ **Compatible**: Widely supported by browsers and servers
-- ✅ **Compact**: Smaller key sizes and certificate files
+- **Fast**: Quicker than RSA for signing operations
+- **Secure**: 256-bit elliptic curve equivalent to 3072-bit RSA
+- **Compatible**: Widely supported by browsers and servers
+- **Compact**: Smaller key sizes and certificate files
 
 For programmatic usage via the library, you can choose from multiple algorithms including different ECDSA curves (P-256, P-384, P-521) and RSA key sizes (2048, 3072, 4096 bits). See the [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms) section for details.
 
 <a id="development-local-usage"></a>
 
-### 🛠️ Development & Local Usage
+### Development & Local Usage
 
 If you're developing or testing locally, you have multiple convenient options:
 
@@ -226,7 +200,7 @@ See [CLI.md](./docs/CLI.md) for complete CLI documentation and usage examples.
 
 <a id="cli-commands-reference"></a>
 
-### 📖 CLI Commands Reference
+### CLI Commands Reference
 
 | Command              | Purpose                        | Algorithm Options                    | EAB Options                                |
 | -------------------- | ------------------------------ | ------------------------------------ | ------------------------------------------ |
@@ -252,10 +226,10 @@ acme-love interactive --staging
 
 # Commercial CA with External Account Binding
 acme-love cert \
-  --domain acme-love.com \
-  --directory https://acme.zerossl.com/v2/DV90 \
-  --eab-kid "your-eab-key-id" \
-  --eab-hmac-key "your-eab-hmac-key"
+ --domain acme-love.com \
+ --directory https://acme.zerossl.com/v2/DV90 \
+ --eab-kid "your-eab-key-id" \
+ --eab-hmac-key "your-eab-hmac-key"
 
 # Note: For known CAs, you can also use predefined providers in the library:
 # AcmeClient(provider.zerossl.production) or AcmeClient(provider.google.production)
@@ -263,9 +237,9 @@ acme-love cert \
 
 <a id="library-usage"></a>
 
-## 📚 Library Usage
+## Library Usage
 
-[🔝 Back to Top](#table-of-contents)
+[Back to Top](#table-of-contents)
 
 <a id="installation"></a>
 
@@ -289,7 +263,7 @@ const client = new AcmeClient(provider.letsencrypt.staging, {
 
 // Alternative: Create client with string URL
 // const client = new AcmeClient(provider.letsencrypt.staging.directoryUrl, {
-//   nonce: { maxPool: 64 },
+// nonce: { maxPool: 64 },
 // });
 
 // 2. Generate account keys (P-256 ECDSA recommended)
@@ -338,72 +312,20 @@ console.log('Certificate obtained!', certificate);
 
 ### External Account Binding (EAB) Support
 
-For Certificate Authorities that require External Account Binding (like ZeroSSL, Google Trust Services), provide EAB credentials during account registration:
+For Certificate Authorities that require EAB (ZeroSSL, Google Trust Services), provide credentials during account creation:
 
 ```ts
-import { AcmeClient, AcmeAccount, generateKeyPair, provider } from 'acme-love';
-
-// Create client for CA that requires EAB - using provider preset (recommended)
-const client = new AcmeClient(provider.zerossl.production);
-
-// Alternative: Create client with string URL
-// const client = new AcmeClient('https://acme.zerossl.com/v2/DV90');
-
-// Generate account keys
-const keyPair = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' });
-const accountKeys = {
-  privateKey: keyPair.privateKey!,
-  publicKey: keyPair.publicKey!,
-};
-
-// Create account with EAB
 const account = new AcmeAccount(client, accountKeys, {
   externalAccountBinding: {
-    kid: 'your-key-identifier-from-ca', // Provided by your CA
-    hmacKey: 'your-base64url-hmac-key-from-ca', // Provided by your CA
+    kid: 'your-key-identifier-from-ca',
+    hmacKey: 'your-base64url-hmac-key-from-ca',
   },
 });
-
-// Register account (EAB is handled automatically)
-const registration = await account.register({
-  contact: 'admin@acme-love.com',
-  termsOfServiceAgreed: true,
-});
-
-// Continue with normal certificate issuance...
-const order = await account.createOrder(['acme-love.com']);
-// ... rest of the flow
 ```
 
-**EAB-enabled Certificate Authorities:**
+**EAB-enabled CAs:** ZeroSSL (required), Google Trust Services (required), Buypass (optional).
 
-- **ZeroSSL**: Requires EAB for new account registration
-- **Google Trust Services**: Requires EAB for all accounts
-- **Buypass**: Optional EAB for enhanced validation
-- **Custom/Enterprise CAs**: Many require EAB for access control
-
-**Getting EAB Credentials:**
-
-1. Register with your chosen CA's website
-2. Navigate to ACME/API settings in your account dashboard
-3. Generate or retrieve your EAB Key ID and HMAC Key
-4. Use these credentials in your ACME client configuration
-
-**CLI Usage with EAB:**
-
-```bash
-# ZeroSSL example
-acme-love cert \
-  --domain acme-love.com \
-  --eab-hmac-key "your-zerossl-hmac-key"
-
-# Google Trust Services example
-acme-love cert \
-  --domain acme-love.com \
-  --eab-hmac-key "your-google-hmac-key"
-```
-
-📖 **Detailed EAB documentation**: [docs/EAB.md](./docs/EAB.md)
+For complete EAB setup including CLI usage and credential acquisition, see [docs/EAB.md](./docs/EAB.md).
 
 <a id="supported-cryptographic-algorithms"></a>
 
@@ -500,7 +422,6 @@ const registration = await account.register({
 // Save the account URL (kid) for future use
 const accountUrl = registration.accountUrl;
 
-// Save account info for future use
 // Save account information for reuse
 const accountInfo = {
   accountUrl, // This is the kid
@@ -566,17 +487,17 @@ try {
 } catch (error) {
   // Server maintenance detection
   if (error instanceof ServerMaintenanceError) {
-    console.log('🔧 Service is under maintenance');
-    console.log('📊 Check https://letsencrypt.status.io/');
-    console.log('⏳ Please try again later when the service is restored.');
+    console.log(' Service is under maintenance');
+    console.log(' Check https://letsencrypt.status.io/');
+    console.log(' Please try again later when the service is restored.');
     return;
   }
 
   // Rate limiting with automatic retry information
   if (error instanceof RateLimitedError) {
     const retrySeconds = error.getRetryAfterSeconds();
-    console.log(`⏱️ Rate limited. Retry in ${retrySeconds} seconds`);
-    console.log(`📝 Details: ${error.detail}`);
+    console.log(` Rate limited. Retry in ${retrySeconds} seconds`);
+    console.log(` Details: ${error.detail}`);
 
     // Wait and retry automatically
     if (retrySeconds && retrySeconds < 300) {
@@ -589,44 +510,44 @@ try {
 
   // Nonce issues (automatically handled by nonce manager)
   if (error instanceof BadNonceError) {
-    console.log('🔄 Invalid nonce - this should be handled automatically');
+    console.log(' Invalid nonce - this should be handled automatically');
     // The NonceManager typically retries these automatically
   }
 
   // Account-related errors
   if (error instanceof AccountDoesNotExistError) {
-    console.log('👤 Account does not exist - need to register first');
+    console.log(' Account does not exist - need to register first');
   }
 
   // Order state errors
   if (error instanceof OrderNotReadyError) {
-    console.log('📋 Order not ready for finalization - complete challenges first');
+    console.log(' Order not ready for finalization - complete challenges first');
   }
 
   // EAB requirement
   if (error instanceof ExternalAccountRequiredError) {
-    console.log('🔑 This CA requires External Account Binding (EAB)');
-    console.log('💡 Use --eab-hmac-key option or provide EAB credentials');
+    console.log(' This CA requires External Account Binding (EAB)');
+    console.log(' Use --eab-hmac-key option or provide EAB credentials');
   }
 
   // Rate limiter errors (from internal rate limiting system)
   if (error instanceof RateLimitError) {
-    console.log(`🚦 Internal rate limit: ${error.message}`);
-    console.log(`📊 Attempts: ${error.rateLimitInfo.attempts}`);
-    console.log(`⏳ Retry in ${error.rateLimitInfo.retryDelaySeconds}s`);
+    console.log(` Internal rate limit: ${error.message}`);
+    console.log(` Attempts: ${error.rateLimitInfo.attempts}`);
+    console.log(` Retry in ${error.rateLimitInfo.retryDelaySeconds}s`);
   }
 
   // Generic ACME error with details
   if (error instanceof AcmeError) {
-    console.log(`❌ ACME Error: ${error.detail}`);
-    console.log(`🔍 Type: ${error.type}`);
-    console.log(`📊 Status: ${error.status}`);
+    console.log(` ACME Error: ${error.detail}`);
+    console.log(` Type: ${error.type}`);
+    console.log(` Status: ${error.status}`);
 
     // Handle subproblems for compound errors
     if (error.subproblems?.length) {
-      console.log('📋 Subproblems:');
+      console.log(' Subproblems:');
       error.subproblems.forEach((sub, i) => {
-        console.log(`  ${i + 1}. ${sub.detail} (${sub.type})`);
+        console.log(` ${i + 1}. ${sub.detail} (${sub.type})`);
       });
     }
   }
@@ -781,13 +702,13 @@ async function handleCertificateError(error: unknown) {
 
   switch (category) {
     case 'retry':
-      console.log('⏳ Temporary issue - will retry automatically');
+      console.log(' Temporary issue - will retry automatically');
       break;
     case 'reconfigure':
-      console.log('⚙️ Configuration issue - please check your settings');
+      console.log(' Configuration issue - please check your settings');
       break;
     case 'fatal':
-      console.log('❌ Fatal error - manual intervention required');
+      console.log(' Fatal error - manual intervention required');
       break;
   }
 }
@@ -867,50 +788,22 @@ debugHttp('HTTP operation debug info');
 
 <a id="nonce-management"></a>
 
-## ⚡ Nonce Management
+## Nonce Management
 
-[🔝 Back to Top](#table-of-contents)
+[Back to Top](#table-of-contents)
 
-ACME Love includes a sophisticated **NonceManager** that optimizes nonce handling for high-performance certificate operations. Nonces are automatically pooled, prefetched, and recycled to minimize network round-trips.
-
-<a id="global-configuration"></a>
-
-### Global Configuration
-
-Set default nonce behavior for all accounts:
+ACME Love includes a **NonceManager** that optimizes nonce handling for high-performance certificate operations. Nonces are automatically pooled, prefetched, and recycled to minimize network round-trips.
 
 ```ts
 const client = new AcmeClient(provider.letsencrypt.production, {
   nonce: {
-    maxPool: 64, // Cache up to 64 nonces
-    prefetchLowWater: 12, // Start prefetch when < 12 remain
-    prefetchHighWater: 40, // Fill up to 40 nonces
-    maxAgeMs: 5 * 60_000, // Expire after 5 minutes
-    // Note: Logging is handled by unified debug system (DEBUG=acme-love:nonce)
+    maxPool: 64,
+    prefetchLowWater: 12,
+    prefetchHighWater: 40,
+    maxAgeMs: 5 * 60_000,
   },
 });
 ```
-
-<a id="per-account-overrides"></a>
-
-### Per-Account Overrides
-
-Fine-tune nonce behavior for specific accounts:
-
-```ts
-const account = new AcmeAccount(client, accountKeys, {
-  nonceOverrides: {
-    maxPool: 128, // Higher throughput for this account
-    prefetchLowWater: 20,
-    prefetchHighWater: 80,
-    // Note: Logging is handled by unified debug system (DEBUG=acme-love:nonce)
-  },
-});
-```
-
-<a id="configuration-options"></a>
-
-### Configuration Options
 
 | Option              | Default | Description                                        |
 | ------------------- | ------- | -------------------------------------------------- |
@@ -919,94 +812,22 @@ const account = new AcmeAccount(client, accountKeys, {
 | `prefetchHighWater` | 0       | Target fill level for prefetch                     |
 | `maxAgeMs`          | 300000  | Discard nonces older than 5 minutes                |
 
-**Note**: Logging is now handled by the unified debug system. Use `DEBUG=acme-love:nonce` to enable nonce manager debug output.
-
-<a id="performance-scenarios"></a>
-
-### Performance Scenarios
-
-```ts
-// Low traffic / sequential operations
-{ prefetchLowWater: 0 }  // Disable prefetch
-
-// Moderate parallelism (5-10 concurrent operations)
-{ prefetchLowWater: 4, prefetchHighWater: 12, maxPool: 32 }
-
-// High burst / parallel workloads
-{ prefetchLowWater: 16, prefetchHighWater: 48, maxPool: 128 }
-```
-
-The NonceManager automatically handles `badNonce` retries, harvests nonces from response headers, and isolates nonce pools per CA/account combination.
+For performance scenarios, per-account overrides, and advanced configuration see [docs/NONCE-MANAGER.md](./docs/NONCE-MANAGER.md).
 
 <a id="debug-logging"></a>
 
 ### Debug Logging
 
-ACME Love uses the [`debug`](https://www.npmjs.com/package/debug) module for structured logging. Debug output is automatically disabled in production unless explicitly enabled:
-
 ```bash
 # Enable all ACME Love debug output
 DEBUG=acme-love:* node your-app.js
 
-# Enable only nonce manager debug
-DEBUG=acme-love:nonce node your-app.js
-
-# Enable multiple specific components
-DEBUG=acme-love:nonce,acme-love:http node your-app.js
-
-# Available debug namespaces:
-# acme-love:nonce    - Nonce management operations
-# acme-love:http     - HTTP requests and responses
-# acme-love:challenge - Challenge solving process
-# acme-love:client   - Core client operations
-# acme-love:validator - Validation functions
+# Available namespaces: acme-love:nonce, acme-love:http, acme-love:challenge, acme-love:client, acme-love:validator
 ```
-
-```ts
-// Programmatic debug control
-import { enableDebug, disableDebug, isDebugEnabled } from 'acme-love';
-
-// Enable debug programmatically (useful for development)
-enableDebug();
-
-// Disable debug programmatically (useful for production)
-disableDebug();
-
-// Check if debug is enabled
-if (isDebugEnabled()) {
-  console.log('Debug logging is active');
-}
-```
-
-<a id="custom-nonce-manager-logging"></a>
-
-### Custom Nonce Manager Logging
-
-In previous versions, NonceManager accepted a custom `log` function for debugging. This has been replaced with the unified debug system. If you need custom logging behavior for nonce operations, you can intercept the debug output:
-
-```ts
-// New unified approach:
-import debug from 'debug';
-
-// Override the nonce debug function for custom formatting
-const originalNonceDebug = debug('acme-love:nonce');
-debug.enabled = () => true; // Force enable for custom handler
-
-// Custom nonce logging with your preferred logger
-const customNonceLogger = (...args: any[]) => {
-  logger.info('[nonce]', ...args); // Your custom logger
-  originalNonceDebug(...args); // Still call original if needed
-};
-
-// Replace the debug function globally
-debug('acme-love:nonce').log = customNonceLogger;
-```
-
-📖 **Detailed documentation**: [docs/NONCE-MANAGER.md](./docs/NONCE-MANAGER.md)
 
 <a id="advanced-validators-utilities"></a>
 
-## 🔍 Advanced Validators & Utilities
+## Advanced Validators & Utilities
 
 <a id="dns-validation-functions"></a>
 
@@ -1029,9 +850,9 @@ const result = await resolveAndValidateAcmeTxtAuthoritative(
 );
 
 if (result.ok) {
-  console.log('✅ DNS challenge validated');
+  console.log(' DNS challenge validated');
 } else {
-  console.log('❌ DNS validation failed:', result.error);
+  console.log(' DNS validation failed:', result.error);
 }
 
 // Standard DNS validation with fallback to public resolvers
@@ -1071,12 +892,12 @@ When using the CLI, ACME Love automatically handles file organization and config
 ```bash
 # Default directory structure created by CLI
 ./certificates/
-├── acme-love.com/
-│   ├── cert.pem          # Certificate chain
-│   ├── cert-key.json     # Certificate private key (JWK format)
-│   ├── cert.csr.pem      # Certificate signing request
-│   └── order.json        # ACME order details
-└── account-key.json      # ACME account keys (JWK format)
+ acme-love.com/
+ cert.pem # Certificate chain
+ cert-key.json # Certificate private key (JWK format)
+ cert.csr.pem # Certificate signing request
+ order.json # ACME order details
+ account-key.json # ACME account keys (JWK format)
 ```
 
 **CLI Configuration Defaults:**
@@ -1089,7 +910,7 @@ When using the CLI, ACME Love automatically handles file organization and config
 
 <a id="csr-generation"></a>
 
-## 🔧 CSR Generation
+## CSR Generation
 
 The `createAcmeCsr` helper generates everything needed for certificate finalization:
 
@@ -1162,7 +983,7 @@ const keyPair = await generateKeyPair(ecAlgo);
 
 <a id="supported-acme-providers"></a>
 
-## 🏢 Supported ACME Providers
+## Supported ACME Providers
 
 Built-in directory presets for major Certificate Authorities:
 
@@ -1189,16 +1010,16 @@ provider.zerossl.production.directoryUrl;
 
 | Provider              | EAB Required | Notes                                   |
 | --------------------- | ------------ | --------------------------------------- |
-| Let's Encrypt         | ❌ No        | Free, automatic registration            |
-| Buypass               | ⚠️ Optional  | Enhanced validation with EAB            |
-| Google Trust Services | ✅ Required  | Commercial service, register for access |
-| ZeroSSL               | ✅ Required  | Free tier available, EAB mandatory      |
+| Let's Encrypt         | No           | Free, automatic registration            |
+| Buypass               | Optional     | Enhanced validation with EAB            |
+| Google Trust Services | Required     | Commercial service, register for access |
+| ZeroSSL               | Required     | Free tier available, EAB mandatory      |
 
 Use `--eab-kid` and `--eab-hmac-key` CLI options or the `eab` parameter in `ensureRegistered()` for providers that require External Account Binding.
 
 <a id="client-initialization"></a>
 
-## 🔧 Client Initialization
+## Client Initialization
 
 ACME Love supports two convenient ways to initialize the `AcmeClient`:
 
@@ -1239,48 +1060,48 @@ const client3 = new AcmeClient('https://my-custom-ca.com/acme/directory');
 
 ### Benefits of Provider Presets
 
-✅ **Type Safety**: Full TypeScript support with autocomplete
-✅ **Validation**: Pre-validated directory URLs
-✅ **Convenience**: No need to remember complex URLs
-✅ **Consistency**: Standardized configuration across projects
-✅ **Updates**: Automatic URL updates with library updates
+**Type Safety**: Full TypeScript support with autocomplete
+**Validation**: Pre-validated directory URLs
+**Convenience**: No need to remember complex URLs
+**Consistency**: Standardized configuration across projects
+**Updates**: Automatic URL updates with library updates
 
 **Recommendation**: Use provider presets for standard CAs (Let's Encrypt, Google, etc.) and string URLs for custom or enterprise ACME directories.
 
 <a id="cli-features-showcase"></a>
 
-## 🎨 CLI Features Showcase
+## CLI Features Showcase
 
 <a id="beautiful-interactive-prompts"></a>
 
 ### Beautiful Interactive Prompts
 
-- 🎮 Full interactive mode with guided setup
-- 🌈 Colorful, emoji-rich interface using `@inquirer/prompts`
-- 🔧 Environment selection (staging/production/custom)
-- 📝 Challenge type selection (DNS-01/HTTP-01)
+- Full interactive mode with guided setup
+- Colorful, emoji-rich interface using `@inquirer/prompts`
+- Environment selection (staging/production/custom)
+- Challenge type selection (DNS-01/HTTP-01)
 
 <a id="smart-error-handling"></a>
 
 ### Smart Error Handling
 
-- 🔧 Maintenance detection with helpful messages
-- 📊 Links to service status pages
-- 💡 User-friendly error explanations
-- 🚨 Proper exit codes
+- Maintenance detection with helpful messages
+- Links to service status pages
+- User-friendly error explanations
+- Proper exit codes
 
 <a id="automatic-validation"></a>
 
 ### Automatic Validation
 
-- 🔍 DNS record verification with authoritative lookups
-- 🌐 HTTP challenge validation with `undici`
-- ⏳ Retry logic with progress indicators
-- ✅ Success confirmation
+- DNS record verification with authoritative lookups
+- HTTP challenge validation with `undici`
+- Retry logic with progress indicators
+- Success confirmation
 
 <a id="documentation"></a>
 
-## 📖 Documentation
+## Documentation
 
 - [CLI Documentation](./docs/CLI.md) - Complete CLI usage guide and examples
 - [API Documentation](./docs/) - Library API reference
@@ -1288,7 +1109,7 @@ const client3 = new AcmeClient('https://my-custom-ca.com/acme/directory');
 
 <a id="troubleshooting"></a>
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 <a id="common-issues"></a>
 
@@ -1304,10 +1125,10 @@ const client3 = new AcmeClient('https://my-custom-ca.com/acme/directory');
 **JWK Import/Export Issues**
 
 ```ts
-// ❌ Wrong algorithm specification
+// Wrong algorithm specification
 await crypto.subtle.importKey('jwk', jwkData, { name: 'ECDSA' }, false, ['sign']);
 
-// ✅ Correct algorithm with namedCurve
+// Correct algorithm with namedCurve
 await crypto.subtle.importKey('jwk', jwkData, { name: 'ECDSA', namedCurve: 'P-256' }, false, [
   'sign',
 ]);
@@ -1340,7 +1161,7 @@ if (process.env.NODE_ENV === 'production') {
 
 ```bash
 # If DNS propagation is slow, increase timeout in your waitFor function
-await new Promise(resolve => setTimeout(resolve, 30000));  // Wait 30s
+await new Promise(resolve => setTimeout(resolve, 30000)); // Wait 30s
 ```
 
 **File Permission Errors**
@@ -1352,22 +1173,22 @@ chmod 755 ./certificates/
 
 <a id="requirements"></a>
 
-## ⚡ Requirements
+## Requirements
 
 - **Node.js ≥ 20** (WebCrypto, modern URL, base64url support)
 - **TypeScript ≥ 5** (for development)
 
 <a id="performance-stress-testing"></a>
 
-## 🚀 Performance & Stress Testing
+## Performance & Stress Testing
 
-[🔝 Back to Top](#table-of-contents)
+[Back to Top](#table-of-contents)
 
 ACME Love undergoes regular stress tests (Let's Encrypt staging) across multiple load tiers. Below are the latest consolidated results pulled from the stress report artifacts (Quick / Standard / Heavy). They demonstrate scalability, nonce‑pool efficiency, and stability as order volume increases.
 
 <a id="consolidated-metrics-latest-run"></a>
 
-### 🔢 Consolidated Metrics (Latest Run)
+### Consolidated Metrics (Latest Run)
 
 | Tier         | Accounts | Orders/Acc | Total Orders | Total Time | Avg Resp | P50 | P95  | P99  | Requests | Req/s | Orders/s | Success | New-Nonce | Nonce Eff. | Saved Req. |
 | ------------ | -------- | ---------- | ------------ | ---------- | -------- | --- | ---- | ---- | -------- | ----- | -------- | ------- | --------- | ---------- | ---------- |
@@ -1379,7 +1200,7 @@ All tiers achieved 100% success. Heavy test maintains <500ms average latency and
 
 <a id="interpretation"></a>
 
-### 🧪 Interpretation
+### Interpretation
 
 - **100% Success Rate**: All test scenarios (Quick, Standard, Heavy) completed without errors.
 - **Stable Performance**: Average response time is <500ms even under heavy load (Heavy: 494ms, Standard: 451ms, Quick: 346ms).
@@ -1391,7 +1212,7 @@ All tiers achieved 100% success. Heavy test maintains <500ms average latency and
 
 <a id="key-optimizations"></a>
 
-### ⚙️ Key Optimizations
+### Key Optimizations
 
 - Rate limiting + exponential backoff (automatic HTTP 503 / Retry-After handling)
 - High‑efficiency nonce pool (dynamic refill + minimal new-nonce calls)
@@ -1400,7 +1221,7 @@ All tiers achieved 100% success. Heavy test maintains <500ms average latency and
 
 <a id="example-high-load-configuration"></a>
 
-### 🔍 Example High-Load Configuration
+### Example High-Load Configuration
 
 ```typescript
 const client = new AcmeClient(directoryUrl, {
@@ -1415,7 +1236,7 @@ const client = new AcmeClient(directoryUrl, {
 
 <a id="detailed-reports"></a>
 
-### 📈 Detailed Reports
+### Detailed Reports
 
 Comprehensive performance & reliability artifacts (human‑readable Markdown + machine‑readable JSON):
 
@@ -1429,15 +1250,15 @@ Each stress test report includes: latency distribution (P50/P75/P90/P95/P99), th
 
 <a id="running-the-tests"></a>
 
-### 🏃 Running the Tests
+### Running the Tests
 
 **Test Types**
 
-- 🔬 **Unit Tests**: Mock-based testing of individual components
-- 🌐 **Integration Tests**: Real requests to Let's Encrypt staging
-- ⚡ **Async Behavior Tests**: Concurrent operations and memory leak prevention
-- 🔄 **E2E Tests**: Full workflow testing with staging environment
-- 🚀 **Stress Tests**: High-volume production scenario validation (run separately)
+- **Unit Tests**: Mock-based testing of individual components
+- **Integration Tests**: Real requests to Let's Encrypt staging
+- **Async Behavior Tests**: Concurrent operations and memory leak prevention
+- **E2E Tests**: Full workflow testing with staging environment
+- **Stress Tests**: High-volume production scenario validation (run separately)
 
 ```bash
 
@@ -1445,29 +1266,29 @@ Each stress test report includes: latency distribution (P50/P75/P90/P95/P99), th
 npm test
 
 # Run specific test types
-npm run test:unit           # Unit tests only (skips e2e & stress)
-npm run test:e2e            # End-to-end tests (Let's Encrypt staging)
-npm run test:e2e:ci         # E2E for CI (requires ACME_E2E_ENABLED=1)
+npm run test:unit # Unit tests only (skips e2e & stress)
+npm run test:e2e # End-to-end tests (Let's Encrypt staging)
+npm run test:e2e:ci # E2E for CI (requires ACME_E2E_ENABLED=1)
 
 # Run with coverage report
 npm run test:coverage
 
 # Focused component tests
-npm run test:nonce-manager  # Nonce manager focused tests (in-band)
-npm run test:rate-limiting  # Rate limiting behavior & backoff
-npm run test:deadlock       # Deadlock detection / concurrency safety
+npm run test:nonce-manager # Nonce manager focused tests (in-band)
+npm run test:rate-limiting # Rate limiting behavior & backoff
+npm run test:deadlock # Deadlock detection / concurrency safety
 
 # Stress tiers (instrumented performance runs)
-npm run test:quick          # Quick tier (2 × 20 orders) ~7s
-npm run test:standard       # Standard tier (4 × 50 orders) ~16s
-npm run test:heavy          # Heavy tier (4 × 200 orders) ~60s
+npm run test:quick # Quick tier (2 × 20 orders) ~7s
+npm run test:standard # Standard tier (4 × 50 orders) ~16s
+npm run test:heavy # Heavy tier (4 × 200 orders) ~60s
 
-npm run test:deadlock       # Deadlock detection
+npm run test:deadlock # Deadlock detection
 # Full suite
-npm run test:all            # EVERYTHING (includes stress) – slower
+npm run test:all # EVERYTHING (includes stress) – slower
 ```
 
-**✅ Resolution**:
+** Resolution**:
 
 - Implemented comprehensive rate limiting system with HTTP 503 detection
 - Added exponential backoff with Retry-After header support
@@ -1477,35 +1298,35 @@ npm run test:all            # EVERYTHING (includes stress) – slower
 
 **Current Status**:
 
-- ✅ **100% success rate** in heavy stress testing
-- ✅ **Zero rate limit violations** with automatic backoff
-- ✅ **Production-ready** performance (25+ req/s sustained)
-- ✅ **Enterprise-scale** validation (400 concurrent operations)
-- ✅ **10x Performance Improvement**: Tests complete in 30-35s vs 5-10 minutes
+- **100% success rate** in heavy stress testing
+- **Zero rate limit violations** with automatic backoff
+- **Production-ready** performance (25+ req/s sustained)
+- **Enterprise-scale** validation (400 concurrent operations)
+- **10x Performance Improvement**: Tests complete in 30-35s vs 5-10 minutes
 
 <a id="test-coverage"></a>
 
-## 🧪 Test Coverage
+## Test Coverage
 
-[🔝 Back to Top](#table-of-contents)
+[Back to Top](#table-of-contents)
 
 ACME Love maintains comprehensive test coverage to ensure reliability and quality:
 
 **Test Statistics**
 
-- ✅ **60 Tests** across 18 test suites
-- ✅ **100% Passing** test rate
-- 📊 **Core Components Coverage:**
-  - `csr.ts`: **94.11%** (cryptographic operations)
-  - `nonce-manager.ts`: **68.03%** (pooling & concurrent access)
-  - `acme-directory.ts`: **83.33%** (directory operations)
-  - `acme-client-core.ts`: **93.75%** (core client functionality)
+- **60 Tests** across 18 test suites
+- **100% Passing** test rate
+- **Core Components Coverage:**
+- `csr.ts`: **94.11%** (cryptographic operations)
+- `nonce-manager.ts`: **68.03%** (pooling & concurrent access)
+- `acme-directory.ts`: **83.33%** (directory operations)
+- `acme-client-core.ts`: **93.75%** (core client functionality)
 
 **Note**: Stress tests are excluded from the default `npm test` command to keep CI/CD pipelines fast. They should be run manually or in dedicated test environments.
 
 <a id="test-account-management"></a>
 
-### 🔑 Test Account Management
+### Test Account Management
 
 ACME Love includes a sophisticated test account management system to avoid Let's Encrypt rate limits during development and testing:
 
@@ -1525,31 +1346,25 @@ npm run accounts cleanup 24
 
 **Benefits**:
 
-- ✅ Avoid Let's Encrypt's 50 registrations per IP per 3 hours limit
-- ✅ Faster test execution (reuse existing accounts)
-- ✅ Isolated accounts per test type
-- ✅ Automatic git ignore protection
+- Avoid Let's Encrypt's 50 registrations per IP per 3 hours limit
+- Faster test execution (reuse existing accounts)
+- Isolated accounts per test type
+- Automatic git ignore protection
 
-📋 **Detailed account management guide**: [TEST-ACCOUNT-MANAGEMENT.md](./docs/reports/TEST-ACCOUNT-MANAGEMENT.md)
+  **Detailed account management guide**: [TEST-ACCOUNT-MANAGEMENT.md](./docs/reports/TEST-ACCOUNT-MANAGEMENT.md)
 
 <a id="license"></a>
 
-## 📄 License
+## License
 
-ISC License - see [LICENSE](./LICENSE) file for details.
+MIT License - see [LICENSE](./LICENSE) file for details.
 
 <a id="contributing"></a>
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please read our contributing guidelines and submit pull requests.
 
 ---
 
-<div align="center">
-
-**Made with ❤️ for the Node.js community**
-
-[🔝 Back to Top](#table-of-contents) | [Report Issues](https://github.com/thebitrock/acme-love/issues) | [Request Features](https://github.com/thebitrock/acme-love/discussions)
-
-</div>
+[Back to Top](#table-of-contents) | [Report Issues](https://github.com/thebitrock/acme-love/issues) | [Request Features](https://github.com/thebitrock/acme-love/discussions)

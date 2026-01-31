@@ -1,8 +1,8 @@
-# Contributing to ACME Love 🔐
+# Contributing to ACME Love
 
 Thank you for your interest in contributing to acme-love! We welcome contributions from the community.
 
-## 🚀 Quick Start
+## Quick Start
 
 1. **Fork the repository**
 2. **Clone your fork**: `git clone https://github.com/thebitrock/acme-love.git`
@@ -11,7 +11,7 @@ Thank you for your interest in contributing to acme-love! We welcome contributio
 5. **Make your changes**
 6. **Submit a pull request**
 
-## 📋 Development Setup
+## Development Setup
 
 ### Prerequisites
 
@@ -34,20 +34,20 @@ npm install
 npm run build
 
 # Run tests
-npm test                    # Unit tests
-npm run test:e2e           # E2E tests (requires setup)
-npm run test:coverage     # Coverage report
+npm test # Unit tests
+npm run test:e2e # E2E tests (requires setup)
+npm run test:coverage # Coverage report
 
 # Code quality
-npm run lint              # Check code style
-npm run format           # Format code
+npm run lint # Check code style
+npm run format # Format code
 
 # CLI development
-npm run cli:help         # Test CLI
-npm run cli:staging      # Interactive staging mode
+npm run cli:help # Test CLI
+npm run cli:staging # Interactive staging mode
 ```
 
-## 🧪 Testing
+## Testing
 
 We have comprehensive test coverage:
 
@@ -71,7 +71,7 @@ npm run test:stress
 npm run test:coverage
 ```
 
-## 📝 Code Style
+## Code Style
 
 We use:
 
@@ -82,32 +82,35 @@ We use:
 ### Before submitting:
 
 ```bash
-npm run lint:check      # Check for issues
-npm run format:check    # Check formatting
-npm run test           # Ensure tests pass
+npm run lint:check # Check for issues
+npm run format:check # Check formatting
+npm run test # Ensure tests pass
 ```
 
-## 🐛 Bug Reports
+## Bug Reports
 
 When reporting bugs, please include:
 
 1. **Environment details**:
-   - Node.js version
-   - npm version
-   - Operating system
-   - acme-love version
+
+- Node.js version
+- npm version
+- Operating system
+- acme-love version
 
 2. **Reproduction steps**:
-   - Minimal code example
-   - Command that fails
-   - Expected vs actual behavior
+
+- Minimal code example
+- Command that fails
+- Expected vs actual behavior
 
 3. **Error details**:
-   - Full error message
-   - Stack trace (if available)
-   - Debug logs (`DEBUG=acme-love:* your-command`)
 
-## ✨ Feature Requests
+- Full error message
+- Stack trace (if available)
+- Debug logs (`DEBUG=acme-love:* your-command`)
+
+## Feature Requests
 
 For new features, please:
 
@@ -116,7 +119,7 @@ For new features, please:
 3. **Provide examples** of how it would work
 4. **Consider backwards compatibility**
 
-## 🔧 Pull Requests
+## Pull Requests
 
 ### Guidelines
 
@@ -156,7 +159,7 @@ docs(readme): update installation instructions
 test(e2e): add tests for EAB functionality
 ```
 
-## 📚 Documentation
+## Documentation
 
 Help us improve documentation by:
 
@@ -171,21 +174,21 @@ Documentation files:
 - `docs/` - Detailed guides
 - Code comments - Inline documentation
 
-## 🏗️ Architecture
+## Architecture
 
 ### Project Structure
 
 ```
 src/
-├── cli.ts              # CLI entry point
-├── index.ts            # Library entry point
-├── types.ts            # TypeScript definitions
-├── acme/               # ACME protocol implementation
-├── utils/              # Utility functions
-└── ...
+ cli.ts # CLI entry point
+ index.ts # Library entry point
+ types.ts # TypeScript definitions
+ acme/ # ACME protocol implementation
+ utils/ # Utility functions
+ ...
 
-__tests__/              # Test files
-docs/                   # Documentation
+__tests__/ # Test files
+docs/ # Documentation
 ```
 
 ### Key Components
@@ -196,7 +199,7 @@ docs/                   # Documentation
 - **CSR Generator**: Certificate signing request creation
 - **Validators**: Challenge validation helpers
 
-## 🎯 Areas for Contribution
+## Areas for Contribution
 
 We especially welcome contributions in:
 
@@ -207,7 +210,7 @@ We especially welcome contributions in:
 5. **Testing** - More comprehensive test coverage
 6. **Performance** - Optimizations and benchmarks
 
-## 🤝 Community
+## Community
 
 - **Security Email**: roman@pohorilchuk.com for security issues
 - **General Issues**: https://github.com/thebitrock/acme-love/issues
@@ -215,11 +218,11 @@ We especially welcome contributions in:
 - **Email**: roman@pohorilchuk.com for direct contact
 - **Maintainer**: Roman Pohorilchuk (@thebitrock)
 
-## 📄 License
+## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
 
-## 🙏 Recognition
+## Recognition
 
 Contributors are recognized in:
 
@@ -229,4 +232,4 @@ Contributors are recognized in:
 
 ---
 
-Happy coding! 🚀
+Thank you for contributing to ACME Love.

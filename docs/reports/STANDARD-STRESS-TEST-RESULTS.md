@@ -1,8 +1,8 @@
-# 🚀 ACME Love - Standard Stress Test Results
+# ACME Love - Standard Stress Test Results
 
 > High-level performance & reliability snapshot for ACME protocol operations under configured load.
 
-## 🧪 Test Configuration
+## Test Configuration
 
 | Field               | Value                     |
 | ------------------- | ------------------------- |
@@ -18,7 +18,7 @@
 | Node Version        | v22.18.0                  |
 | Package Version     | v1.7.0                    |
 
-## ⚙️ Performance Summary
+## Performance Summary
 
 | Metric           | Value          |
 | ---------------- | -------------- |
@@ -37,30 +37,30 @@
 | Error Count      | 0              |
 | Error Rate       | 0.00%          |
 
-### ⏱️ Latency Sparkline
+### Latency Sparkline
 
 ```
 Latency ms trend:
-▂▂▁▂▁▂▁▁▂▁▁▁▁▁▂▄▁▁▁▁▁▁▁▂▁▃▄▁▅▆▁▁▁▁▁▃▄▄▁▁▇▁
+
 ```
 
-### ✅ Threshold Validation
+### Threshold Validation
 
-| Metric            | Actual | Threshold  | Status  |
-| ----------------- | ------ | ---------- | ------- |
-| Success Rate      | 100.0% | >= 75.0%   | ✅ Pass |
-| Avg Response Time | 465 ms | <= 5000 ms | ✅ Pass |
-| Error Rate        | 0.00%  | <= 20.00%  | ✅ Pass |
-| Requests / Sec    | 42.91  | >= 1       | ✅ Pass |
+| Metric            | Actual | Threshold  | Status |
+| ----------------- | ------ | ---------- | ------ |
+| Success Rate      | 100.0% | >= 75.0%   | Pass   |
+| Avg Response Time | 465 ms | <= 5000 ms | Pass   |
+| Error Rate        | 0.00%  | <= 20.00%  | Pass   |
+| Requests / Sec    | 42.91  | >= 1       | Pass   |
 
-### 📊 Request Distribution
+### Request Distribution
 
 | Method | Count | Percent |
 | ------ | ----- | ------- |
 | POST   | 400   | 88.1%   |
 | HEAD   | 54    | 11.9%   |
 
-### 🔝 Top Endpoints
+### Top Endpoints
 
 | Endpoint      | Requests | Percent |
 | ------------- | -------- | ------- |
@@ -68,7 +68,7 @@ Latency ms trend:
 | authorization | 200      | 44.1%   |
 | new-nonce     | 54       | 11.9%   |
 
-### 🧩 Endpoint Breakdown (Let's Encrypt Staging)
+### Endpoint Breakdown (Let's Encrypt Staging)
 
 | Endpoint      | Requests | Percent |
 | ------------- | -------- | ------- |
@@ -76,7 +76,7 @@ Latency ms trend:
 | authorization | 200      | 44.1%   |
 | new-nonce     | 54       | 11.9%   |
 
-### 👥 Per-Account Performance
+### Per-Account Performance
 
 | Account | Requests | Percent of Total |
 | ------- | -------- | ---------------- |
@@ -85,7 +85,7 @@ Latency ms trend:
 | 3       | 114      | 25.1%            |
 | 4       | 114      | 25.1%            |
 
-### 🔐 Nonce Manager Performance
+### Nonce Manager Performance
 
 | Metric                     | Value    |
 | -------------------------- | -------- |
@@ -94,7 +94,7 @@ Latency ms trend:
 | Pool Efficiency            | 88%      |
 | Final Pool State           | 0 nonces |
 
-### ⏱️ Phase Breakdown
+### Phase Breakdown
 
 | Phase            | Duration (s) | Requests | Errors | Avg Resp (ms) |
 | ---------------- | ------------ | -------- | ------ | ------------- |
@@ -102,15 +102,15 @@ Latency ms trend:
 | Order Creation   | 9            | 454      | 0      | 465           |
 | Nonce Analysis   | 0            | 0        | 0      | 0             |
 
-### ⭐ Key Performance Indicators
+### Key Performance Indicators
 
-- ✅ Processed **200/200** orders (100.00%)
-- ✅ Sustained **42.91 req/s** & **18.90 orders/s**
-- ✅ Maintained **465 ms** avg response (P95 1255 ms, P99 1494 ms)
-- ✅ Nonce pooling avoided **400** extra requests (88% efficiency)
-- ✅ Zero errors observed
+- Processed **200/200** orders (100.00%)
+- Sustained **42.91 req/s** & **18.90 orders/s**
+- Maintained **465 ms** avg response (P95 1255 ms, P99 1494 ms)
+- Nonce pooling avoided **400** extra requests (88% efficiency)
+- Zero errors observed
 
-### 🧾 Stress Test Validation
+### Stress Test Validation
 
 This standard load stress test demonstrates that ACME Love handled **4 accounts** issuing **200 orders** while meeting defined SLA thresholds.
 

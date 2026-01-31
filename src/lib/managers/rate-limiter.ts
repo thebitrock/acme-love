@@ -5,6 +5,12 @@
  */
 
 import { debugRateLimit } from '../utils/debug.js';
+import {
+  RATE_LIMIT_MIN_INTERVAL_MS,
+  RATE_LIMIT_MAX_RETRIES,
+  RATE_LIMIT_BASE_DELAY_MS,
+  RATE_LIMIT_MAX_DELAY_MS,
+} from '../constants/defaults.js';
 
 export interface RateLimiterOptions {
   /** Maximum number of retry attempts (default: 3) */
@@ -52,13 +58,13 @@ export class RateLimiter {
   private readonly rateLimits = new Map<string, number>();
   private readonly pendingAcquires = new Map<string, Promise<void>>();
   private lastRequest = 0;
-  private readonly minInterval = 100; // Minimum 100ms between requests
+  private readonly minInterval = RATE_LIMIT_MIN_INTERVAL_MS;
 
   constructor(opts: RateLimiterOptions = {}) {
     this.opts = {
-      maxRetries: 3,
-      baseDelayMs: 1000,
-      maxDelayMs: 5 * 60 * 1000, // 5 minutes
+      maxRetries: RATE_LIMIT_MAX_RETRIES,
+      baseDelayMs: RATE_LIMIT_BASE_DELAY_MS,
+      maxDelayMs: RATE_LIMIT_MAX_DELAY_MS,
       respectRetryAfter: true,
       ...opts,
     };

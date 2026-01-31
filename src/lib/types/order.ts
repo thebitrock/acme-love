@@ -32,6 +32,22 @@ export interface AcmeIdentifier {
 }
 
 /**
+ * RFC 7807 Problem Document for ACME error responses
+ *
+ * @see https://datatracker.ietf.org/doc/html/rfc7807
+ */
+export interface AcmeProblem {
+  /** Problem type URI (e.g., "urn:ietf:params:acme:error:rateLimited") */
+  type?: string;
+  /** Human-readable error description */
+  detail?: string;
+  /** HTTP status code */
+  status?: number;
+  /** Sub-problems for compound errors */
+  subproblems?: AcmeProblem[];
+}
+
+/**
  * ACME Challenge according to RFC 8555
  */
 export interface AcmeChallenge {
@@ -46,7 +62,7 @@ export interface AcmeChallenge {
   /** Validation timestamp */
   validated?: string;
   /** Error information if validation failed */
-  error?: unknown;
+  error?: AcmeProblem;
 }
 
 /**
@@ -84,10 +100,12 @@ export interface AcmeOrder {
   /** Order URL (set by client) */
   url?: string;
   /** Error information if order failed */
-  error?: unknown;
+  error?: AcmeProblem;
 }
 
-// Backward compatibility with old naming
+/** @deprecated Use AcmeOrder instead */
 export type ACMEOrder = AcmeOrder;
+/** @deprecated Use AcmeChallenge instead */
 export type ACMEChallenge = AcmeChallenge;
+/** @deprecated Use AcmeAuthorization instead */
 export type ACMEAuthorization = AcmeAuthorization;

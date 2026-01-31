@@ -8,6 +8,13 @@ import { BadNonceError } from '../errors/acme-server-errors.js';
 import { createErrorFromProblem } from '../errors/factory.js';
 import type { ParsedResponseData } from '../transport/http-client.js';
 import { safeReadBody } from '../utils/index.js';
+import {
+  NONCE_MAX_AGE_MS,
+  NONCE_MAX_POOL_SIZE,
+  NONCE_PREFETCH_LOW_WATER,
+  NONCE_PREFETCH_HIGH_WATER,
+  NONCE_WAITER_TIMEOUT_MS,
+} from '../constants/defaults.js';
 import { debugNonce } from '../utils/debug.js';
 import { RateLimiter } from './rate-limiter.js';
 
@@ -72,10 +79,10 @@ export class NonceManager {
 
   constructor(opts: NonceManagerOptions) {
     this.opts = {
-      maxAgeMs: 120_000, // 2 minutes
-      maxPool: 32,
-      prefetchLowWater: 5,
-      prefetchHighWater: 10,
+      maxAgeMs: NONCE_MAX_AGE_MS,
+      maxPool: NONCE_MAX_POOL_SIZE,
+      prefetchLowWater: NONCE_PREFETCH_LOW_WATER,
+      prefetchHighWater: NONCE_PREFETCH_HIGH_WATER,
       rateLimiter: new RateLimiter(),
       ...opts,
     };
@@ -137,7 +144,7 @@ export class NonceManager {
       };
 
       // Add timeout for waiter
-      const timeoutMs = 30_000;
+      const timeoutMs = NONCE_WAITER_TIMEOUT_MS;
       waiter.timeout = setTimeout(() => {
         const current = this.pending.get(namespace) || [];
         const idx = current.indexOf(waiter);
