@@ -4,12 +4,12 @@
 
 We actively support the following versions of acme-love:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.5.x   | :white_check_mark: |
-| 1.4.x   | :white_check_mark: |
-| 1.3.x   | :x:                |
-| < 1.3   | :x:                |
+| Version | Supported          | Status              |
+| ------- | ------------------ | ------------------- |
+| 2.x.x   | :white_check_mark: | Current (latest)    |
+| 1.7.x   | :white_check_mark: | Maintenance mode    |
+| 1.6.x   | :white_check_mark: | Maintenance mode    |
+| < 1.6   | :x:                | No longer supported |
 
 ## Reporting a Vulnerability
 

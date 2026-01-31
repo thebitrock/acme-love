@@ -3,7 +3,12 @@
 [![NPM Version](https://img.shields.io/npm/v/acme-love.svg)](https://www.npmjs.com/package/acme-love)
 [![NPM Downloads](https://img.shields.io/npm/dm/acme-love.svg)](https://www.npmjs.com/package/acme-love)
 [![License](https://img.shields.io/npm/l/acme-love.svg)](https://github.com/thebitrock/acme-love/blob/main/LICENSE)
+[![CI Status](https://github.com/thebitrock/acme-love/workflows/CI%20&%20Release/badge.svg)](https://github.com/thebitrock/acme-love/actions)
+[![GitHub Stars](https://img.shields.io/github/stars/thebitrock/acme-love?style=social)](https://github.com/thebitrock/acme-love)
+[![Bundle Size](https://img.shields.io/bundlephobia/min/acme-love)](https://bundlephobia.com/package/acme-love)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Node.js Version](https://img.shields.io/node/v/acme-love.svg)](https://nodejs.org/)
+[![Provenance](https://img.shields.io/badge/provenance-enabled-brightgreen)](https://www.npmjs.com/package/acme-love)
 
 **Modern, strongly-typed ACME (RFC 8555) toolkit for Node.js 20+**
 
@@ -97,6 +102,14 @@ const ready = await account.solveHttp01(order, {
 | **Modern Crypto**    | ECDSA (P-256/384/521) and RSA (2048/3072/4096)    |
 | **Performance**      | Nonce pooling, concurrent operations              |
 | **Type Safety**      | Full TypeScript support with strict typing        |
+
+## Package Size
+
+- **Packed size**: 91.6 kB (gzipped for npm registry)
+- **Unpacked size**: 407.4 kB
+- **Dependencies**: 7 runtime dependencies
+- **Tree-shakeable**: Yes (ESM with `sideEffects: false`)
+- **TypeScript types**: Included (no @types package needed)
 
 ## Supported Providers
 
