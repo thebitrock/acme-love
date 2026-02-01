@@ -1,10 +1,9 @@
 <div align="center">
 
-# ACME Love
+# acme-love
 
-**Modern, strongly‑typed ACME (RFC 8555) toolkit for Node.js 20+**
-
-Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certificate Authorities
+ACME v2 client (RFC 8555) for Let's Encrypt
+TypeScript-first · Node.js · CLI
 
 [![NPM Version](https://img.shields.io/npm/v/acme-love.svg)](https://www.npmjs.com/package/acme-love)
 [![NPM License](https://img.shields.io/npm/l/acme-love.svg)](https://github.com/thebitrock/acme-love/blob/main/LICENSE)
@@ -12,6 +11,8 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 [![Coverage](https://img.shields.io/badge/coverage-94%25%20CSR%20%7C%2069%25%20NonceManager-green.svg)](https://github.com/thebitrock/acme-love)
 
 </div>
+
+A Node.js / TypeScript ACME client for certificate automation with Let's Encrypt and other ACME-compliant CAs. Supports DNS-01 and HTTP-01 validation, wildcard domains, and External Account Binding (EAB).
 
 <a id="table-of-contents"></a>
 
@@ -43,6 +44,10 @@ Powerful CLI tool + TypeScript library for Let's Encrypt and other ACME Certific
 - [Client Initialization](#client-initialization)
 - [CLI Features Showcase](#cli-features-showcase)
 - [Documentation](#documentation)
+- [ACME Client for TypeScript](#acme-client-for-typescript)
+- [Let's Encrypt ACME CLI](#lets-encrypt-acme-cli)
+- [RFC 8555 Compliance](#rfc-8555-compliance)
+- [Comparison with Other ACME Clients](#comparison-with-other-acme-clients)
 - [Troubleshooting](#troubleshooting)
 - [Requirements](#requirements)
 - [Performance & Stress Testing](#performance-stress-testing)
@@ -1106,6 +1111,42 @@ const client3 = new AcmeClient('https://my-custom-ca.com/acme/directory');
 - [CLI Documentation](./docs/CLI.md) - Complete CLI usage guide and examples
 - [API Documentation](./docs/) - Library API reference
 - [Examples](./examples/) - Code examples and use cases
+
+<a id="acme-client-for-typescript"></a>
+
+## ACME Client for TypeScript
+
+acme-love is a TypeScript-first ACME client built with full type safety in mind. Every API surface — from account registration to certificate finalization — is fully typed, giving you autocomplete and compile-time checks out of the box. The library exports granular types such as `AcmeEcAlgorithm`, `AcmeRsaAlgorithm`, `AcmeCertificateAlgorithm`, and all RFC 8555 response shapes, so you can integrate ACME certificate automation into any TypeScript project with confidence.
+
+<a id="lets-encrypt-acme-cli"></a>
+
+## Let's Encrypt ACME CLI
+
+The `acme-love` CLI lets you obtain Let's Encrypt certificates from the terminal in a single command. Run `npx acme-love interactive --staging` for a guided wizard, or use `acme-love cert` for non-interactive automation in CI/CD pipelines. The CLI supports DNS-01 and HTTP-01 challenges, wildcard domains, custom CAs, and External Account Binding — everything you need to automate Let's Encrypt certificate issuance without writing code.
+
+<a id="rfc-8555-compliance"></a>
+
+## RFC 8555 Compliance
+
+acme-love implements the ACME protocol as defined in [RFC 8555](https://www.rfc-editor.org/rfc/rfc8555). This includes the full order lifecycle (newAccount, newOrder, authorization, challenge, finalize, certificate download), JWS-signed requests with nonce replay protection, `problem+json` error handling, and Retry-After / rate-limit awareness. The library also supports RFC 8555 External Account Binding (EAB) for commercial CAs like ZeroSSL and Google Trust Services.
+
+<a id="comparison-with-other-acme-clients"></a>
+
+## Comparison with Other ACME Clients
+
+| Feature | **acme-love** | **acme-client** | **greenlock** | **certbot** |
+| --- | --- | --- | --- | --- |
+| Language | TypeScript / Node.js | Node.js | Node.js | Python |
+| TypeScript types | Built-in | Community | No | N/A |
+| CLI included | Yes | No | Yes | Yes |
+| DNS-01 / HTTP-01 | Both | Both | Both | Both |
+| Wildcard support | Yes | Yes | Yes | Yes |
+| EAB support | Yes | Limited | No | Yes |
+| Nonce pooling | Yes | No | No | No |
+| ESM native | Yes | Yes | No | N/A |
+| Multiple CAs | Let's Encrypt, ZeroSSL, Google, Buypass | Let's Encrypt | Let's Encrypt | Let's Encrypt |
+
+acme-love focuses on a modern, typed developer experience with built-in CLI, nonce pooling for high-throughput scenarios, and first-class support for multiple ACME-compliant Certificate Authorities. If you are migrating from `acme-client`, `greenlock`, or `certbot`, the programmatic API and CLI cover the same core workflows with additional TypeScript safety and multi-CA support.
 
 <a id="troubleshooting"></a>
 

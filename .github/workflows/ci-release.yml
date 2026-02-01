@@ -91,7 +91,7 @@ jobs:
           npm whoami
 
       - name: Build
-        run: npm run build
+        run: npm run build:prod
 
       - name: Release (semantic-release)
         run: npx --no-install semantic-release
