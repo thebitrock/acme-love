@@ -1,3 +1,9 @@
+## [2.3.2](https://github.com/thebitrock/acme-love/compare/v2.3.1...v2.3.2) (2026-02-01)
+
+### Bug Fixes
+
+- improve formatting in companion packages section of README ([15bbf3d](https://github.com/thebitrock/acme-love/commit/15bbf3d9f8c99de081805542c4a0ce78c0a2684f))
+
 ## [2.3.1](https://github.com/thebitrock/acme-love/compare/v2.3.0...v2.3.1) (2026-02-01)
 
 ### Bug Fixes
