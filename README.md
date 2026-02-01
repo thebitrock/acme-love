@@ -1134,17 +1134,17 @@ acme-love implements the ACME protocol as defined in [RFC 8555](https://www.rfc-
 
 ## Comparison with Other ACME Clients
 
-| Feature | **acme-love** | **acme-client** | **greenlock** | **certbot** |
-| --- | --- | --- | --- | --- |
-| Language | TypeScript / Node.js | Node.js | Node.js | Python |
-| TypeScript types | Built-in | Community | No | N/A |
-| CLI included | Yes | No | Yes | Yes |
-| DNS-01 / HTTP-01 | Both | Both | Both | Both |
-| Wildcard support | Yes | Yes | Yes | Yes |
-| EAB support | Yes | Limited | No | Yes |
-| Nonce pooling | Yes | No | No | No |
-| ESM native | Yes | Yes | No | N/A |
-| Multiple CAs | Let's Encrypt, ZeroSSL, Google, Buypass | Let's Encrypt | Let's Encrypt | Let's Encrypt |
+| Feature          | **acme-love**                           | **acme-client** | **greenlock** | **certbot**   |
+| ---------------- | --------------------------------------- | --------------- | ------------- | ------------- |
+| Language         | TypeScript / Node.js                    | Node.js         | Node.js       | Python        |
+| TypeScript types | Built-in                                | Community       | No            | N/A           |
+| CLI included     | Yes                                     | No              | Yes           | Yes           |
+| DNS-01 / HTTP-01 | Both                                    | Both            | Both          | Both          |
+| Wildcard support | Yes                                     | Yes             | Yes           | Yes           |
+| EAB support      | Yes                                     | Limited         | No            | Yes           |
+| Nonce pooling    | Yes                                     | No              | No            | No            |
+| ESM native       | Yes                                     | Yes             | No            | N/A           |
+| Multiple CAs     | Let's Encrypt, ZeroSSL, Google, Buypass | Let's Encrypt   | Let's Encrypt | Let's Encrypt |
 
 acme-love focuses on a modern, typed developer experience with built-in CLI, nonce pooling for high-throughput scenarios, and first-class support for multiple ACME-compliant Certificate Authorities. If you are migrating from `acme-client`, `greenlock`, or `certbot`, the programmatic API and CLI cover the same core workflows with additional TypeScript safety and multi-CA support.
 
