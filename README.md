@@ -1119,10 +1119,10 @@ const client3 = new AcmeClient('https://my-custom-ca.com/acme/directory');
 
 Official companion packages for automated DNS-01 challenge solving:
 
-| Package | Description |
-| --- | --- |
+| Package                                                                    | Description                                                                   |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | [acme-love-cloudflare](https://www.npmjs.com/package/acme-love-cloudflare) | Cloudflare DNS-01 solver — create and clean up TXT records via Cloudflare API |
-| [acme-love-route53](https://www.npmjs.com/package/acme-love-route53) | AWS Route 53 DNS-01 solver — automate TXT records via AWS SDK |
+| [acme-love-route53](https://www.npmjs.com/package/acme-love-route53)       | AWS Route 53 DNS-01 solver — automate TXT records via AWS SDK                 |
 
 ```typescript
 import { createCloudflareDns01Solver } from 'acme-love-cloudflare';
