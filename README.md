@@ -44,6 +44,7 @@ A Node.js / TypeScript ACME client for certificate automation with Let's Encrypt
 - [Client Initialization](#client-initialization)
 - [CLI Features Showcase](#cli-features-showcase)
 - [Documentation](#documentation)
+- [Ecosystem](#ecosystem)
 - [ACME Client for TypeScript](#acme-client-for-typescript)
 - [Let's Encrypt ACME CLI](#lets-encrypt-acme-cli)
 - [RFC 8555 Compliance](#rfc-8555-compliance)
@@ -1111,6 +1112,26 @@ const client3 = new AcmeClient('https://my-custom-ca.com/acme/directory');
 - [CLI Documentation](./docs/CLI.md) - Complete CLI usage guide and examples
 - [API Documentation](./docs/) - Library API reference
 - [Examples](./examples/) - Code examples and use cases
+
+<a id="ecosystem"></a>
+
+## Ecosystem
+
+Official companion packages for automated DNS-01 challenge solving:
+
+| Package                                                                    | Description                                                                   |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [acme-love-cloudflare](https://www.npmjs.com/package/acme-love-cloudflare) | Cloudflare DNS-01 solver — create and clean up TXT records via Cloudflare API |
+| [acme-love-route53](https://www.npmjs.com/package/acme-love-route53)       | AWS Route 53 DNS-01 solver — automate TXT records via AWS SDK                 |
+
+```typescript
+import { createCloudflareDns01Solver } from 'acme-love-cloudflare';
+// or
+import { createRoute53Dns01Solver } from 'acme-love-route53';
+
+const solver = createCloudflareDns01Solver({ apiToken: process.env.CF_API_TOKEN! });
+const ready = await account.solveDns01(order, solver);
+```
 
 <a id="acme-client-for-typescript"></a>
 
