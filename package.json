@@ -1,6 +1,6 @@
 {
   "name": "acme-love",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "ACME v2 client (RFC 8555) for Let's Encrypt — TypeScript, Node.js, CLI",
   "main": "dist/index.js",
   "type": "module",

@@ -1,3 +1,9 @@
+## [2.3.1](https://github.com/thebitrock/acme-love/compare/v2.3.0...v2.3.1) (2026-02-01)
+
+### Bug Fixes
+
+- improve formatting in comparison table of README ([6f42b61](https://github.com/thebitrock/acme-love/commit/6f42b61b41799cff1ff88ba18637fcd17f1bbfbb))
+
 ## [2.3.0](https://github.com/thebitrock/acme-love/compare/v2.2.1...v2.3.0) (2026-02-01)
 
 ### Features
