@@ -1,3 +1,15 @@
+## [2.3.0](https://github.com/thebitrock/acme-love/compare/v2.2.1...v2.3.0) (2026-02-01)
+
+### Features
+
+- enhance README with detailed sections on TypeScript client, Let's Encrypt CLI, RFC 8555 compliance, and comparison with other ACME clients ([988a5a4](https://github.com/thebitrock/acme-love/commit/988a5a487f2bbdaf85caf61c5af2c217640c12a4))
+- update package description and enhance keywords for better discoverability ([c0ef4e6](https://github.com/thebitrock/acme-love/commit/c0ef4e69001ef7adf7e2867cb47c7832cccfd3b7))
+- update README and NPM-README with improved descriptions and formatting ([c65bbf7](https://github.com/thebitrock/acme-love/commit/c65bbf703c4ef3e9bf6f5551832024bb1b416173))
+
+### Bug Fixes
+
+- update build process and paths for production build ([e86099e](https://github.com/thebitrock/acme-love/commit/e86099e5cbe1d2b5e9598c24658f0dd223c05762))
+
 ## [2.2.1](https://github.com/thebitrock/acme-love/compare/v2.2.0...v2.2.1) (2026-01-31)
 
 ### Bug Fixes
