@@ -102,7 +102,13 @@ jobs:
       - name: Test with coverage
         run: npm run test:coverage
 
-      - name: Upload coverage report
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          directory: coverage/
+          fail_ci_if_error: false
+
+      - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
