@@ -55,7 +55,7 @@ export class AcmeHttpClient {
     return headers;
   }
 
-  async get(url: string, headers: Record<string, string> = {}): Promise<ParsedResponseData> {
+  public async get(url: string, headers: Record<string, string> = {}): Promise<ParsedResponseData> {
     AcmeHttpClient.ensureHttps(url);
     headers = this.ensureUserAgent({ ...headers });
     debugHttp('GET %s init headers=%j', url, headers);
@@ -84,7 +84,7 @@ export class AcmeHttpClient {
     }
   }
 
-  async post<T>(
+  public async post<T>(
     url: string,
     body: unknown,
     headers: Record<string, string> = {},
@@ -139,7 +139,7 @@ export class AcmeHttpClient {
     }
   }
 
-  async head(
+  public async head(
     url: string,
     headers: Record<string, string> = {},
   ): Promise<Omit<Dispatcher.ResponseData, 'body'> & { body: void }> {

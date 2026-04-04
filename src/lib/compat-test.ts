@@ -21,14 +21,14 @@ export class NonceManagerCompat {
   /**
    * Legacy take() method - maps to new get() method
    */
-  async take(namespace: string): Promise<string> {
+  public async take(namespace: string): Promise<string> {
     return this.nonce.get(namespace);
   }
 
   /**
    * Legacy withNonceRetry method - simplified implementation for tests
    */
-  async withNonceRetry<T>(namespace: string, fn: (nonce: string) => Promise<T>): Promise<T> {
+  public async withNonceRetry<T>(namespace: string, fn: (nonce: string) => Promise<T>): Promise<T> {
     let lastError: Error | undefined;
 
     // Try up to 2 times for badNonce retry
@@ -62,14 +62,14 @@ export class NonceManagerCompat {
   /**
    * Get pool size for compatibility
    */
-  getPoolSize(namespace: string): number {
+  public getPoolSize(namespace: string): number {
     return this.nonce.getStats(namespace).poolSize;
   }
 
   /**
    * Legacy static method - creates namespace string
    */
-  static makeNamespace(namespace: string): string {
+  public static makeNamespace(namespace: string): string {
     return namespace;
   }
 }
@@ -87,7 +87,7 @@ export class RateLimiterCompat {
   /**
    * Legacy executeWithRateLimit method
    */
-  async executeWithRateLimit<T>(fn: () => Promise<T>): Promise<T> {
+  public async executeWithRateLimit<T>(fn: () => Promise<T>): Promise<T> {
     await this.rateLimiter.acquire();
     return fn();
   }
@@ -95,7 +95,7 @@ export class RateLimiterCompat {
   /**
    * Legacy getKnownEndpoints method - returns mock data for tests
    */
-  static getKnownEndpoints(): Record<string, string> {
+  public static getKnownEndpoints(): Record<string, string> {
     return {
       'new-account': '/acme/new-account',
       'new-order': '/acme/new-order',

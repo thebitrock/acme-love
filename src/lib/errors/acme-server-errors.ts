@@ -1,11 +1,11 @@
 import { ACME_ERROR } from './codes.js';
 
 export class AcmeError extends Error {
-  type: string;
-  detail: string;
-  subproblems?: AcmeError[] | undefined;
-  status?: number | undefined;
-  instance: string | undefined;
+  public type: string;
+  public detail: string;
+  public subproblems?: AcmeError[] | undefined;
+  public status?: number | undefined;
+  public instance: string | undefined;
 
   constructor(
     detail: string,
@@ -22,7 +22,7 @@ export class AcmeError extends Error {
     this.instance = opts?.instance;
   }
 
-  toJSON(): Record<string, unknown> {
+  public toJSON(): Record<string, unknown> {
     const res: Record<string, unknown> = { type: this.type, detail: this.detail };
 
     if (this.status !== undefined) {
@@ -40,7 +40,7 @@ export class AcmeError extends Error {
     return res;
   }
 
-  addSubproblem(error: AcmeError): this {
+  public addSubproblem(error: AcmeError): this {
     (this.subproblems ??= []).push(error);
 
     return this;
@@ -120,7 +120,7 @@ export class BadRevocationReasonError extends AcmeError {
  * Error indicating that the JWS was signed with an algorithm the server does not support
  */
 export class BadSignatureAlgorithmError extends AcmeError {
-  algorithms?: string[]; // List of supported algorithms
+  public algorithms?: string[]; // List of supported algorithms
 
   constructor(
     detail = 'The JWS was signed with an algorithm the server does not support',
@@ -132,7 +132,7 @@ export class BadSignatureAlgorithmError extends AcmeError {
     this.algorithms = algorithms || [];
   }
 
-  override toJSON(): Record<string, unknown> {
+  public override toJSON(): Record<string, unknown> {
     const result = super.toJSON() as Record<string, unknown>;
 
     if (this.algorithms && this.algorithms.length > 0) {
@@ -165,7 +165,7 @@ export class CompoundError extends AcmeError {
     this.type = ACME_ERROR.compound;
   }
 
-  override toString(): string {
+  public override toString(): string {
     const header = `${this.constructor.name}: ${this.detail}`;
     if (!this.subproblems || this.subproblems.length === 0) return header;
     const lines = this.subproblems.map((s, i) => `  ${i + 1}. [${s.type}] ${s.detail}`);
@@ -259,7 +259,7 @@ export class OrderNotReadyError extends AcmeError {
  * Error indicating that the request exceeds a rate limit
  */
 export class RateLimitedError extends AcmeError {
-  retryAfter: Date | undefined;
+  public retryAfter: Date | undefined;
 
   constructor(detail = 'The request exceeds a rate limit', status = 429, retryAfter?: Date) {
     super(detail, status);
@@ -270,7 +270,7 @@ export class RateLimitedError extends AcmeError {
   /**
    * Get the Retry-After value in seconds
    */
-  getRetryAfterSeconds(): number | undefined {
+  public getRetryAfterSeconds(): number | undefined {
     if (!this.retryAfter) {
       return undefined;
     }
@@ -281,7 +281,7 @@ export class RateLimitedError extends AcmeError {
     return Math.max(0, seconds);
   }
 
-  override toJSON(): Record<string, unknown> {
+  public override toJSON(): Record<string, unknown> {
     const result = super.toJSON() as Record<string, unknown>;
 
     if (this.retryAfter) {
@@ -325,9 +325,9 @@ export class ServerMaintenanceError extends AcmeError {
     this.isMaintenanceError = true;
   }
 
-  isMaintenanceError: boolean;
+  public isMaintenanceError: boolean;
 
-  override toString(): string {
+  public override toString(): string {
     return (
       `${this.constructor.name}: ${this.detail}\n` +
       `🔧 The ACME server is currently under maintenance.\n` +

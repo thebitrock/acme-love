@@ -55,6 +55,31 @@ export default [
       '@typescript-eslint/ban-ts-comment': ['warn', { 'ts-ignore': 'allow-with-description' }],
     },
   },
+  // Stricter rules for library code (src/lib/), excluding example/demo/compat helpers
+  {
+    files: ['src/lib/**/*.ts'],
+    ignores: ['src/lib/demo.ts', 'src/lib/example.ts', 'src/lib/compat-test.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/explicit-function-return-type': [
+        'error',
+        {
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+          allowHigherOrderFunctions: true,
+          allowDirectConstAssertionInArrowFunctions: true,
+        },
+      ],
+      '@typescript-eslint/explicit-member-accessibility': [
+        'error',
+        {
+          accessibility: 'explicit',
+          overrides: { constructors: 'no-public' },
+        },
+      ],
+    },
+  },
   {
     files: ['__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
     languageOptions: {

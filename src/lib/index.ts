@@ -154,3 +154,21 @@ export { REVOCATION_REASON, type RevocationReasonValue } from './constants/statu
 // Utils
 export { safeReadBody, pemToBase64Url } from './utils/index.js';
 export { buildUserAgent, getPackageInfo, type PackageInfo } from './utils/user-agent.js';
+
+// Branded types for compile-time safety
+export type {
+  AccountUrl,
+  Nonce,
+  Base64UrlString,
+  PemString,
+  ChallengeToken,
+  DirectoryUrl,
+} from './types/branded.js';
+export {
+  asAccountUrl,
+  asNonce,
+  asBase64Url,
+  asPem,
+  asChallengeToken,
+  asDirectoryUrl,
+} from './types/branded.js';

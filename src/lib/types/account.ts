@@ -20,7 +20,7 @@ export interface AcmeAccountObject {
   /** Terms of service agreement */
   termsOfServiceAgreed?: boolean;
   /** External account binding */
-  externalAccountBinding?: any;
+  externalAccountBinding?: Record<string, unknown>;
   /** Account creation date */
   createdAt?: string;
   /** Account orders URL */
@@ -50,5 +50,5 @@ export interface AcmeProblemDetails {
   /** Problem instance URI */
   instance?: string;
   /** Additional problem-specific data */
-  [key: string]: any;
+  [key: string]: unknown;
 }

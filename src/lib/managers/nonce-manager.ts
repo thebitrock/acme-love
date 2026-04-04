@@ -97,7 +97,7 @@ export class NonceManager {
    * @throws {BadNonceError} When nonce fetch fails
    * @throws {RateLimitError} When rate limited
    */
-  async get(namespace = 'default'): Promise<string> {
+  public async get(namespace = 'default'): Promise<string> {
     debugNonce('NonceManager.get() namespace=%s', namespace);
 
     // Clean stale nonces first
@@ -367,7 +367,7 @@ export class NonceManager {
    * @param namespace - Namespace to get stats for (default: 'default')
    * @returns Pool statistics
    */
-  getStats(namespace = 'default'): { poolSize: number; prefetching: boolean } {
+  public getStats(namespace = 'default'): { poolSize: number; prefetching: boolean } {
     const pool = this.pool.get(namespace) || [];
     return {
       poolSize: pool.length,
@@ -378,7 +378,7 @@ export class NonceManager {
   /**
    * Clear all nonces from all namespaces
    */
-  clear(): void {
+  public clear(): void {
     this.pool.clear();
     this.pending.clear();
     this.refilling.clear();
@@ -398,7 +398,7 @@ export class NonceManager {
    *
    * @param namespace - Namespace to clear
    */
-  clearNamespace(namespace: string): void {
+  public clearNamespace(namespace: string): void {
     this.pool.delete(namespace);
 
     // Clear timeouts for pending waiters in this namespace
@@ -418,7 +418,7 @@ export class NonceManager {
    * Execute an ACME request with automatic retry on `badNonce`.
    * The last response (even if badNonce) is returned if retries are exhausted.
    */
-  async withNonceRetry(
+  public async withNonceRetry(
     namespace: string,
     fn: (nonce: string) => Promise<ParsedResponseData>,
     maxAttempts = 3,

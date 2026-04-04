@@ -108,21 +108,21 @@ export class AcmeAccount {
   }
 
   /** Account key pair */
-  get keys(): AccountKeys {
+  public get keys(): AccountKeys {
     return this.signer.keys;
   }
 
   /** Account key identifier (set after registration) */
-  get kid(): string | undefined {
+  public get kid(): string | undefined {
     return this.signer.kid || undefined;
   }
 
-  set kid(value: string) {
+  public set kid(value: string) {
     this.signer.kid = value;
   }
 
   /** Get the ACME directory for this account's client */
-  async getDirectory(): Promise<AcmeDirectory> {
+  public async getDirectory(): Promise<AcmeDirectory> {
     return this.signer.getDirectory();
   }
 
@@ -131,7 +131,10 @@ export class AcmeAccount {
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.3
    */
-  async register({ contact, termsOfServiceAgreed }: AcmeAccountRegistrationPayload): Promise<{
+  public async register({
+    contact,
+    termsOfServiceAgreed,
+  }: AcmeAccountRegistrationPayload): Promise<{
     accountUrl: string;
     account: Record<string, unknown>;
   }> {
@@ -187,7 +190,7 @@ export class AcmeAccount {
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.3.2
    */
-  async getAccount(): Promise<Record<string, unknown>> {
+  public async getAccount(): Promise<Record<string, unknown>> {
     if (!this.signer.kid) {
       throw AccountError.notRegistered();
     }
@@ -206,7 +209,7 @@ export class AcmeAccount {
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-6.3
    */
-  async fetch<T>(url: string): Promise<T> {
+  public async fetch<T>(url: string): Promise<T> {
     const response = await this.signer.signedPost(url, null);
 
     if (response.statusCode !== 200) {
@@ -221,25 +224,25 @@ export class AcmeAccount {
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-8.1
    */
-  async keyAuthorization(token: string): Promise<string> {
+  public async keyAuthorization(token: string): Promise<string> {
     return this.signer.keyAuthorization(token);
   }
 
   // --- Order management (delegated to AcmeOrderManager) ---
 
-  async createOrder(identifiers: string[]): Promise<AcmeOrder> {
+  public async createOrder(identifiers: string[]): Promise<AcmeOrder> {
     return this.orders.createOrder(identifiers);
   }
 
-  async finalize(order: AcmeOrder, csrDerBase64Url: string): Promise<AcmeOrder> {
+  public async finalize(order: AcmeOrder, csrDerBase64Url: string): Promise<AcmeOrder> {
     return this.orders.finalize(order, csrDerBase64Url);
   }
 
-  async waitOrder(order: AcmeOrder, targetStatuses: AcmeOrderStatus[]): Promise<AcmeOrder> {
+  public async waitOrder(order: AcmeOrder, targetStatuses: AcmeOrderStatus[]): Promise<AcmeOrder> {
     return this.orders.waitOrder(order, targetStatuses);
   }
 
-  async downloadCertificate(order: AcmeOrder): Promise<string> {
+  public async downloadCertificate(order: AcmeOrder): Promise<string> {
     return this.orders.downloadCertificate(order);
   }
 
@@ -250,7 +253,7 @@ export class AcmeAccount {
    * @param reason - Optional RFC 5280 CRL reason code (0-5)
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.6
    */
-  async revokeCertificate(certificatePem: string, reason?: number): Promise<void> {
+  public async revokeCertificate(certificatePem: string, reason?: number): Promise<void> {
     const directory = await this.getDirectory();
     const derBase64Url = pemToBase64Url(certificatePem);
 
@@ -268,7 +271,7 @@ export class AcmeAccount {
 
   // --- Challenge solving (delegated to AcmeChallengeSolver) ---
 
-  async getAuthorization(authzUrl: string): Promise<AcmeAuthorization> {
+  public async getAuthorization(authzUrl: string): Promise<AcmeAuthorization> {
     const response = await this.signer.signedPost(authzUrl, null);
 
     if (response.statusCode !== 200) {
@@ -278,15 +281,15 @@ export class AcmeAccount {
     return response.body as AcmeAuthorization;
   }
 
-  async getChallenge(challengeUrl: string): Promise<AcmeChallenge> {
+  public async getChallenge(challengeUrl: string): Promise<AcmeChallenge> {
     return this.challenges.getChallenge(challengeUrl);
   }
 
-  async acceptChallenge(challengeUrl: string): Promise<AcmeChallenge> {
+  public async acceptChallenge(challengeUrl: string): Promise<AcmeChallenge> {
     return this.challenges.acceptChallenge(challengeUrl);
   }
 
-  async solveDns01(
+  public async solveDns01(
     order: AcmeOrder,
     opts: {
       waitFor: (preparation: ChallengePreparation) => Promise<void>;
@@ -296,7 +299,7 @@ export class AcmeAccount {
     return this.challenges.solveDns01(order, opts);
   }
 
-  async solveHttp01(
+  public async solveHttp01(
     order: AcmeOrder,
     opts: {
       waitFor: (preparation: ChallengePreparation) => Promise<void>;
