@@ -42,7 +42,7 @@ Two entry points:
 | Layer           | Path                                                                                                               | Purpose                                                                                                                                                                                    |
 | --------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **core/**       | `acme-client.ts`, `acme-account.ts`, `acme-order-manager.ts`, `acme-challenge-solver.ts`, `acme-request-signer.ts` | ACME protocol implementation. `AcmeClient` is the main entry: discovers directory, manages nonces. `AcmeAccount` handles registration/auth. `AcmeOrderManager` drives the order lifecycle. |
-| **transport/**  | `http-client.ts`, `middleware.ts`, `retry.ts`, `acme-transport.ts`                                                 | HTTP layer using `undici`. Middleware pipeline (timing, logging, rate-limit, user-agent). Retry with exponential backoff.                                                                  |
+| **transport/**  | `http-client.ts`, `middleware.ts`, `retry.ts`                                                                      | HTTP layer using `undici`. Middleware pipeline (timing, logging, rate-limit, user-agent). Retry with exponential backoff.                                                                  |
 | **managers/**   | `nonce-manager.ts`, `rate-limiter.ts`                                                                              | Nonce pooling (RFC 8555 Section 6.5 anti-replay). Rate limiter with configurable windows.                                                                                                  |
 | **crypto/**     | `csr.ts`, `signer.ts`, `index.ts`                                                                                  | Key generation (ECDSA P-256/384/521, RSA 2048/3072/4096), CSR creation, JWS signing via `jose` + `@peculiar/x509`.                                                                         |
 | **challenges/** | `dns-txt-validator.ts`, `http-validator.ts`                                                                        | DNS-01 TXT record validation, HTTP-01 challenge validation.                                                                                                                                |
@@ -66,3 +66,55 @@ CLI built with `commander`. `program.ts` registers subcommands from `commands/`.
 - **Conventional Commits** required (`feat(scope):`, `fix(scope):`, etc.). Semantic-release automates versioning and npm publish via `ci-release.yml`.
 - **Prettier**: single quotes, trailing commas, 100 char line width, LF endings.
 - **Debug logging**: namespaced under `acme-love:*` (enable with `DEBUG=acme-love:*`).
+
+## Architecture Rules
+
+These rules are enforced automatically via `npm run lint:arch` (dependency-cruiser) and ESLint.
+
+### Layer Dependency Rules (enforced by dependency-cruiser)
+
+```
+cli/ ──→ lib/core/ ──→ lib/transport/
+              │              │
+              ├──→ lib/managers/
+              │
+              ├──→ lib/crypto/
+              │
+              └──→ lib/challenges/
+
+lib/types/, lib/errors/, lib/utils/, lib/constants/ ← shared, no upward deps
+```
+
+**Forbidden imports:**
+
+- `lib/` must NOT import from `cli/` — library code cannot depend on CLI
+- `transport/` must NOT import from `core/` — HTTP layer cannot depend on ACME protocol
+- `managers/` must NOT import from `core/` — infrastructure cannot depend on ACME protocol
+- `types/` and `errors/` must NOT import from runtime modules (core, transport, managers, challenges)
+- No circular dependencies allowed
+
+Run `npm run lint:arch` to validate. This runs in CI via prepublishOnly.
+
+### ESLint Strict Rules (src/lib/ only)
+
+- `@typescript-eslint/no-explicit-any`: **error** — no `any` in library code
+- `@typescript-eslint/no-non-null-assertion`: **error** — no `!` assertions
+- `@typescript-eslint/explicit-function-return-type`: **error** — all exported functions must have return types
+- `@typescript-eslint/explicit-member-accessibility`: **error** — all class members must have `public`/`private`/`protected`
+
+Test files (`__tests__/`) are exempt from these rules.
+
+### Branded Types
+
+Use branded types from `src/lib/types/branded.ts` for semantically distinct string values:
+
+| Type              | Use for                       | Example                                          |
+| ----------------- | ----------------------------- | ------------------------------------------------ |
+| `AccountUrl`      | Account kid URLs              | `https://acme.test/acct/123`                     |
+| `Nonce`           | Replay-nonce values           | Anti-replay tokens                               |
+| `Base64UrlString` | Base64url-encoded data        | CSR DER, JWK thumbprints                         |
+| `PemString`       | PEM-encoded certificates/keys | `-----BEGIN CERTIFICATE-----`                    |
+| `ChallengeToken`  | ACME challenge tokens         | RFC 8555 §8.1 tokens                             |
+| `DirectoryUrl`    | ACME directory URLs           | `https://acme-v02.api.letsencrypt.org/directory` |
+
+Use `asAccountUrl()`, `asNonce()`, etc. at trust boundaries (after validation, after parsing server responses). Never cast raw strings directly — use the helper functions.

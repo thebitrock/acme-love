@@ -44,19 +44,19 @@ export class JoseAcmeSigner implements AcmeSigner {
 
   constructor(private readonly account: AcmeAccountKeyPair) {}
 
-  getAccount(): AcmeAccountKeyPair {
+  public getAccount(): AcmeAccountKeyPair {
     return this.account;
   }
 
-  getAccountKid(): string | undefined {
+  public getAccountKid(): string | undefined {
     return this.account.keyId;
   }
 
-  setAccountKid(kid: string): void {
+  public setAccountKid(kid: string): void {
     this.account.keyId = kid;
   }
 
-  async getJwk(): Promise<JWK> {
+  public async getJwk(): Promise<JWK> {
     if (this.jwkPromise) return this.jwkPromise;
     if (!this.account.publicKey) {
       throw new UnauthorizedError('Account key is not initialized');
@@ -65,25 +65,25 @@ export class JoseAcmeSigner implements AcmeSigner {
     return this.jwkPromise;
   }
 
-  async signJws(payload: Uint8Array, header: JWSHeaderParameters): Promise<FlattenedJWS> {
+  public async signJws(payload: Uint8Array, header: JWSHeaderParameters): Promise<FlattenedJWS> {
     if (!this.account.privateKey) {
       throw new UnauthorizedError('Account private key is not initialized');
     }
     return new FlattenedSign(payload).setProtectedHeader(header).sign(this.account.privateKey);
   }
 
-  async generateKeyAuthorization(token: string): Promise<string> {
+  public async generateKeyAuthorization(token: string): Promise<string> {
     const jwk = await this.getJwk();
     const thumb = await calculateJwkThumbprint(jwk, 'sha256');
     return `${token}.${thumb}`;
   }
 
-  async dns01Value(token: string): Promise<string> {
+  public async dns01Value(token: string): Promise<string> {
     const ka = await this.generateKeyAuthorization(token);
     return createHash('sha256').update(ka).digest('base64url');
   }
 
-  async tlsAlpn01Digest(token: string): Promise<Buffer> {
+  public async tlsAlpn01Digest(token: string): Promise<Buffer> {
     const ka = await this.generateKeyAuthorization(token);
     return createHash('sha256').update(ka).digest(); // 32 bytes
   }

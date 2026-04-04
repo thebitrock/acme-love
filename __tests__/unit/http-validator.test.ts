@@ -106,4 +106,79 @@ describe('validateHttp01ChallengeByUrl', () => {
     const callOpts = mockRequest.mock.calls[0][1] as any;
     expect(callOpts.headers['User-Agent']).toBe('custom/1.0');
   });
+
+  it('rejects private IPv6 addresses', async () => {
+    for (const ip of ['::1', 'fe80::1', 'fc00::1', 'fd00::1']) {
+      const result = await validateHttp01ChallengeByUrl(
+        `http://[${ip}]/.well-known/acme-challenge/token`,
+        'auth',
+      );
+      expect(result.ok).toBe(false);
+      expect(result.reasons!.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('rejects private IPv4 addresses', async () => {
+    for (const ip of ['127.0.0.1', '10.0.0.1', '169.254.1.1', '172.16.0.1', '192.168.1.1']) {
+      const result = await validateHttp01ChallengeByUrl(
+        `http://${ip}/.well-known/acme-challenge/token`,
+        'auth',
+      );
+      expect(result.ok).toBe(false);
+      expect(result.reasons![0]).toContain('SSRF');
+    }
+  });
+
+  it('rejects invalid hostname', async () => {
+    const result = await validateHttp01ChallengeByUrl(
+      'http://not valid!/.well-known/acme-challenge/token',
+      'auth',
+    );
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects localhost domain', async () => {
+    const result = await validateHttp01ChallengeByUrl(
+      'http://localhost/.well-known/acme-challenge/token',
+      'auth',
+    );
+    expect(result.ok).toBe(false);
+    expect(result.reasons![0]).toContain('SSRF');
+  });
+
+  it('rejects .local domain', async () => {
+    const result = await validateHttp01ChallengeByUrl(
+      'http://foo.local/.well-known/acme-challenge/token',
+      'auth',
+    );
+    expect(result.ok).toBe(false);
+    expect(result.reasons![0]).toContain('SSRF');
+  });
+
+  it('rejects .localhost subdomain', async () => {
+    const result = await validateHttp01ChallengeByUrl(
+      'http://sub.localhost/.well-known/acme-challenge/token',
+      'auth',
+    );
+    expect(result.ok).toBe(false);
+    expect(result.reasons![0]).toContain('SSRF');
+  });
+
+  it('rejects ftp protocol', async () => {
+    const result = await validateHttp01ChallengeByUrl(
+      'ftp://example.com/.well-known/acme-challenge/token',
+      'auth',
+    );
+    expect(result.ok).toBe(false);
+    expect(result.reasons![0]).toContain('protocol');
+  });
+
+  it('allows public IP address', async () => {
+    mockRequest.mockResolvedValue(mockResponse(200, 'key-auth'));
+    const result = await validateHttp01ChallengeByUrl(
+      'http://8.8.8.8/.well-known/acme-challenge/token',
+      'key-auth',
+    );
+    expect(result.ok).toBe(true);
+  });
 });

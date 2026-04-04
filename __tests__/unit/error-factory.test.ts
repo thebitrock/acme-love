@@ -5,6 +5,7 @@ import {
   BadSignatureAlgorithmError,
   RateLimitedError,
   ServerMaintenanceError,
+  UserActionRequiredError,
   AcmeError,
   ACME_ERROR,
 } from '../../src/index.js';
@@ -65,5 +66,27 @@ describe('createErrorFromProblem', () => {
     const err = createErrorFromProblem({ type: 'urn:custom:unknown:error', detail: 'x' });
     expect(err).toBeInstanceOf(AcmeError);
     expect(err.type).toBe('urn:custom:unknown:error');
+  });
+
+  it('returns AcmeError for null input', () => {
+    const err = createErrorFromProblem(null);
+    expect(err).toBeInstanceOf(AcmeError);
+    expect(err.detail).toBe('Unknown error shape');
+  });
+
+  it('returns AcmeError for non-object input', () => {
+    const err = createErrorFromProblem(42);
+    expect(err).toBeInstanceOf(AcmeError);
+    expect(err.detail).toBe('Unknown error shape');
+  });
+
+  it('creates UserActionRequiredError with instance', () => {
+    const err = createErrorFromProblem({
+      type: ACME_ERROR.userActionRequired,
+      detail: 'Accept ToS',
+      instance: 'https://example.com/tos',
+    });
+    expect(err).toBeInstanceOf(UserActionRequiredError);
+    expect(err.instance).toBe('https://example.com/tos');
   });
 });

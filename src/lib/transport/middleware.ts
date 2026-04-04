@@ -201,7 +201,7 @@ export class MiddlewarePipeline {
   /**
    * Add middleware to the pipeline
    */
-  use(middleware: Middleware): this {
+  public use(middleware: Middleware): this {
     this.middlewares.push(middleware);
     return this;
   }
@@ -209,7 +209,7 @@ export class MiddlewarePipeline {
   /**
    * Execute the middleware pipeline
    */
-  async execute(
+  public async execute(
     context: RequestContext,
     finalHandler: () => Promise<ParsedResponseData>,
   ): Promise<ParsedResponseData> {
@@ -230,14 +230,14 @@ export class MiddlewarePipeline {
   /**
    * Get the number of middlewares in the pipeline
    */
-  get length(): number {
+  public get length(): number {
     return this.middlewares.length;
   }
 
   /**
    * Clear all middlewares
    */
-  clear(): this {
+  public clear(): this {
     this.middlewares = [];
     return this;
   }

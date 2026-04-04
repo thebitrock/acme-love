@@ -15,7 +15,11 @@ import { createErrorFromProblem } from './errors/factory.js';
 /**
  * Demo: Modern ACME certificate workflow with RFC 8555 naming
  */
-async function demonstrateModernAcmeWorkflow() {
+async function demonstrateModernAcmeWorkflow(): Promise<{
+  client: AcmeClient;
+  directory: AcmeDirectory;
+  status: string;
+}> {
   console.log('🚀 ACME Love - RFC 8555 Compliant Architecture Demo');
 
   // 1. Create ACME client with clean naming
@@ -64,7 +68,7 @@ async function demonstrateModernAcmeWorkflow() {
 /**
  * Demo: Tree-shakable imports from modular structure
  */
-function demonstrateTreeShaking() {
+function demonstrateTreeShaking(): string {
   console.log('\n📦 Tree-shaking Benefits:');
   console.log('✅ Import only what you need:');
   console.log('  import { AcmeClient } from "acme-love/lib/core"');
@@ -78,7 +82,7 @@ function demonstrateTreeShaking() {
 /**
  * Demo: TypeScript excellence with proper typing
  */
-function demonstrateTypeScriptExcellence() {
+function demonstrateTypeScriptExcellence(): string[] {
   console.log('\n🔷 TypeScript Benefits:');
   console.log('✅ Strong typing throughout');
   console.log('✅ Proper barrel exports');
@@ -107,7 +111,11 @@ function demonstrateTypeScriptExcellence() {
 export { demonstrateModernAcmeWorkflow, demonstrateTreeShaking, demonstrateTypeScriptExcellence };
 
 // Default export for easy testing
-export default async function runDemo() {
+export default async function runDemo(): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
   console.log('🎯 ACME Love Architecture Migration Demo\n');
 
   try {

@@ -184,4 +184,11 @@ describe('CSR and Key Generation', () => {
       }
     }, 30000); // RSA generation can be slow
   });
+
+  describe('CSR Validation', () => {
+    test('should reject empty domains array', async () => {
+      const algo: AcmeEcAlgorithm = { kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' };
+      await expect(createAcmeCsr([], algo)).rejects.toThrow();
+    });
+  });
 });

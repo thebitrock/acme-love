@@ -57,6 +57,30 @@ describe('AcmeOrderManager', () => {
       });
     });
 
+    it('throws on non-HTTPS Location header', async () => {
+      const signer = makeMockSigner([
+        {
+          statusCode: 201,
+          headers: { location: 'http://insecure.test/order/1' },
+          body: { status: 'pending', identifiers: [], authorizations: [], finalize: '' },
+        },
+      ]);
+      const manager = new AcmeOrderManager(signer);
+      await expect(manager.createOrder(['example.com'])).rejects.toThrow('Invalid order URL');
+    });
+
+    it('throws on invalid Location URL', async () => {
+      const signer = makeMockSigner([
+        {
+          statusCode: 201,
+          headers: { location: 'not-a-url' },
+          body: { status: 'pending', identifiers: [], authorizations: [], finalize: '' },
+        },
+      ]);
+      const manager = new AcmeOrderManager(signer);
+      await expect(manager.createOrder(['example.com'])).rejects.toThrow('Invalid order URL');
+    });
+
     it('throws on non-201 response', async () => {
       const signer = makeMockSigner([
         {

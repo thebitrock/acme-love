@@ -67,7 +67,7 @@ export class AcmeChallengeSolver {
    * The facade sets this to a late-bound reference so subclass overrides
    * of getAuthorization are respected in the internal solve loop.
    */
-  resolveAuthorization: (authzUrl: string) => Promise<AcmeAuthorization>;
+  public resolveAuthorization: (authzUrl: string) => Promise<AcmeAuthorization>;
 
   constructor(
     private readonly signer: AcmeRequestSigner,
@@ -82,7 +82,7 @@ export class AcmeChallengeSolver {
    * @param authzUrl - URL of the authorization resource
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.5
    */
-  async getAuthorization(authzUrl: string): Promise<AcmeAuthorization> {
+  public async getAuthorization(authzUrl: string): Promise<AcmeAuthorization> {
     return this.resolveAuthorization(authzUrl);
   }
 
@@ -102,7 +102,7 @@ export class AcmeChallengeSolver {
    * @param challengeUrl - URL of the challenge resource
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.5.1
    */
-  async getChallenge(challengeUrl: string): Promise<AcmeChallenge> {
+  public async getChallenge(challengeUrl: string): Promise<AcmeChallenge> {
     const response = await this.signer.signedPost(challengeUrl, null);
 
     if (response.statusCode !== 200) {
@@ -118,7 +118,7 @@ export class AcmeChallengeSolver {
    * @param challengeUrl - URL of the challenge to accept
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.5.1
    */
-  async acceptChallenge(challengeUrl: string): Promise<AcmeChallenge> {
+  public async acceptChallenge(challengeUrl: string): Promise<AcmeChallenge> {
     const response = await this.signer.signedPost(challengeUrl, {});
 
     if (response.statusCode !== 200) {
@@ -136,7 +136,7 @@ export class AcmeChallengeSolver {
    * @param opts.waitFor - Callback to wait for DNS propagation
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-8.4
    */
-  async solveDns01(
+  public async solveDns01(
     order: AcmeOrder,
     opts: {
       waitFor: (preparation: ChallengePreparation) => Promise<void>;
@@ -168,7 +168,7 @@ export class AcmeChallengeSolver {
    * @param opts.waitFor - Callback to wait for HTTP server setup
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-8.3
    */
-  async solveHttp01(
+  public async solveHttp01(
     order: AcmeOrder,
     opts: {
       waitFor: (preparation: ChallengePreparation) => Promise<void>;

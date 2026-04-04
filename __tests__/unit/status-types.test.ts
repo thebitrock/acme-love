@@ -3,6 +3,10 @@ import {
   isValidOrderStatusTransition,
   isValidAuthorizationStatusTransition,
   isValidChallengeStatusTransition,
+  isAcmeOrderStatus,
+  isAcmeAuthorizationStatus,
+  isAcmeChallengeStatus,
+  isAcmeChallengeType,
   ORDER_STATUS,
   AUTHORIZATION_STATUS,
   CHALLENGE_STATUS,
@@ -201,5 +205,56 @@ describe('isValidChallengeStatusTransition', () => {
     expect(
       isValidChallengeStatusTransition(CHALLENGE_STATUS.PENDING, CHALLENGE_STATUS.PENDING),
     ).toBe(false);
+  });
+});
+
+describe('isAcmeOrderStatus', () => {
+  it('returns true for valid statuses', () => {
+    expect(isAcmeOrderStatus('pending')).toBe(true);
+    expect(isAcmeOrderStatus('ready')).toBe(true);
+    expect(isAcmeOrderStatus('valid')).toBe(true);
+    expect(isAcmeOrderStatus('invalid')).toBe(true);
+    expect(isAcmeOrderStatus('processing')).toBe(true);
+  });
+
+  it('returns false for invalid statuses', () => {
+    expect(isAcmeOrderStatus('bogus')).toBe(false);
+    expect(isAcmeOrderStatus('')).toBe(false);
+  });
+});
+
+describe('isAcmeAuthorizationStatus', () => {
+  it('returns true for valid statuses', () => {
+    expect(isAcmeAuthorizationStatus('pending')).toBe(true);
+    expect(isAcmeAuthorizationStatus('valid')).toBe(true);
+    expect(isAcmeAuthorizationStatus('deactivated')).toBe(true);
+  });
+
+  it('returns false for invalid statuses', () => {
+    expect(isAcmeAuthorizationStatus('unknown')).toBe(false);
+  });
+});
+
+describe('isAcmeChallengeStatus', () => {
+  it('returns true for valid statuses', () => {
+    expect(isAcmeChallengeStatus('pending')).toBe(true);
+    expect(isAcmeChallengeStatus('processing')).toBe(true);
+    expect(isAcmeChallengeStatus('valid')).toBe(true);
+  });
+
+  it('returns false for invalid statuses', () => {
+    expect(isAcmeChallengeStatus('x')).toBe(false);
+  });
+});
+
+describe('isAcmeChallengeType', () => {
+  it('returns true for valid types', () => {
+    expect(isAcmeChallengeType('dns-01')).toBe(true);
+    expect(isAcmeChallengeType('http-01')).toBe(true);
+    expect(isAcmeChallengeType('tls-alpn-01')).toBe(true);
+  });
+
+  it('returns false for invalid types', () => {
+    expect(isAcmeChallengeType('x')).toBe(false);
   });
 });
