@@ -89,6 +89,23 @@ export const ACME_CHALLENGE_TYPE = {
 } as const;
 
 /**
+ * RFC 5280 CRL Reason Codes for certificate revocation
+ *
+ * @see https://datatracker.ietf.org/doc/html/rfc5280#section-5.3.1
+ * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.6
+ */
+export const REVOCATION_REASON = {
+  UNSPECIFIED: 0,
+  KEY_COMPROMISE: 1,
+  CA_COMPROMISE: 2,
+  AFFILIATION_CHANGED: 3,
+  SUPERSEDED: 4,
+  CESSATION_OF_OPERATION: 5,
+} as const;
+
+export type RevocationReasonValue = (typeof REVOCATION_REASON)[keyof typeof REVOCATION_REASON];
+
+/**
  * Type aliases for status constant values
  */
 export type AcmeOrderStatusValue = (typeof ACME_ORDER_STATUS)[keyof typeof ACME_ORDER_STATUS];

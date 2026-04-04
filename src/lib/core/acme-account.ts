@@ -25,6 +25,7 @@ import type {
 import type { AcmeDirectory } from '../types/directory.js';
 import { createErrorFromProblem } from '../errors/factory.js';
 import { AccountError } from '../errors/acme-operation-errors.js';
+import { pemToBase64Url } from '../utils/index.js';
 
 // Re-export types that were originally defined here
 export type { AccountKeys, ExternalAccountBinding } from './acme-request-signer.js';
@@ -232,6 +233,29 @@ export class AcmeAccount {
 
   async downloadCertificate(order: AcmeOrder): Promise<string> {
     return this.orders.downloadCertificate(order);
+  }
+
+  /**
+   * Revoke a certificate
+   *
+   * @param certificatePem - PEM-encoded certificate (full chain or leaf only)
+   * @param reason - Optional RFC 5280 CRL reason code (0-5)
+   * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.6
+   */
+  async revokeCertificate(certificatePem: string, reason?: number): Promise<void> {
+    const directory = await this.getDirectory();
+    const derBase64Url = pemToBase64Url(certificatePem);
+
+    const payload: Record<string, unknown> = { certificate: derBase64Url };
+    if (reason !== undefined) {
+      payload.reason = reason;
+    }
+
+    const response = await this.signer.signedPost(directory.revokeCert, payload);
+
+    if (response.statusCode !== 200) {
+      throw createErrorFromProblem(response.body);
+    }
   }
 
   // --- Challenge solving (delegated to AcmeChallengeSolver) ---

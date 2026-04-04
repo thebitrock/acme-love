@@ -148,6 +148,9 @@ export {
   JoseAcmeSigner,
 } from './crypto/index.js';
 
+// Constants
+export { REVOCATION_REASON, type RevocationReasonValue } from './constants/status.js';
+
 // Utils
-export { safeReadBody } from './utils/index.js';
+export { safeReadBody, pemToBase64Url } from './utils/index.js';
 export { buildUserAgent, getPackageInfo, type PackageInfo } from './utils/user-agent.js';
