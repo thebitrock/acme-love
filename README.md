@@ -7,8 +7,8 @@ TypeScript-first · Node.js · CLI
 
 [![NPM Version](https://img.shields.io/npm/v/acme-love.svg)](https://www.npmjs.com/package/acme-love)
 [![NPM License](https://img.shields.io/npm/l/acme-love.svg)](https://github.com/thebitrock/acme-love/blob/main/LICENSE)
-[![Tests](https://img.shields.io/badge/tests-42%20passing-brightgreen.svg)](https://github.com/thebitrock/acme-love)
-[![Coverage](https://img.shields.io/badge/coverage-94%25%20CSR%20%7C%2069%25%20NonceManager-green.svg)](https://github.com/thebitrock/acme-love)
+[![CI](https://github.com/thebitrock/acme-love/actions/workflows/ci-release.yml/badge.svg)](https://github.com/thebitrock/acme-love/actions/workflows/ci-release.yml)
+[![codecov](https://codecov.io/gh/thebitrock/acme-love/graph/badge.svg)](https://codecov.io/gh/thebitrock/acme-love)
 
 </div>
 

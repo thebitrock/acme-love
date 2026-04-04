@@ -11,6 +11,47 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint:check
+
+      - name: Format
+        run: npm run format:check
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build (production)
+        run: npm run build:prod
+
   test:
     name: Test (${{ matrix.node }} • ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -18,7 +59,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-15, windows-latest]
-        node: ['20.18.1', '21.x', '22.x']
+        node: ['20.x', '22.x', '24.x']
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,19 +79,46 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Build (POSIX only)
-        if: runner.os != 'Windows'
-        run: npm run build
-
-      - name: Lint
-        run: npm run lint:check
-
       - name: Test
         run: npm test
 
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          directory: coverage/
+          fail_ci_if_error: false
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
   release:
     name: Release (semantic-release)
-    needs: [test]
+    needs: [lint, build, test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
