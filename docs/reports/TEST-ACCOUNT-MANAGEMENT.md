@@ -97,8 +97,8 @@ import { testAccountManager } from './utils/account-manager.js';
 const accountKeys = await testAccountManager.getOrCreateAccountKeys('my-test-account');
 
 // Use with ACME client
-const core = new AcmeClientCore(STAGING_DIRECTORY_URL);
-const session = new AcmeAccountSession(core, accountKeys);
+const client = new AcmeClient(STAGING_DIRECTORY_URL);
+const account = new AcmeAccount(client, accountKeys);
 ```
 
 ## Benefits

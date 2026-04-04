@@ -109,8 +109,7 @@ npm run test:watch # Watch mode for development
 ### Namespace Isolation
 
 ```typescript
-const namespace = NonceManager.makeNamespace(directoryUrl);
-await nonceManager.take(namespace);
+const nonce = await nonceManager.getNonce(namespace);
 ```
 
 ### Algorithm Testing
@@ -126,7 +125,7 @@ const algorithms: AcmeCertificateAlgorithm[] = [
 ### Concurrent Access Testing
 
 ```typescript
-const promises = Array.from({ length: 20 }, () => nonceManager.take(namespace));
+const promises = Array.from({ length: 20 }, () => nonceManager.get(namespace));
 const nonces = await Promise.all(promises);
 ```
 
@@ -200,6 +199,5 @@ const nonces = await Promise.all(promises);
 
 ---
 
-**Status**: **Comprehensive test suite successfully implemented**
-**Coverage**: **42 tests covering all critical functionality**
-**Environments**: **Unit + Integration + E2E with real staging requests**
+**Status**: Comprehensive test suite implemented
+**Environments**: Unit + Integration + E2E with real staging requests
