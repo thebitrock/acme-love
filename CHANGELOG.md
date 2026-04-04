@@ -1,3 +1,9 @@
+## [2.3.3](https://github.com/thebitrock/acme-love/compare/v2.3.2...v2.3.3) (2026-04-04)
+
+### Bug Fixes
+
+- **security:** harden library against SSRF, path traversal, and key exposure vulnerabilities ([775ac88](https://github.com/thebitrock/acme-love/commit/775ac88d187e2cc5243a4bda26a877f9b111ee31))
+
 ## [2.3.2](https://github.com/thebitrock/acme-love/compare/v2.3.1...v2.3.2) (2026-02-01)
 
 ### Bug Fixes
