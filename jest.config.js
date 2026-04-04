@@ -25,7 +25,15 @@ export default {
   },
 
   // Coverage configuration
-  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/**/*.test.ts', '!src/**/*.spec.ts'],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/**/*.test.ts',
+    '!src/**/*.spec.ts',
+    '!src/lib/compat-test.ts',
+    '!src/lib/demo.ts',
+    '!src/lib/example.ts',
+  ],
 
   // Transform ignore patterns - don't transform node_modules except jose
   transformIgnorePatterns: ['node_modules/(?!(jose))'],
