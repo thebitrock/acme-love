@@ -44,7 +44,18 @@ export class AcmeOrderManager {
     }
 
     const order = response.body as AcmeOrder;
-    order.url = response.headers.location as string;
+    const locationHeader = response.headers.location as string;
+    if (locationHeader) {
+      try {
+        const parsed = new URL(locationHeader);
+        if (parsed.protocol !== 'https:') {
+          throw new Error('non-HTTPS');
+        }
+        order.url = locationHeader;
+      } catch {
+        throw new Error(`Invalid order URL in Location header: "${locationHeader}"`);
+      }
+    }
 
     return order;
   }

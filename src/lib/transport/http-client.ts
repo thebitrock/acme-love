@@ -19,8 +19,33 @@ export interface ParsedResponseData extends Omit<Dispatcher.ResponseData, 'body'
  * - Optimized for ACME protocol requirements
  * - Undici-based for maximum performance
  */
+/** Headers that should be redacted in debug output to prevent sensitive data leakage. */
+const REDACTED_HEADERS = new Set(['replay-nonce', 'authorization']);
+
+function redactHeaders(
+  headers: Record<string, string | string[] | undefined>,
+): Record<string, string | string[] | undefined> {
+  const redacted: Record<string, string | string[] | undefined> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    redacted[key] = REDACTED_HEADERS.has(key.toLowerCase()) ? '[REDACTED]' : value;
+  }
+  return redacted;
+}
+
 export class AcmeHttpClient {
   private static userAgent = buildUserAgent();
+
+  private static ensureHttps(url: string): void {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:') {
+        throw new Error(`ACME protocol requires HTTPS, got "${parsed.protocol}" for ${url}`);
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('ACME protocol')) throw e;
+      throw new Error(`Invalid URL: ${url}`);
+    }
+  }
 
   private ensureUserAgent(headers: Record<string, string>): Record<string, string> {
     const hasUA = Object.keys(headers).some((k) => k.toLowerCase() === 'user-agent');
@@ -31,6 +56,7 @@ export class AcmeHttpClient {
   }
 
   async get(url: string, headers: Record<string, string> = {}): Promise<ParsedResponseData> {
+    AcmeHttpClient.ensureHttps(url);
     headers = this.ensureUserAgent({ ...headers });
     debugHttp('GET %s init headers=%j', url, headers);
     const start = Date.now();
@@ -43,7 +69,7 @@ export class AcmeHttpClient {
         res.statusCode,
         Date.now() - start,
         res.headers['content-type'],
-        res.headers,
+        redactHeaders(res.headers),
       );
 
       this.logRateLimit('GET', url, res.statusCode, res.headers);
@@ -63,6 +89,7 @@ export class AcmeHttpClient {
     body: unknown,
     headers: Record<string, string> = {},
   ): Promise<Omit<Dispatcher.ResponseData, 'body'> & { body: T }> {
+    AcmeHttpClient.ensureHttps(url);
     headers = this.ensureUserAgent({ ...headers });
     let serializedBody: string | Uint8Array | Buffer | null;
 
@@ -97,7 +124,7 @@ export class AcmeHttpClient {
         res.statusCode,
         Date.now() - start,
         res.headers['content-type'],
-        res.headers,
+        redactHeaders(res.headers),
       );
 
       this.logRateLimit('POST', url, res.statusCode, res.headers);
@@ -116,6 +143,7 @@ export class AcmeHttpClient {
     url: string,
     headers: Record<string, string> = {},
   ): Promise<Omit<Dispatcher.ResponseData, 'body'> & { body: void }> {
+    AcmeHttpClient.ensureHttps(url);
     headers = this.ensureUserAgent({ ...headers });
     debugHttp('HEAD %s init headers=%j', url, headers);
     const start = Date.now();
@@ -127,7 +155,7 @@ export class AcmeHttpClient {
         url,
         res.statusCode,
         Date.now() - start,
-        res.headers,
+        redactHeaders(res.headers),
       );
 
       this.logRateLimit('HEAD', url, res.statusCode, res.headers);
@@ -143,6 +171,22 @@ export class AcmeHttpClient {
     }
   }
 
+  /** Max response size for JSON/problem responses (1 MB). */
+  private static readonly MAX_JSON_SIZE = 1 * 1024 * 1024;
+  /** Max response size for text/PEM responses (10 MB). */
+  private static readonly MAX_TEXT_SIZE = 10 * 1024 * 1024;
+
+  private enforceContentLengthLimit(
+    headers: Record<string, string | string[] | undefined>,
+    maxBytes: number,
+  ): void {
+    const cl = headers['content-length'];
+    const contentLength = typeof cl === 'string' ? parseInt(cl, 10) : NaN;
+    if (!isNaN(contentLength) && contentLength > maxBytes) {
+      throw new Error(`Response body exceeds maximum allowed size of ${maxBytes} bytes`);
+    }
+  }
+
   private async parseResponseBody(
     headers: Record<string, string | string[] | undefined>,
     body: Dispatcher.ResponseData['body'],
@@ -151,12 +195,15 @@ export class AcmeHttpClient {
     const ct = (Array.isArray(rawCt) ? rawCt[0] : rawCt)?.toLowerCase() ?? '';
 
     if (ct.includes('application/json') || ct.includes('application/problem+json')) {
+      this.enforceContentLengthLimit(headers, AcmeHttpClient.MAX_JSON_SIZE);
       return body.json();
     }
     if (ct.startsWith('text/') || ct.includes('application/pem-certificate-chain')) {
+      this.enforceContentLengthLimit(headers, AcmeHttpClient.MAX_TEXT_SIZE);
       return body.text();
     }
     // Binary fallback
+    this.enforceContentLengthLimit(headers, AcmeHttpClient.MAX_JSON_SIZE);
     const buf = await body.arrayBuffer();
     return Buffer.from(buf);
   }

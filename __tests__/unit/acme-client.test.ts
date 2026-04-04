@@ -14,7 +14,7 @@ function makeGetResponse(statusCode: number, body: unknown) {
   } as any;
 }
 
-describe.skip('AcmeClient', () => {
+describe('AcmeClient', () => {
   const directoryBody = { newNonce: 'https://example.test/acme/new-nonce' };
 
   beforeEach(() => {
