@@ -42,12 +42,10 @@ const nm = new NonceManager({
   prefetchHighWater: 16,
 });
 
-const namespace = NonceManager.makeNamespace('https://acme-v02.api.letsencrypt.org/directory');
-
-// Manual flow
-const nonce = await nm.take(namespace);
+// Manual flow (namespace defaults to 'default')
+const nonce = await nm.get('letsencrypt');
 // sign JWS with `nonce` ... send request ... capture response
-// nm.putFromResponse is internal: when you use withNonceRetry it harvests automatically.
+// Nonces from responses are harvested automatically inside withNonceRetry.
 ```
 
 ### Automatic retry
@@ -69,19 +67,15 @@ If the server answers with a problem document whose `type` ends with `:badNonce`
 | ------------------- | --------------------- | ------------------ | ---------------------------------------------------------- |
 | `newNonceUrl`       | `string`              | —                  | Absolute ACME newNonce endpoint                            |
 | `fetch`             | `FetchLike`           | —                  | Function performing HEAD/GET returning `HttpResponse`      |
-| `maxAgeMs`          | `number`              | 300000             | Discard nonce older than this (avoid replay window issues) |
+| `maxAgeMs`          | `number`              | 120000             | Discard nonce older than this (avoid replay window issues) |
 | `maxPool`           | `number`              | 32                 | Hard upper bound of stored nonces                          |
 | `prefetchLowWater`  | `number`              | 0                  | When pool size below this, start prefetching (0 disables)  |
 | `prefetchHighWater` | `number`              | `prefetchLowWater` | Target level to fill up to (<= maxPool)                    |
 | `log`               | `(msg,...args)=>void` | noop               | Diagnostic logger                                          |
 
-### `static makeNamespace(caDirectoryUrl: string): string`
+### `get(namespace = 'default'): Promise<string>`
 
-Produces a canonical namespace key (CA origin). You can append account thumbprint if needed: `makeNamespace(url) + '::' + thumbprint`.
-
-### `take(namespace): Promise<string>`
-
-Returns an available fresh nonce or waits for a refill. Triggers async refill if pool depleted.
+Returns an available fresh nonce or waits for a refill. Triggers async refill if pool depleted. Namespace defaults to `'default'` — use the CA hostname or a custom key to isolate pools.
 
 ### `withNonceRetry(namespace, fn, maxAttempts=3)`
 
@@ -93,7 +87,7 @@ Current number of stored (non‑expired) nonces.
 
 ## Internal Mechanics
 
-1. `take()` pops the freshest nonce (LIFO) ensuring minimal age.
+1. `get()` pops the freshest nonce (LIFO) ensuring minimal age.
 2. If pool empty → enqueue waiter & start (or coalesce into) `runRefill`.
 3. `runRefill()` fetches new nonces while:
 
@@ -102,7 +96,7 @@ Current number of stored (non‑expired) nonces.
   stopping when size reaches highWater / maxPool / no more need / failure.
 
 4. Responses processed by `withNonceRetry()` are scanned for `Replay-Nonce` headers and inserted.
-5. `gc()` prunes expired entries on each `take()`.
+5. `gc()` prunes expired entries on each `get()`.
 
 ## Error Handling
 
@@ -126,7 +120,7 @@ Current number of stored (non‑expired) nonces.
 
 ## Testing Strategies
 
-- Inject a mock `fetch` counting calls; assert coalescing (N parallel `take()` → 1 network fetch).
+- Inject a mock `fetch` counting calls; assert coalescing (N parallel `get()` → 1 network fetch).
 - Simulate `badNonce` by crafting a problem document; verify `withNonceRetry` attempts increments.
 - Force expiry by setting `maxAgeMs` low and advancing timers.
 
@@ -134,7 +128,7 @@ Current number of stored (non‑expired) nonces.
 
 ```ts
 function accountNamespace(caDirectory: string, jwkThumbprint: string) {
-  return `${NonceManager.makeNamespace(caDirectory)}::${jwkThumbprint}`;
+  return `${new URL(caDirectory).host}::${jwkThumbprint}`;
 }
 ```
 

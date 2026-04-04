@@ -57,7 +57,7 @@ const nonceManager = new NonceManager({
 // - Automatically retries with exponential backoff
 
 try {
-  const nonce = await nonceManager.take(namespace);
+  const nonce = await nonceManager.get(namespace);
   // Use nonce...
 } catch (error) {
   if (error instanceof RateLimitError) {
@@ -196,8 +196,7 @@ console.log('Rate limit status:', limitStatus);
 ### Simple Nonce Retrieval
 
 ```typescript
-const namespace = NonceManager.makeNamespace('https://acme-v02.api.letsencrypt.org');
-const nonce = await nonceManager.take(namespace);
+const nonce = await nonceManager.get('acme-v02.api.letsencrypt.org');
 ```
 
 ### Rate Limit Handling in Loop
@@ -205,7 +204,7 @@ const nonce = await nonceManager.take(namespace);
 ```typescript
 for (const domain of domains) {
   try {
-    const nonce = await nonceManager.take(namespace);
+    const nonce = await nonceManager.get(namespace);
     // Create certificate order...
     await delay(1000); // Pause between requests
   } catch (error) {
@@ -227,7 +226,7 @@ const semaphore = new Semaphore(3); // Maximum 3 parallel requests
 const promises = domains.map(async (domain) => {
   await semaphore.acquire();
   try {
-    const nonce = await nonceManager.take(namespace);
+    const nonce = await nonceManager.get(namespace);
     // Process domain...
   } finally {
     semaphore.release();
