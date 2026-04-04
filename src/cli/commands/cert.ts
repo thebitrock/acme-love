@@ -1,7 +1,7 @@
 import { confirm, input, select } from '@inquirer/prompts';
 import chalk from 'chalk';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { dirname, join, resolve } from 'path';
 import {
   AcmeClient,
   AcmeAccount,
@@ -131,6 +131,7 @@ export async function handleCertCommand(options: CertCommandOptions) {
       accountKeyPath,
       JSON.stringify({ privateKey: privateKeyJwk, publicKey: publicKeyJwk }, null, 2),
     );
+    chmodSync(accountKeyPath, 0o600);
   }
 
   const acct = new AcmeAccount(client, accountKeys, {
@@ -197,12 +198,21 @@ export async function handleCertCommand(options: CertCommandOptions) {
     const accountData = JSON.parse(readFileSync(accountKeyPath, 'utf-8'));
     accountData.kid = kid;
     writeFileSync(accountKeyPath, JSON.stringify(accountData, null, 2));
+    chmodSync(accountKeyPath, 0o600);
   }
 
   const certPath = join(outputDir, `${domain}.crt`);
   const keyPath = join(outputDir, `${domain}.key`);
+  const resolvedOutputDir = resolve(outputDir);
+  if (
+    !resolve(certPath).startsWith(resolvedOutputDir) ||
+    !resolve(keyPath).startsWith(resolvedOutputDir)
+  ) {
+    throw new Error(`Domain name "${domain}" would write files outside the output directory`);
+  }
   writeFileSync(certPath, certificate);
   writeFileSync(keyPath, privateKeyPemString);
+  chmodSync(keyPath, 0o600);
 
   heading('Success');
   kv('Certificate', certPath);

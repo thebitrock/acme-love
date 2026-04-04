@@ -94,6 +94,13 @@ export class ChallengeError extends AcmeOperationError {
       status: 'invalid',
     });
   }
+
+  static invalidToken(token: string): ChallengeError {
+    return new ChallengeError(
+      `Challenge token contains invalid characters (expected base64url): "${token.slice(0, 40)}"`,
+      { status: 'invalid_token' },
+    );
+  }
 }
 
 /**

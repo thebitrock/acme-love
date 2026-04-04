@@ -119,8 +119,11 @@ export function calculateRetryDelay(
   // Calculate exponential backoff
   const exponentialDelay = config.baseDelayMs * Math.pow(config.backoffFactor, attempt);
 
-  // Add jitter to avoid thundering herd
-  const jitter = exponentialDelay * config.jitterPercent * (Math.random() * 2 - 1);
+  // Add jitter to avoid thundering herd (crypto-safe random)
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  const rand = buf[0] / 0xffffffff; // [0, 1]
+  const jitter = exponentialDelay * config.jitterPercent * (rand * 2 - 1);
   const delayWithJitter = exponentialDelay + jitter;
 
   // Clamp to max delay

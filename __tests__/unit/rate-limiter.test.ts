@@ -2,6 +2,9 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 // Updated to import from public entrypoint
 import { RateLimiter, RateLimitError } from '../../src/index.js';
 
+// Skipped: fake timers + async setTimeout in executeWithRetry causes deadlock.
+// The RateLimiter's sleep() creates a real setTimeout that fake timers can't
+// advance mid-await. Covered by debug-rate-limit.test.ts with real timers.
 describe.skip('RateLimiter', () => {
   beforeEach(() => {
     jest.useFakeTimers();

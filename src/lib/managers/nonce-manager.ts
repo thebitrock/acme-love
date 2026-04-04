@@ -320,6 +320,10 @@ export class NonceManager {
       if (!nonceHeader || typeof nonceHeader !== 'string') {
         throw new BadNonceError('No replay-nonce header in response');
       }
+      // RFC 8555: nonce must be base64url, enforce reasonable length
+      if (!/^[A-Za-z0-9_-]+$/.test(nonceHeader) || nonceHeader.length > 256) {
+        throw new BadNonceError(`Invalid nonce format or length (${nonceHeader.length} chars)`);
+      }
 
       debugNonce('Fetched new nonce: namespace=%s, nonce=%s', namespace, nonceHeader);
       this.putNonce(namespace, nonceHeader);

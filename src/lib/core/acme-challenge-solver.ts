@@ -242,6 +242,11 @@ export class AcmeChallengeSolver {
         continue;
       }
 
+      // RFC 8555 Section 8.1: token must be base64url characters only
+      if (!/^[A-Za-z0-9_-]+$/.test(challenge.token)) {
+        throw ChallengeError.invalidToken(challenge.token);
+      }
+
       const keyAuth = await this.signer.keyAuthorization(challenge.token);
       const preparation = await opts.prepareChallenge(authorization, keyAuth, challenge);
 

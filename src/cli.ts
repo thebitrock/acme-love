@@ -11,7 +11,7 @@ import { handleError } from './cli/utils/errors.js';
 const program = createCli();
 
 function exitUnlessTest(code: number) {
-  if (process.env.ACME_CLI_TEST) return; // let tests continue
+  if (process.env.ACME_CLI_TEST === '1' || process.env.NODE_ENV === 'test') return;
   process.exit(code);
 }
 

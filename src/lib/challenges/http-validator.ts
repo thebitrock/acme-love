@@ -11,6 +11,59 @@
  */
 
 import { request } from 'undici';
+import { isIP } from 'net';
+import { buildUserAgent } from '../utils/user-agent.js';
+
+/** RFC 1123 hostname pattern (labels separated by dots, no trailing dot). */
+const HOSTNAME_RE = /^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63})*$/;
+
+/** Private/reserved IPv4 CIDR prefixes that must be blocked to prevent SSRF. */
+const PRIVATE_IPV4_PREFIXES = [
+  '127.',
+  '10.',
+  '0.',
+  '169.254.',
+  // 172.16.0.0/12
+  ...Array.from({ length: 16 }, (_, i) => `172.${16 + i}.`),
+  // 192.168.0.0/16
+  '192.168.',
+];
+
+function isPrivateOrReservedIP(host: string): boolean {
+  if (
+    host === '::1' ||
+    host === '::' ||
+    host.startsWith('fe80:') ||
+    host.startsWith('fc') ||
+    host.startsWith('fd')
+  ) {
+    return true;
+  }
+  return PRIVATE_IPV4_PREFIXES.some((prefix) => host.startsWith(prefix));
+}
+
+function validateDomain(domain: string): void {
+  if (isIP(domain) !== 0) {
+    if (isPrivateOrReservedIP(domain)) {
+      throw new Error(`SSRF blocked: "${domain}" resolves to a private/reserved IP address`);
+    }
+    return; // public IP is allowed
+  }
+  if (!HOSTNAME_RE.test(domain)) {
+    throw new Error(`Invalid domain name: "${domain}"`);
+  }
+  if (domain === 'localhost' || domain.endsWith('.localhost') || domain.endsWith('.local')) {
+    throw new Error(`SSRF blocked: "${domain}" is a loopback/local domain`);
+  }
+}
+
+function validateChallengeUrl(url: string): void {
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`Invalid protocol in challenge URL: ${parsed.protocol}`);
+  }
+  validateDomain(parsed.hostname);
+}
 
 /**
  * Result of HTTP-01 challenge validation
@@ -55,6 +108,7 @@ export async function validateHttp01Challenge(
   expectedKeyAuth?: string,
   opts: AcmeHttpValidationOptions = {},
 ): Promise<AcmeHttpValidationResult> {
+  validateDomain(domain);
   const url = `http://${domain}/.well-known/acme-challenge/${token}`;
   return validateHttp01ChallengeByUrl(url, expectedKeyAuth, opts);
 }
@@ -70,9 +124,10 @@ export async function validateHttp01ChallengeByUrl(
   expectedKeyAuth?: string,
   opts: AcmeHttpValidationOptions = {},
 ): Promise<AcmeHttpValidationResult> {
-  const { timeoutMs = 4000, followRedirects = true, userAgent = 'acme-love/1.0' } = opts;
+  const { timeoutMs = 4000, followRedirects = true, userAgent = buildUserAgent() } = opts;
 
   try {
+    validateChallengeUrl(challengeUrl);
     const response = await request(challengeUrl, {
       method: 'GET',
       headers: {
