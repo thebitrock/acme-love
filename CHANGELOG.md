@@ -1,3 +1,9 @@
+## [2.5.0](https://github.com/thebitrock/acme-love/compare/v2.4.0...v2.5.0) (2026-04-04)
+
+### Features
+
+- implement certificate revocation (RFC 8555 Section 7.6) ([f37526f](https://github.com/thebitrock/acme-love/commit/f37526f65a4a0a69c5794211a846534aa1978cd0))
+
 ## [2.4.0](https://github.com/thebitrock/acme-love/compare/v2.3.3...v2.4.0) (2026-04-04)
 
 ### Features
