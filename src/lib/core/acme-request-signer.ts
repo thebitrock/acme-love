@@ -88,12 +88,15 @@ export class AcmeRequestSigner {
   constructor(
     client: AcmeClient,
     keys: AccountKeys,
-    opts: { kid?: string; nonce?: Partial<NonceManagerOptions> },
+    opts: { kid?: string; nonce?: Partial<NonceManagerOptions>; nonceManager?: NonceManager },
   ) {
     this.client = client;
     this.keys = keys;
     this.kid = opts.kid || '';
     this.nonceOptions = opts.nonce || {};
+    if (opts.nonceManager) {
+      this.nonce = opts.nonceManager;
+    }
   }
 
   async getDirectory(): Promise<AcmeDirectory> {

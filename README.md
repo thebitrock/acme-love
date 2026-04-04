@@ -35,6 +35,7 @@ A Node.js / TypeScript ACME client for certificate automation with Let's Encrypt
   - [External Account Binding (EAB)](#external-account-binding-eab-support)
   - [Supported Cryptographic Algorithms](#supported-cryptographic-algorithms)
   - [Working with Existing Accounts](#working-with-existing-accounts)
+  - [Certificate Revocation](#certificate-revocation)
   - [Advanced Features](#advanced-features)
 - [Nonce Management](#nonce-management)
   - [Debug Logging](#debug-logging)
@@ -312,6 +313,11 @@ const valid = await account.waitOrder(finalized, ['valid']);
 const certificate = await account.downloadCertificate(valid);
 
 console.log('Certificate obtained!', certificate);
+
+// 7. Revoke certificate (optional)
+import { REVOCATION_REASON } from 'acme-love';
+await account.revokeCertificate(certificate); // no reason
+await account.revokeCertificate(certificate, REVOCATION_REASON.KEY_COMPROMISE); // with reason
 ```
 
 <a id="external-account-binding-eab-support"></a>
@@ -465,6 +471,33 @@ const account = new AcmeAccount(client, accountKeys, {
 // No need to call register() - account already exists
 const order = await account.createOrder(['acme-love.com']);
 ```
+
+<a id="certificate-revocation"></a>
+
+### Certificate Revocation
+
+Revoke a previously issued certificate per [RFC 8555 Section 7.6](https://datatracker.ietf.org/doc/html/rfc8555#section-7.6):
+
+```ts
+import { REVOCATION_REASON } from 'acme-love';
+
+// Revoke without a reason
+await account.revokeCertificate(certificatePem);
+
+// Revoke with an RFC 5280 reason code
+await account.revokeCertificate(certificatePem, REVOCATION_REASON.KEY_COMPROMISE);
+```
+
+Available reason codes (`REVOCATION_REASON`):
+
+| Constant                 | Value | When to use                           |
+| ------------------------ | ----- | ------------------------------------- |
+| `UNSPECIFIED`            | 0     | No specific reason                    |
+| `KEY_COMPROMISE`         | 1     | Private key was compromised           |
+| `CA_COMPROMISE`          | 2     | CA private key was compromised        |
+| `AFFILIATION_CHANGED`    | 3     | Certificate owner changed affiliation |
+| `SUPERSEDED`             | 4     | Certificate replaced by a new one     |
+| `CESSATION_OF_OPERATION` | 5     | Domain/service no longer in operation |
 
 <a id="advanced-features"></a>
 

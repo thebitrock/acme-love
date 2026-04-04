@@ -25,6 +25,7 @@ import type {
 import type { AcmeDirectory } from '../types/directory.js';
 import { createErrorFromProblem } from '../errors/factory.js';
 import { AccountError } from '../errors/acme-operation-errors.js';
+import { pemToBase64Url } from '../utils/index.js';
 
 // Re-export types that were originally defined here
 export type { AccountKeys, ExternalAccountBinding } from './acme-request-signer.js';
@@ -54,6 +55,12 @@ export interface AcmeAccountOptions {
   nonce?: Partial<NonceManagerOptions>;
   /** External account binding for CAs that require it */
   externalAccountBinding?: ExternalAccountBinding;
+  /** @internal Test-only: inject a pre-built request signer */
+  _signer?: AcmeRequestSigner;
+  /** @internal Test-only: inject a pre-built order manager */
+  _orders?: AcmeOrderManager;
+  /** @internal Test-only: inject a pre-built challenge solver */
+  _challenges?: AcmeChallengeSolver;
 }
 
 /**
@@ -86,12 +93,14 @@ export class AcmeAccount {
 
   constructor(client: AcmeClient, keys: AccountKeys, opts: AcmeAccountOptions = {}) {
     this.opts = opts;
-    this.signer = new AcmeRequestSigner(client, keys, {
-      ...(opts.kid !== undefined && { kid: opts.kid }),
-      ...(opts.nonce !== undefined && { nonce: opts.nonce }),
-    });
-    this.orders = new AcmeOrderManager(this.signer);
-    this.challenges = new AcmeChallengeSolver(this.signer, this.orders);
+    this.signer =
+      opts._signer ??
+      new AcmeRequestSigner(client, keys, {
+        ...(opts.kid !== undefined && { kid: opts.kid }),
+        ...(opts.nonce !== undefined && { nonce: opts.nonce }),
+      });
+    this.orders = opts._orders ?? new AcmeOrderManager(this.signer);
+    this.challenges = opts._challenges ?? new AcmeChallengeSolver(this.signer, this.orders);
 
     // Late-bind so subclass overrides of getAuthorization are respected
     // by the internal challenge solve loop
@@ -232,6 +241,29 @@ export class AcmeAccount {
 
   async downloadCertificate(order: AcmeOrder): Promise<string> {
     return this.orders.downloadCertificate(order);
+  }
+
+  /**
+   * Revoke a certificate
+   *
+   * @param certificatePem - PEM-encoded certificate (full chain or leaf only)
+   * @param reason - Optional RFC 5280 CRL reason code (0-5)
+   * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.6
+   */
+  async revokeCertificate(certificatePem: string, reason?: number): Promise<void> {
+    const directory = await this.getDirectory();
+    const derBase64Url = pemToBase64Url(certificatePem);
+
+    const payload: Record<string, unknown> = { certificate: derBase64Url };
+    if (reason !== undefined) {
+      payload.reason = reason;
+    }
+
+    const response = await this.signer.signedPost(directory.revokeCert, payload);
+
+    if (response.statusCode !== 200) {
+      throw createErrorFromProblem(response.body);
+    }
   }
 
   // --- Challenge solving (delegated to AcmeChallengeSolver) ---

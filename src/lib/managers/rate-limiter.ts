@@ -165,13 +165,14 @@ export class RateLimiter {
       new Date(retryAfter).toISOString(),
     );
 
-    // Clean up expired rate limits periodically
-    setTimeout(
+    // Clean up expired rate limits periodically (unref so it doesn't block exit)
+    const timer = setTimeout(
       () => {
         this.cleanupExpiredLimits();
       },
       retryAfterSeconds * 1000 + 1000,
     );
+    if (typeof timer === 'object' && 'unref' in timer) timer.unref();
   }
 
   /**

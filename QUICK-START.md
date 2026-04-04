@@ -99,6 +99,18 @@ try {
 }
 ```
 
+## Certificate Revocation
+
+```typescript
+import { REVOCATION_REASON } from 'acme-love';
+
+// Revoke a certificate (pass the PEM string from downloadCertificate)
+await account.revokeCertificate(certificate);
+
+// Revoke with a reason code
+await account.revokeCertificate(certificate, REVOCATION_REASON.KEY_COMPROMISE);
+```
+
 ## Advanced Configuration
 
 ### Nonce Management

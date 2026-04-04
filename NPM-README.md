@@ -101,6 +101,7 @@ const ready = await account.solveHttp01(order, {
 | **All Challenges**   | DNS-01, HTTP-01 with automatic validation         |
 | **Wildcard Support** | `*.example.com` certificates via DNS-01           |
 | **EAB Support**      | External Account Binding for commercial CAs       |
+| **Revocation**       | Certificate revocation with RFC 5280 reason codes |
 | **Modern Crypto**    | ECDSA (P-256/384/521) and RSA (2048/3072/4096)    |
 | **Performance**      | Nonce pooling, concurrent operations              |
 | **Type Safety**      | Full TypeScript support with strict typing        |

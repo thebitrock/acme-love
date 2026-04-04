@@ -6,6 +6,23 @@ import type { ParsedResponseData } from '../transport/http-client.js';
  * @param res - Parsed response data from HTTP client
  * @returns Parsed JSON object or null if parsing fails
  */
+/**
+ * Convert a PEM-encoded certificate to base64url DER encoding
+ *
+ * Strips PEM headers/footers, removes whitespace, and converts
+ * standard base64 to base64url (RFC 4648 Section 5).
+ *
+ * @param pem - PEM-encoded certificate string
+ * @returns base64url-encoded DER bytes (no padding)
+ */
+export function pemToBase64Url(pem: string): string {
+  const base64 = pem
+    .replace(/-----BEGIN [A-Z ]+-----/g, '')
+    .replace(/-----END [A-Z ]+-----/g, '')
+    .replace(/\s/g, '');
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 export async function safeReadBody(res: ParsedResponseData): Promise<object | null> {
   const body = res.body;
 
