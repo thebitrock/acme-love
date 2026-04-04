@@ -27,7 +27,7 @@ export class AcmeOrderManager {
    * @param identifiers - Array of domain names for the certificate
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.4
    */
-  async createOrder(identifiers: string[]): Promise<AcmeOrder> {
+  public async createOrder(identifiers: string[]): Promise<AcmeOrder> {
     const directory = await this.signer.getDirectory();
 
     const payload = {
@@ -67,7 +67,7 @@ export class AcmeOrderManager {
    * @param csrDerBase64Url - Certificate Signing Request in base64url-encoded DER format
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.4
    */
-  async finalize(order: AcmeOrder, csrDerBase64Url: string): Promise<AcmeOrder> {
+  public async finalize(order: AcmeOrder, csrDerBase64Url: string): Promise<AcmeOrder> {
     if (!order.finalize) {
       throw OrderError.noFinalizeUrl();
     }
@@ -93,7 +93,7 @@ export class AcmeOrderManager {
    * @param targetStatuses - Array of acceptable final statuses to wait for
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.6
    */
-  async waitOrder(order: AcmeOrder, targetStatuses: AcmeOrderStatus[]): Promise<AcmeOrder> {
+  public async waitOrder(order: AcmeOrder, targetStatuses: AcmeOrderStatus[]): Promise<AcmeOrder> {
     let currentOrder = order;
     let attempts = 0;
     const maxAttempts = ORDER_POLL_MAX_ATTEMPTS;
@@ -123,7 +123,7 @@ export class AcmeOrderManager {
    * @param order - Finalized order with certificate URL (status must be "valid")
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.4.2
    */
-  async downloadCertificate(order: AcmeOrder): Promise<string> {
+  public async downloadCertificate(order: AcmeOrder): Promise<string> {
     if (!order.certificate) {
       throw OrderError.noCertificateUrl();
     }

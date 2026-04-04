@@ -7,7 +7,7 @@
 import { AcmeClient } from '../lib/core/acme-client.js';
 
 // Example of how the new architecture would work
-async function example() {
+async function example(): Promise<AcmeClient> {
   // Create ACME client with RFC 8555 compliant naming
   const client = new AcmeClient('https://acme-staging-v02.api.letsencrypt.org/directory');
 

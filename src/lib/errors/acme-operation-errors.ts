@@ -14,8 +14,8 @@
  * Distinguished from AcmeError which represents server-side RFC 8555 errors.
  */
 export abstract class AcmeOperationError extends Error {
-  abstract readonly code: string;
-  abstract readonly type: string;
+  public abstract readonly code: string;
+  public abstract readonly type: string;
 
   constructor(
     message: string,
@@ -35,31 +35,31 @@ export abstract class AcmeOperationError extends Error {
  * Errors related to domain authorization
  */
 export class AuthorizationError extends AcmeOperationError {
-  readonly code = 'AUTHORIZATION_ERROR';
-  readonly type = 'authorization';
+  public readonly code = 'AUTHORIZATION_ERROR';
+  public readonly type = 'authorization';
 
-  static invalid(domain: string, reason?: string): AuthorizationError {
+  public static invalid(domain: string, reason?: string): AuthorizationError {
     return new AuthorizationError(
       `Authorization for ${domain} is invalid and cannot be processed${reason ? `: ${reason}` : ''}`,
       { domain, status: 'invalid', reason },
     );
   }
 
-  static deactivated(domain: string): AuthorizationError {
+  public static deactivated(domain: string): AuthorizationError {
     return new AuthorizationError(`Authorization for ${domain} has been deactivated`, {
       domain,
       status: 'deactivated',
     });
   }
 
-  static expired(domain: string): AuthorizationError {
+  public static expired(domain: string): AuthorizationError {
     return new AuthorizationError(`Authorization for ${domain} has expired`, {
       domain,
       status: 'expired',
     });
   }
 
-  static revoked(domain: string): AuthorizationError {
+  public static revoked(domain: string): AuthorizationError {
     return new AuthorizationError(`Authorization for ${domain} has been revoked`, {
       domain,
       status: 'revoked',
@@ -71,31 +71,31 @@ export class AuthorizationError extends AcmeOperationError {
  * Errors related to challenges
  */
 export class ChallengeError extends AcmeOperationError {
-  readonly code = 'CHALLENGE_ERROR';
-  readonly type = 'challenge';
+  public readonly code = 'CHALLENGE_ERROR';
+  public readonly type = 'challenge';
 
-  static notFound(challengeType: string, domain: string): ChallengeError {
+  public static notFound(challengeType: string, domain: string): ChallengeError {
     return new ChallengeError(`Challenge type ${challengeType} not found for ${domain}`, {
       challengeType,
       domain,
     });
   }
 
-  static invalid(challengeType: string, domain: string, reason?: string): ChallengeError {
+  public static invalid(challengeType: string, domain: string, reason?: string): ChallengeError {
     return new ChallengeError(
       `Challenge ${challengeType} for ${domain} is invalid${reason ? `: ${reason}` : ''}`,
       { challengeType, domain, status: 'invalid', reason },
     );
   }
 
-  static invalidWithoutDetail(challengeType: string): ChallengeError {
+  public static invalidWithoutDetail(challengeType: string): ChallengeError {
     return new ChallengeError(`Challenge ${challengeType} is invalid without error detail`, {
       challengeType,
       status: 'invalid',
     });
   }
 
-  static invalidToken(token: string): ChallengeError {
+  public static invalidToken(token: string): ChallengeError {
     return new ChallengeError(
       `Challenge token contains invalid characters (expected base64url): "${token.slice(0, 40)}"`,
       { status: 'invalid_token' },
@@ -107,18 +107,22 @@ export class ChallengeError extends AcmeOperationError {
  * Errors related to certificate orders
  */
 export class OrderError extends AcmeOperationError {
-  readonly code = 'ORDER_ERROR';
-  readonly type = 'order';
+  public readonly code = 'ORDER_ERROR';
+  public readonly type = 'order';
 
-  static noFinalizeUrl(): OrderError {
+  public static noFinalizeUrl(): OrderError {
     return new OrderError('Order does not have finalize URL', { missing: 'finalize' });
   }
 
-  static noCertificateUrl(): OrderError {
+  public static noCertificateUrl(): OrderError {
     return new OrderError('Order does not have certificate URL', { missing: 'certificate' });
   }
 
-  static timeout(targetStatuses: string[], currentStatus: string, attempts: number): OrderError {
+  public static timeout(
+    targetStatuses: string[],
+    currentStatus: string,
+    attempts: number,
+  ): OrderError {
     return new OrderError(
       `Order did not reach target status ${targetStatuses.join(', ')} after ${attempts} attempts. Current status: ${currentStatus}`,
       { targetStatuses, currentStatus, attempts },
@@ -130,16 +134,16 @@ export class OrderError extends AcmeOperationError {
  * Errors related to account operations
  */
 export class AccountError extends AcmeOperationError {
-  readonly code = 'ACCOUNT_ERROR';
-  readonly type = 'account';
+  public readonly code = 'ACCOUNT_ERROR';
+  public readonly type = 'account';
 
-  static notRegistered(): AccountError {
+  public static notRegistered(): AccountError {
     return new AccountError('Account not registered. Call register() first.', {
       action: 'register_required',
     });
   }
 
-  static noAccountUrl(): AccountError {
+  public static noAccountUrl(): AccountError {
     return new AccountError('No account URL in registration response', {
       missing: 'location_header',
     });

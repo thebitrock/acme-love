@@ -99,7 +99,7 @@ export class AcmeRequestSigner {
     }
   }
 
-  async getDirectory(): Promise<AcmeDirectory> {
+  public async getDirectory(): Promise<AcmeDirectory> {
     return this.client.getDirectory();
   }
 
@@ -112,7 +112,7 @@ export class AcmeRequestSigner {
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-6.2
    */
-  async signedPost(
+  public async signedPost(
     url: string,
     payload: string | Record<string, unknown> | Uint8Array | null | undefined,
     forceJwk = false,
@@ -159,7 +159,7 @@ export class AcmeRequestSigner {
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-8.1
    * @see https://datatracker.ietf.org/doc/html/rfc7638
    */
-  async keyAuthorization(token: string): Promise<string> {
+  public async keyAuthorization(token: string): Promise<string> {
     const jwk = await jose.exportJWK(this.keys.publicKey);
     const thumbprint = await jose.calculateJwkThumbprint(jwk, 'sha256');
     return `${token}.${thumbprint}`;
@@ -170,7 +170,10 @@ export class AcmeRequestSigner {
    *
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.3.4
    */
-  async createExternalAccountBinding(eab: ExternalAccountBinding, url: string): Promise<string> {
+  public async createExternalAccountBinding(
+    eab: ExternalAccountBinding,
+    url: string,
+  ): Promise<string> {
     // Validate EAB HMAC key is valid base64url
     if (!/^[A-Za-z0-9_-]+$/.test(eab.hmacKey)) {
       throw new Error('EAB HMAC key must be a valid base64url-encoded string');

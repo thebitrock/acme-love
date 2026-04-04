@@ -75,7 +75,7 @@ export class RateLimiter {
    *
    * @param endpoint - Optional endpoint identifier for per-endpoint limiting
    */
-  async acquire(endpoint = 'default'): Promise<void> {
+  public async acquire(endpoint = 'default'): Promise<void> {
     // Check if there's already a pending acquire for this endpoint
     const pendingAcquire = this.pendingAcquires.get(endpoint);
     if (pendingAcquire) {
@@ -153,7 +153,7 @@ export class RateLimiter {
    * @param endpoint - The endpoint that was rate limited
    * @param retryAfterSeconds - Seconds to wait before retrying
    */
-  recordRateLimit(endpoint: string, retryAfterSeconds: number): void {
+  public recordRateLimit(endpoint: string, retryAfterSeconds: number): void {
     const retryAfter = Date.now() + retryAfterSeconds * 1000;
     this.rateLimits.set(endpoint, retryAfter);
 
@@ -182,7 +182,7 @@ export class RateLimiter {
    * @param endpoint - Endpoint identifier for rate limiting
    * @returns Promise resolving to function result
    */
-  async executeWithRetry<T>(fn: () => Promise<T>, endpoint = 'default'): Promise<T> {
+  public async executeWithRetry<T>(fn: () => Promise<T>, endpoint = 'default'): Promise<T> {
     let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= this.opts.maxRetries + 1; attempt++) {
@@ -356,7 +356,7 @@ export class RateLimiter {
   /**
    * Get current rate limit status
    */
-  getStatus(): { rateLimitedEndpoints: string[]; nextAvailable: number | null } {
+  public getStatus(): { rateLimitedEndpoints: string[]; nextAvailable: number | null } {
     const now = Date.now();
     const rateLimitedEndpoints: string[] = [];
     let nextAvailable: number | null = null;
@@ -376,7 +376,7 @@ export class RateLimiter {
   /**
    * Clear all rate limit state
    */
-  clear(): void {
+  public clear(): void {
     this.rateLimits.clear();
     this.pendingAcquires.clear();
     debugRateLimit('Cleared all rate limit state');
@@ -385,7 +385,7 @@ export class RateLimiter {
   /**
    * Get rate limit status for a specific endpoint (legacy compatibility)
    */
-  getRateLimitStatus(endpoint: string): { isLimited: boolean; retryAfter?: number } {
+  public getRateLimitStatus(endpoint: string): { isLimited: boolean; retryAfter?: number } {
     const retryAfter = this.rateLimits.get(endpoint);
     if (retryAfter && Date.now() < retryAfter) {
       return { isLimited: true, retryAfter };
@@ -396,7 +396,7 @@ export class RateLimiter {
   /**
    * Clear rate limit for a specific endpoint (legacy compatibility)
    */
-  clearRateLimit(endpoint: string): void {
+  public clearRateLimit(endpoint: string): void {
     this.rateLimits.delete(endpoint);
     debugRateLimit('Cleared rate limit for endpoint %s', endpoint);
   }
@@ -404,7 +404,15 @@ export class RateLimiter {
   /**
    * Get known ACME endpoints (legacy compatibility)
    */
-  static getKnownEndpoints() {
+  public static getKnownEndpoints(): {
+    readonly NEW_NONCE: '/acme/new-nonce';
+    readonly NEW_ACCOUNT: '/acme/new-account';
+    readonly NEW_ORDER: '/acme/new-order';
+    readonly REVOKE_CERT: '/acme/revoke-cert';
+    readonly RENEWAL_INFO: '/acme/renewal-info';
+    readonly ACME_GENERAL: '/acme/*';
+    readonly DIRECTORY: '/directory';
+  } {
     return {
       NEW_NONCE: '/acme/new-nonce',
       NEW_ACCOUNT: '/acme/new-account',
