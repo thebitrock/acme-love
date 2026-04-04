@@ -288,4 +288,116 @@ describe('NonceManager', () => {
 
     await expect(nm.get(ns)).rejects.toThrow(/503|Rate limit exceeded|No more mock responses/);
   });
+
+  it('rejects nonce with invalid format', async () => {
+    const nm = new NonceManager(
+      makeOptions(
+        makeFetchOnce([
+          createMockResponse({
+            statusCode: 200,
+            headers: { 'replay-nonce': 'invalid nonce with spaces!' },
+            body: undefined,
+          }),
+        ]),
+      ),
+    );
+
+    await expect(nm.get(ns)).rejects.toThrow(/Invalid nonce format/);
+  });
+
+  it('skips duplicate nonces in putNonce', async () => {
+    const nm = new NonceManager(
+      makeOptions(
+        makeFetchRepeatLast([
+          createMockResponse({
+            statusCode: 200,
+            headers: { 'replay-nonce': 'uniqueNonce' },
+            body: undefined,
+          }),
+        ]),
+      ),
+    );
+
+    // Manually add a nonce
+    const pool = (nm as any).pool.get(ns) || [];
+    pool.push({ value: 'myNonce', timestamp: Date.now() });
+    (nm as any).pool.set(ns, pool);
+
+    // Try to add same nonce again via putNonce
+    (nm as any).putNonce(ns, 'myNonce');
+
+    // Pool should still have only 1 entry (dedup)
+    expect(nm.getStats(ns).poolSize).toBe(1);
+  });
+
+  it('evicts oldest nonce when pool is full (FIFO)', async () => {
+    const nm = new NonceManager(
+      makeOptions(
+        makeFetchRepeatLast([
+          createMockResponse({
+            statusCode: 200,
+            headers: { 'replay-nonce': 'newNonce' },
+            body: undefined,
+          }),
+        ]),
+        { maxPool: 2 },
+      ),
+    );
+
+    // Fill pool to max
+    const pool: Array<{ value: string; timestamp: number }> = [
+      { value: 'oldest', timestamp: Date.now() - 100 },
+      { value: 'newer', timestamp: Date.now() },
+    ];
+    (nm as any).pool.set(ns, pool);
+    expect(nm.getStats(ns).poolSize).toBe(2);
+
+    // Add one more — should evict 'oldest'
+    (nm as any).putNonce(ns, 'newest');
+    const currentPool = (nm as any).pool.get(ns);
+    expect(currentPool.length).toBe(2);
+    expect(currentPool[0].value).toBe('newer');
+    expect(currentPool[1].value).toBe('newest');
+  });
+
+  it('withNonceRetry detects badNonce and retries', async () => {
+    let fetchCount = 0;
+    const nm = new NonceManager(
+      makeOptions(async () => {
+        fetchCount++;
+        return createMockResponse({
+          statusCode: 200,
+          headers: { 'replay-nonce': `nonce-${fetchCount}` },
+          body: undefined,
+        });
+      }),
+    );
+
+    let callCount = 0;
+    const result = await nm.withNonceRetry(ns, async (_nonce) => {
+      callCount++;
+      if (callCount === 1) {
+        // Return a badNonce problem response (not throw)
+        return createMockResponse({
+          statusCode: 400,
+          headers: {
+            'content-type': 'application/problem+json',
+            'replay-nonce': `retry-nonce-${callCount}`,
+          },
+          body: {
+            type: 'urn:ietf:params:acme:error:badNonce',
+            detail: 'JWS has an invalid anti-replay nonce',
+          },
+        }) as any;
+      }
+      return createMockResponse({
+        statusCode: 200,
+        headers: { 'replay-nonce': `good-nonce-${callCount}` },
+        body: { status: 'valid' },
+      });
+    });
+
+    expect(callCount).toBe(2);
+    expect(result.statusCode).toBe(200);
+  });
 });

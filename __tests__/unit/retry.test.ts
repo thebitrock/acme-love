@@ -218,4 +218,23 @@ describe('withRetry', () => {
     ).rejects.toThrow('timeout');
     expect(attempt).toBe(3); // initial + 2 retries
   });
+
+  it('extracts Retry-After from error headers', async () => {
+    let attempt = 0;
+    const result = await withRetry(
+      async () => {
+        attempt++;
+        if (attempt === 1) {
+          const err: any = new Error('503');
+          err.statusCode = 503;
+          err.headers = { 'retry-after': '1' };
+          throw err;
+        }
+        return 'ok';
+      },
+      { maxRetries: 2, baseDelayMs: 1, maxDelayMs: 5, jitterPercent: 0, respectRetryAfter: true },
+    );
+    expect(result).toBe('ok');
+    expect(attempt).toBe(2);
+  });
 });

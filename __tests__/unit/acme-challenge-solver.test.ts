@@ -422,5 +422,62 @@ describe('AcmeChallengeSolver', () => {
       const result = await solver.getAuthorization('https://acme.test/authz/1');
       expect(result).toEqual(authz);
     });
+
+    it('throws when defaultGetAuthorization returns non-200', async () => {
+      (signer.signedPost as jest.Mock).mockResolvedValueOnce({
+        statusCode: 403,
+        body: { type: 'urn:ietf:params:acme:error:unauthorized', detail: 'no' },
+      });
+
+      // Use default resolver (not overridden)
+      await expect(solver.getAuthorization('https://acme.test/authz/1')).rejects.toThrow();
+    });
+  });
+
+  describe('completeChallenge via solveDns01', () => {
+    it('skips completeChallenge when challenge is already valid', async () => {
+      const order = makeOrder(['example.com']);
+      const authz: AcmeAuthorization = {
+        identifier: { type: 'dns', value: 'example.com' },
+        status: 'pending',
+        challenges: [
+          {
+            type: 'dns-01',
+            status: 'valid',
+            url: 'https://acme.test/chall/1',
+            token: 'evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA',
+          } as AcmeChallenge,
+        ],
+      } as AcmeAuthorization;
+
+      solver.resolveAuthorization = jest.fn().mockResolvedValue(authz);
+
+      await solver.solveDns01(order, {
+        setDns: jest.fn(),
+        waitFor: jest.fn(),
+      });
+
+      // signedPost should NOT be called for completeChallenge
+      expect(signer.signedPost).not.toHaveBeenCalled();
+    });
+
+    it('throws when completeChallenge returns non-200', async () => {
+      const order = makeOrder(['example.com']);
+      const authz = makePendingAuthz('example.com', 'dns-01');
+
+      solver.resolveAuthorization = jest.fn().mockResolvedValue(authz);
+
+      (signer.signedPost as jest.Mock).mockResolvedValueOnce({
+        statusCode: 403,
+        body: { type: 'urn:ietf:params:acme:error:unauthorized', detail: 'nope' },
+      });
+
+      await expect(
+        solver.solveDns01(order, {
+          setDns: jest.fn().mockResolvedValue(undefined),
+          waitFor: jest.fn().mockResolvedValue(undefined),
+        }),
+      ).rejects.toThrow();
+    });
   });
 });

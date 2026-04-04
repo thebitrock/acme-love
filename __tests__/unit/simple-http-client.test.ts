@@ -315,4 +315,45 @@ describe('AcmeHttpClient', () => {
     const res = await client.get('https://acme-love.test/no-ct');
     expect(Buffer.isBuffer(res.body)).toBe(true);
   });
+
+  it('handles 429 rate limit response without crashing', async () => {
+    mockRequest.mockResolvedValueOnce({
+      statusCode: 429,
+      headers: { 'content-type': 'application/json', 'retry-after': '60' },
+      body: {
+        json: async () => ({ type: 'rateLimited', detail: 'slow down' }),
+        text: async () => '{}',
+        arrayBuffer: async () => new ArrayBuffer(0),
+      },
+      trailers: {},
+      opaque: null,
+      context: {},
+    } as any);
+
+    const AcmeHttpClient = await loadClient();
+    const client = new AcmeHttpClient();
+    const res = await client.get('https://acme-love.test/limited');
+    expect(res.statusCode).toBe(429);
+  });
+
+  it('handles 503 service unavailable response', async () => {
+    mockRequest.mockResolvedValueOnce({
+      statusCode: 503,
+      headers: { 'content-type': 'text/plain', 'Retry-After': '30' },
+      body: {
+        json: async () => ({}),
+        text: async () => 'Service Unavailable',
+        arrayBuffer: async () => new ArrayBuffer(0),
+      },
+      trailers: {},
+      opaque: null,
+      context: {},
+    } as any);
+
+    const AcmeHttpClient = await loadClient();
+    const client = new AcmeHttpClient();
+    const res = await client.get('https://acme-love.test/maint');
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toBe('Service Unavailable');
+  });
 });

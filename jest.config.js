@@ -35,8 +35,12 @@ export default {
     '!src/lib/example.ts',
     '!src/cli.ts',
     '!src/cli/logger.ts',
+    '!src/cli/program.ts',
     '!src/cli/commands/cert.ts',
     '!src/cli/commands/create-account-key.ts',
+    '!src/cli/commands/interactive.ts',
+    '!src/cli/utils/algorithms.ts',
+    '!src/cli/utils/directories.ts',
   ],
 
   // Transform ignore patterns - don't transform node_modules except jose
