@@ -1,3 +1,16 @@
+## [2.4.0](https://github.com/thebitrock/acme-love/compare/v2.3.3...v2.4.0) (2026-04-04)
+
+### Features
+
+- **ci:** add Codecov integration and replace static badges with dynamic ([659945f](https://github.com/thebitrock/acme-love/commit/659945f717484a2f7087e2e7dc92a190937f2bce))
+
+### Bug Fixes
+
+- **ci:** add Node.js 24.x (current) to test matrix, use major versions ([91ba538](https://github.com/thebitrock/acme-love/commit/91ba53854ba41e0ae1bfe5578bea55460dddd837))
+- **ci:** overhaul CI workflow — split jobs, fix build, add coverage ([49209c8](https://github.com/thebitrock/acme-love/commit/49209c822b247d8d9380642a2efa64fdeca695fe))
+- **deps:** update dependencies and fix 13 security vulnerabilities ([5f85a56](https://github.com/thebitrock/acme-love/commit/5f85a56b8b29dd36f42f7ffe319439a8933856ca))
+- **deps:** upgrade semantic-release ecosystem to latest major ([257c5b6](https://github.com/thebitrock/acme-love/commit/257c5b66e9c2f23b4cffaaa7f2cf9177b030f26a))
+
 ## [2.3.3](https://github.com/thebitrock/acme-love/compare/v2.3.2...v2.3.3) (2026-04-04)
 
 ### Bug Fixes
