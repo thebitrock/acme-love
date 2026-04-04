@@ -4,7 +4,7 @@ import { generateKeyPair, type AcmeAccountKeyPair } from '../../src/lib/crypto/i
 
 async function makeAccount(): Promise<AcmeAccountKeyPair> {
   const keys = await generateKeyPair({ kind: 'ec', namedCurve: 'P-256', hash: 'SHA-256' });
-  return { privateKey: keys.privateKey, publicKey: keys.publicKey };
+  return { privateKey: keys.privateKey!, publicKey: keys.publicKey! };
 }
 
 describe('JoseAcmeSigner', () => {
@@ -42,7 +42,10 @@ describe('JoseAcmeSigner', () => {
   });
 
   it('getJwk throws when publicKey is missing', async () => {
-    const account: AcmeAccountKeyPair = { privateKey: undefined, publicKey: undefined };
+    const account = {
+      privateKey: undefined,
+      publicKey: undefined,
+    } as unknown as AcmeAccountKeyPair;
     const signer = new JoseAcmeSigner(account);
     await expect(signer.getJwk()).rejects.toThrow('not initialized');
   });
@@ -58,10 +61,10 @@ describe('JoseAcmeSigner', () => {
   });
 
   it('signJws throws when privateKey is missing', async () => {
-    const account: AcmeAccountKeyPair = {
+    const account = {
       publicKey: (await makeAccount()).publicKey,
       privateKey: undefined,
-    };
+    } as unknown as AcmeAccountKeyPair;
     const signer = new JoseAcmeSigner(account);
     const payload = new TextEncoder().encode('test');
     await expect(signer.signJws(payload, { alg: 'ES256' as const })).rejects.toThrow('private key');

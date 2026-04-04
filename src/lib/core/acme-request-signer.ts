@@ -168,6 +168,11 @@ export class AcmeRequestSigner {
    * @see https://datatracker.ietf.org/doc/html/rfc8555#section-7.3.4
    */
   async createExternalAccountBinding(eab: ExternalAccountBinding, url: string): Promise<string> {
+    // Validate EAB HMAC key is valid base64url
+    if (!/^[A-Za-z0-9_-]+$/.test(eab.hmacKey)) {
+      throw new Error('EAB HMAC key must be a valid base64url-encoded string');
+    }
+
     const publicKeyJwk = await jose.exportJWK(this.keys.publicKey);
 
     const payload = JSON.stringify(publicKeyJwk);

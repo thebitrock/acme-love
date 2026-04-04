@@ -1,7 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
 // Mock undici before imports
-const mockRequest = jest.fn();
+const mockRequest = jest.fn<any>();
 jest.unstable_mockModule('undici', () => ({ request: mockRequest }));
 
 // Dynamic import after mock

@@ -155,7 +155,7 @@ describe('statusValidationMiddleware', () => {
     const mw = statusValidationMiddleware();
     try {
       await mw(makeContext(), async () => makeResponse(403));
-      expect.unreachable('should throw');
+      throw new Error('should have thrown');
     } catch (err: any) {
       expect(err.statusCode).toBe(403);
       expect(err.response).toBeDefined();

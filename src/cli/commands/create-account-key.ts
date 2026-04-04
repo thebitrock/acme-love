@@ -1,5 +1,5 @@
 import { confirm } from '@inquirer/prompts';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { chmodSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
 import { generateKeyPair } from '../../index.js';
 import { parseAlgorithm, selectAlgorithm } from '../utils/algorithms.js';
@@ -34,5 +34,6 @@ export async function handleCreateAccountKey(options: CreateAccountKeyOptions) {
     outputPath,
     JSON.stringify({ privateKey: privateKeyJwk, publicKey: publicKeyJwk }, null, 2),
   );
+  chmodSync(outputPath, 0o600);
   console.log(`Account key created: ${outputPath}`);
 }

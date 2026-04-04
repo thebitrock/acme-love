@@ -156,6 +156,14 @@ export class AcmeAccount {
     if (!accountUrl) {
       throw AccountError.noAccountUrl();
     }
+    try {
+      const parsed = new URL(accountUrl);
+      if (parsed.protocol !== 'https:') {
+        throw new Error('non-HTTPS');
+      }
+    } catch {
+      throw new Error(`Invalid account URL in Location header: "${accountUrl}"`);
+    }
 
     this.signer.kid = accountUrl;
 

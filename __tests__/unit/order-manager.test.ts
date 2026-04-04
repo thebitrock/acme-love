@@ -1,6 +1,17 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { describe, it, expect, jest } from '@jest/globals';
 import { AcmeOrderManager } from '../../src/lib/core/acme-order-manager.js';
-import { OrderError } from '../../src/lib/errors/acme-operation-errors.js';
+import type { AcmeOrder } from '../../src/lib/types/order.js';
+
+function makeOrder(overrides: Partial<AcmeOrder> = {}): AcmeOrder {
+  return {
+    status: 'pending',
+    identifiers: [],
+    authorizations: [],
+    expires: '',
+    finalize: 'https://acme.test/order/1/finalize',
+    ...overrides,
+  } as AcmeOrder;
+}
 
 function makeMockSigner(responses: any[] = []) {
   let callIndex = 0;
@@ -72,14 +83,7 @@ describe('AcmeOrderManager', () => {
         },
       ]);
       const manager = new AcmeOrderManager(signer);
-      const order = {
-        status: 'ready' as const,
-        url: 'https://acme.test/order/1',
-        finalize: 'https://acme.test/order/1/finalize',
-        identifiers: [],
-        authorizations: [],
-        expires: '',
-      };
+      const order = makeOrder({ status: 'ready', url: 'https://acme.test/order/1' });
       const result = await manager.finalize(order, 'base64url-csr');
       expect(result.status).toBe('processing');
       expect(result.url).toBe('https://acme.test/order/1');
@@ -91,8 +95,8 @@ describe('AcmeOrderManager', () => {
     it('throws when no finalize URL', async () => {
       const signer = makeMockSigner();
       const manager = new AcmeOrderManager(signer);
-      const order = { status: 'ready' as const, identifiers: [], authorizations: [], expires: '' };
-      await expect(manager.finalize(order as any, 'csr')).rejects.toThrow('finalize');
+      const order = makeOrder({ status: 'ready', finalize: undefined as any });
+      await expect(manager.finalize(order, 'csr')).rejects.toThrow('finalize');
     });
 
     it('throws on non-200 response', async () => {
@@ -107,13 +111,7 @@ describe('AcmeOrderManager', () => {
         },
       ]);
       const manager = new AcmeOrderManager(signer);
-      const order = {
-        status: 'ready' as const,
-        finalize: 'https://acme.test/order/1/finalize',
-        identifiers: [],
-        authorizations: [],
-        expires: '',
-      };
+      const order = makeOrder({ status: 'ready' });
       await expect(manager.finalize(order, 'csr')).rejects.toThrow();
     });
   });
@@ -122,14 +120,11 @@ describe('AcmeOrderManager', () => {
     it('returns immediately when order already in target status', async () => {
       const signer = makeMockSigner();
       const manager = new AcmeOrderManager(signer);
-      const order = {
-        status: 'valid' as const,
+      const order = makeOrder({
+        status: 'valid',
         url: 'https://acme.test/order/1',
-        identifiers: [],
-        authorizations: [],
-        expires: '',
         certificate: 'https://acme.test/cert/1',
-      };
+      });
       const result = await manager.waitOrder(order, ['valid']);
       expect(result.status).toBe('valid');
       expect(signer.signedPost).not.toHaveBeenCalled();
@@ -145,13 +140,7 @@ describe('AcmeOrderManager', () => {
         },
       ]);
       const manager = new AcmeOrderManager(signer);
-      const order = {
-        status: 'processing' as const,
-        url: 'https://acme.test/order/1',
-        identifiers: [],
-        authorizations: [],
-        expires: '',
-      };
+      const order = makeOrder({ status: 'processing', url: 'https://acme.test/order/1' });
       const result = await manager.waitOrder(order, ['valid']);
       expect(result.status).toBe('valid');
     });
@@ -162,13 +151,7 @@ describe('AcmeOrderManager', () => {
       const certPem = '-----BEGIN CERTIFICATE-----\nMIIB...\n-----END CERTIFICATE-----';
       const signer = makeMockSigner([{ statusCode: 200, headers: {}, body: certPem }]);
       const manager = new AcmeOrderManager(signer);
-      const order = {
-        status: 'valid' as const,
-        certificate: 'https://acme.test/cert/1',
-        identifiers: [],
-        authorizations: [],
-        expires: '',
-      };
+      const order = makeOrder({ status: 'valid', certificate: 'https://acme.test/cert/1' });
       const cert = await manager.downloadCertificate(order);
       expect(cert).toBe(certPem);
     });
@@ -176,8 +159,8 @@ describe('AcmeOrderManager', () => {
     it('throws when no certificate URL', async () => {
       const signer = makeMockSigner();
       const manager = new AcmeOrderManager(signer);
-      const order = { status: 'valid' as const, identifiers: [], authorizations: [], expires: '' };
-      await expect(manager.downloadCertificate(order as any)).rejects.toThrow('certificate');
+      const order = makeOrder({ status: 'valid', certificate: undefined as any });
+      await expect(manager.downloadCertificate(order)).rejects.toThrow('certificate');
     });
 
     it('throws on non-200 response', async () => {
@@ -189,13 +172,7 @@ describe('AcmeOrderManager', () => {
         },
       ]);
       const manager = new AcmeOrderManager(signer);
-      const order = {
-        status: 'valid' as const,
-        certificate: 'https://acme.test/cert/1',
-        identifiers: [],
-        authorizations: [],
-        expires: '',
-      };
+      const order = makeOrder({ status: 'valid', certificate: 'https://acme.test/cert/1' });
       await expect(manager.downloadCertificate(order)).rejects.toThrow();
     });
   });
