@@ -33,6 +33,10 @@ export default {
     '!src/lib/compat-test.ts',
     '!src/lib/demo.ts',
     '!src/lib/example.ts',
+    '!src/cli.ts',
+    '!src/cli/logger.ts',
+    '!src/cli/commands/cert.ts',
+    '!src/cli/commands/create-account-key.ts',
   ],
 
   // Transform ignore patterns - don't transform node_modules except jose

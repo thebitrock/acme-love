@@ -55,6 +55,12 @@ export interface AcmeAccountOptions {
   nonce?: Partial<NonceManagerOptions>;
   /** External account binding for CAs that require it */
   externalAccountBinding?: ExternalAccountBinding;
+  /** @internal Test-only: inject a pre-built request signer */
+  _signer?: AcmeRequestSigner;
+  /** @internal Test-only: inject a pre-built order manager */
+  _orders?: AcmeOrderManager;
+  /** @internal Test-only: inject a pre-built challenge solver */
+  _challenges?: AcmeChallengeSolver;
 }
 
 /**
@@ -87,12 +93,14 @@ export class AcmeAccount {
 
   constructor(client: AcmeClient, keys: AccountKeys, opts: AcmeAccountOptions = {}) {
     this.opts = opts;
-    this.signer = new AcmeRequestSigner(client, keys, {
-      ...(opts.kid !== undefined && { kid: opts.kid }),
-      ...(opts.nonce !== undefined && { nonce: opts.nonce }),
-    });
-    this.orders = new AcmeOrderManager(this.signer);
-    this.challenges = new AcmeChallengeSolver(this.signer, this.orders);
+    this.signer =
+      opts._signer ??
+      new AcmeRequestSigner(client, keys, {
+        ...(opts.kid !== undefined && { kid: opts.kid }),
+        ...(opts.nonce !== undefined && { nonce: opts.nonce }),
+      });
+    this.orders = opts._orders ?? new AcmeOrderManager(this.signer);
+    this.challenges = opts._challenges ?? new AcmeChallengeSolver(this.signer, this.orders);
 
     // Late-bind so subclass overrides of getAuthorization are respected
     // by the internal challenge solve loop
