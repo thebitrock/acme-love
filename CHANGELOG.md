@@ -1,3 +1,9 @@
+## [2.6.0](https://github.com/thebitrock/acme-love/compare/v2.5.0...v2.6.0) (2026-04-05)
+
+### Features
+
+- enforce architectural boundaries and strict typing for lib/ ([cad81ac](https://github.com/thebitrock/acme-love/commit/cad81aca1454e997db2dbc8fa20bc8d55604e39e))
+
 ## [2.5.0](https://github.com/thebitrock/acme-love/compare/v2.4.0...v2.5.0) (2026-04-04)
 
 ### Features
